@@ -266,6 +266,11 @@ export default function App() {
     let siguiente: ReturnType<typeof setTimeout> | undefined;
     const lento = setTimeout(() => { S.slow = true; forzar(); }, 10000);
 
+    // ¿Hay IA en el servidor? Si no, la app usa su método básico por palabras clave.
+    fetch("/api/match").then(r => r.json()).then((d: {ia?: boolean}) => {
+      if (!parado) { S.iaDisponible = !!d.ia; forzar(); }
+    }).catch(() => {});
+
     async function cargar() {
       try {
         const r = await fetch("/api/perfiles", {cache: "no-store"});
