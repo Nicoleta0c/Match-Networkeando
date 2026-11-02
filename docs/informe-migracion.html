@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Networkeando RD: informe de la migración</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --tinta:#1A1033; --suave:#5D5478; --idea:#5B2EFF; --poder:#F0306F; --clic:#FFB800; --ok:#14A06B; --linea:#DDD3F5; --fondo:#F4F0FF; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--tinta); font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 24pt; letter-spacing: -.02em; margin: 0 0 4px; }
+  h2 { font-size: 15pt; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--linea); break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 4px; color: var(--idea); break-after: avoid; }
+  p { margin: 0 0 8px; }
+  ul, ol { margin: 0 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .sub { color: var(--suave); margin-bottom: 16px; }
+  .portada { border-left: 6px solid var(--idea); padding: 4px 0 4px 14px; margin-bottom: 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.5pt; break-inside: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 5px 7px; border-bottom: 1px solid var(--linea); }
+  th { background: var(--fondo); font-weight: 700; }
+  tr { break-inside: avoid; }
+  code, pre { font-family: Consolas, "Cascadia Mono", monospace; font-size: 9pt; }
+  code { background: var(--fondo); padding: 1px 4px; border-radius: 4px; }
+  pre { background: #1A1033; color: #F4F0FF; padding: 8px 10px; border-radius: 8px; margin: 4px 0 10px; white-space: pre-wrap; break-inside: avoid; }
+  .caja { border: 1.5px solid var(--linea); border-radius: 10px; padding: 10px 12px; margin: 8px 0 12px; break-inside: avoid; }
+  .caja.ok { border-color: var(--ok); }
+  .caja.ojo { border-color: var(--clic); background: #FFF8E5; }
+  .etq { display: inline-block; font-size: 8.5pt; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--fondo); color: var(--idea); }
+  .etq.ok { background: #E3F6EE; color: var(--ok); }
+  .etq.pend { background: #FFF1CC; color: #8A5A00; }
+  .salto { break-before: page; }
+</style>
+</head>
+<body>
+
+<div class="portada">
+  <h1>Networkeando RD</h1>
+  <div class="sub">Informe de la migración a Next.js + SQLite · 2 de noviembre de 2026</div>
+</div>
+
+<h2>Resumen en pocas palabras</h2>
+<p>La app pasó de ser un solo archivo <code>index.html</code>, que solo funcionaba dentro de claude.ai, a un proyecto <b>Next.js con TypeScript</b>. Ahora tiene su propia <b>base de datos SQLite</b> y corre en tu laptop sin depender de ningún servicio externo. El diseño, los textos y las animaciones se mantuvieron iguales.</p>
+<div class="caja ok">
+  <b>Estado:</b> los pasos 1 a 5 están hechos, probados y guardados en git (un commit por paso). La app está corriendo en <code>http://localhost:3000</code>.<br>
+  <b>Pendiente:</b> el paso 6 (revisión de diseño con las skills), poner tu clave de Anthropic si quieres la IA, y una prueba con celulares reales.
+</div>
+<p><b>Dónde está el proyecto:</b> <code>C:\Users\Analista BPA\networkeando-rd</code>. Lo saqué del zip a su propia carpeta porque Claude Code estaba abierto en otro proyecto (<code>simulador-precio</code>), y así no se mezclan.</p>
+
+<h2>1. Lo que se instaló en tu computadora</h2>
+
+<h3>Programas</h3>
+<table>
+  <tr><th>Qué</th><th>Versión</th><th>Para qué sirve</th><th>Cómo se instaló</th></tr>
+  <tr><td>Node.js (incluye npm)</td><td>v26.13.0 LTS · npm 11.20.0</td><td>Ejecuta JavaScript fuera del navegador. Next.js lo necesita para funcionar.</td><td>Instalador oficial de nodejs.org en <code>C:\Program Files\nodejs\</code>. Antes de instalarlo comprobé su huella digital (SHA-256) contra la que publica Node. winget no sirvió porque la red bloquea su catálogo.</td></tr>
+</table>
+
+<h3>Skills de Claude Code</h3>
+<p>Copié las 8 skills que venían en el zip (<code>.claude/skills</code>) a tu carpeta personal <code>C:\Users\Analista BPA\.claude\skills</code>, para que estén disponibles en cualquier proyecto. También siguen dentro del proyecto.</p>
+<table>
+  <tr><th>Skill</th><th>Para qué sirve</th></tr>
+  <tr><td>impeccable</td><td>Auditoría y pulido de diseño (<code>/impeccable audit</code>, <code>polish</code>, <code>critique</code>).</td></tr>
+  <tr><td>review-animations</td><td>Revisa animaciones con el criterio de Emil Kowalski.</td></tr>
+  <tr><td>improve-animations</td><td>Auditoría de animaciones y planes para mejorarlas.</td></tr>
+  <tr><td>animate</td><td>Crear animaciones nuevas paso a paso.</td></tr>
+  <tr><td>emil-design-eng</td><td>Criterio de diseño e interacción de Emil Kowalski.</td></tr>
+  <tr><td>design-taste-frontend (taste-skill)</td><td>Criterio visual para evitar diseños genéricos.</td></tr>
+  <tr><td>ui-ux-pro-max</td><td>Catálogo de estilos, paletas y tipografías.</td></tr>
+  <tr><td>huashu-design</td><td>Prototipos HTML, presentaciones y animaciones exportables.</td></tr>
+</table>
+
+<h3>Librerías del proyecto (dentro de <code>node_modules</code>, solo para esta app)</h3>
+<table>
+  <tr><th>Paquete</th><th>Versión</th><th>Para qué sirve</th></tr>
+  <tr><td>next</td><td>16.4.4</td><td>El framework: páginas, servidor y rutas de API.</td></tr>
+  <tr><td>react, react-dom</td><td>19.3.1</td><td>Para construir la interfaz con componentes.</td></tr>
+  <tr><td>qrious</td><td>4.0.2</td><td>Dibuja el código QR. Es la misma librería que usaba el original.</td></tr>
+  <tr><td>@prisma/client · prisma</td><td>6.19.3</td><td>Crea la base de datos SQLite y permite leerla y escribirla desde TypeScript. Usé la 6 porque la 7 necesita compilar un módulo nativo en Windows.</td></tr>
+  <tr><td>@anthropic-ai/sdk</td><td>1.3.0</td><td>Librería oficial para llamar a Claude desde el servidor (match con IA).</td></tr>
+  <tr><td>typescript</td><td>5.9.3</td><td>Revisa los tipos del código. Usé la 5 porque Next todavía no es compatible con la 7.</td></tr>
+  <tr><td>@types/react, @types/react-dom, @types/node</td><td>19 / 19 / 22</td><td>Descripciones de tipos para que TypeScript entienda React y Node.</td></tr>
+</table>
+<p>npm 11 bloquea los scripts de instalación hasta que alguien los aprueba. Solo aprobé los de los tres paquetes oficiales de Prisma, que descargan el motor de la base de datos. Quedó anotado en <code>package.json</code> → <code>allowScripts</code>.</p>
+
+<h2 class="salto">2. Lo que hice en cada paso</h2>
+
+<h3>Paso 1 · Probar el original <span class="etq ok">hecho · commit 2c7e0ec</span></h3>
+<ul>
+  <li>Serví <code>index.html</code> con <code>python -m http.server</code> y probé cada vista en escritorio y en celular.</li>
+  <li>El modo <code>#demo</code> funciona: búsqueda animada, modal "¡Hicieron match!" con Ana Lucía (98%) y 6 matches más.</li>
+  <li>Anoté cómo se ve y cómo se comporta cada vista en <code>REFERENCIA.md</code>, para comparar después.</li>
+</ul>
+
+<h3>Paso 2 · Next.js con React y TypeScript <span class="etq ok">hecho · commit 1588feb</span></h3>
+<ul>
+  <li>Moví el original a <code>legacy/index.html</code> como referencia.</li>
+  <li>Saqué las imágenes de los personajes (DUO_L y DUO_R) con un script a <code>public/duo-l.webp</code> y <code>public/duo-r.webp</code>.</li>
+  <li>Copié el CSS original tal cual a <code>app/globals.css</code>: colores de <code>:root</code>, animaciones, <code>prefers-reduced-motion</code> y safe-area. La fuente Manrope ahora se carga con <code>next/font</code>.</li>
+  <li>Dividí la interfaz en componentes: <code>Barra</code>, <code>VistaInicio</code>, <code>VistaPerfil</code>, <code>VistaClics</code>, <code>VistaProyectar</code>, <code>MatchModal</code>, <code>Buscando</code> y piezas pequeñas en <code>ui.tsx</code>. Se mantienen todos los <code>aria-*</code>, el foco del modal y la tecla Escape.</li>
+  <li>La lógica del match (<code>limpiar</code>, <code>inferir</code>, <code>CLAVES</code>, <code>analizar</code>…) está en <code>lib/match.ts</code>, igual que en el original.</li>
+  <li>Las vistas siguen cambiando por hash: <code>#inicio</code>, <code>#perfil</code>, <code>#clics</code>, <code>#proyectar</code>, <code>#demo</code>.</li>
+  <li><b>Probado:</b> la demo se ve y se comporta igual que el original (mismos textos, mismos porcentajes, clave CARIBE-26), en escritorio y en celular.</li>
+</ul>
+
+<h3>Paso 3 · Base de datos SQLite con Prisma <span class="etq ok">hecho · commit 4cfe89b</span></h3>
+<ul>
+  <li>Tabla <code>Perfil</code> con los mismos campos que <code>limpiar()</code>: idea, needs, power, anon, alias, que, contact, likes, color, createdAt. El archivo de la base es <code>prisma/dev.db</code>.</li>
+  <li><b>Rutas de API:</b>
+    <ul>
+      <li><code>GET /api/perfiles</code>: los 800 más recientes primero.</li>
+      <li><code>PUT /api/perfiles/[id]</code>: crea o actualiza tu perfil.</li>
+      <li><code>DELETE /api/perfiles/[id]</code>: lo borra.</li>
+    </ul>
+  </li>
+  <li><b>Identidad:</b> la primera vez se crea un id anónimo al azar y se guarda en una cookie (<code>nw_uid</code>) que JavaScript no puede leer. Solo puedes editar y borrar el perfil de tu cookie; si intentas tocar otro, la respuesta es 403.</li>
+  <li><b>Validación en el servidor</b> (<code>lib/validar.ts</code>): revisa tipos y largos máximos (idea 280, superpoder 140, nombre 40, a qué te dedicas 50, contacto 80) y rechaza lo inválido con un error 400. La fecha de creación la pone el servidor.</li>
+  <li>El <code>onSnapshot</code> se reemplazó por una consulta cada 5 segundos. Si nada cambió, la pantalla no se redibuja.</li>
+  <li>El <code>localStorage</code> de "clic-notificados" quedó igual.</li>
+  <li><b>Probado con dos personas</b> (el navegador y otra persona simulada con curl, cada una con su cookie): se ven entre sí y el match funcionó (96%). Un tercer perfil apareció solo en menos de 5 segundos. También probé borrar y los permisos 403 y 400.</li>
+</ul>
+
+<h3>Paso 4 · IA para el match <span class="etq ok">hecho · commit 2a14021</span></h3>
+<ul>
+  <li><code>POST /api/match</code> llama a Claude (modelo <code>claude-opus-5-5</code>, esfuerzo bajo) y pide la respuesta en JSON con un esquema fijo. Las instrucciones son las mismas del original.</li>
+  <li>La clave va en <code>.env.local</code> (<code>ANTHROPIC_API_KEY=</code>), que git ignora. Nunca llega al navegador: lo comprobé buscándola en el código que se envía al navegador.</li>
+  <li>Activé el respaldo automático de Anthropic (<code>fallbacks: "default"</code>): si el modelo se niega a responder por sus filtros de seguridad, otro modelo responde en la misma llamada.</li>
+  <li>Límite de 12 pedidos por minuto por persona, para proteger tu clave.</li>
+  <li><b>Probado:</b> sin clave, la app usa el método básico (<code>inferir</code> + <code>CLAVES</code>). Con una clave inválida, la IA falla, la app avisa "La IA no respondió a tiempo…" y usa el método básico.</li>
+</ul>
+
+<h3>Paso 5 · QR y uso en el evento <span class="etq ok">hecho · commit 7d40201</span></h3>
+<ul>
+  <li>El QR ya no apunta a claude.ai: usa la dirección donde corre la app. Si la abres como <code>localhost</code>, la app averigua la IP de tu laptop en el Wi-Fi (hoy <code>10.13.17.42</code>) para que el QR les sirva a los celulares.</li>
+  <li>Si un día la publicas en internet, puedes fijar la dirección con la variable <code>NEXT_PUBLIC_SHARE_URL</code>.</li>
+  <li>Nuevo script <code>npm run evento</code>: prepara la base, construye la versión rápida (producción) y la deja abierta a la red.</li>
+  <li><b>Probado:</b> la versión de producción se construye sin errores y funciona entrando por la IP, como lo haría un celular.</li>
+</ul>
+
+<h3>Paso 6 · Revisión de diseño <span class="etq pend">pendiente</span></h3>
+<p>Todavía no lo hice. Las skills ya están instaladas. Cuando me digas, corro <code>/impeccable audit</code> y <code>review-animations</code> y te doy una lista ordenada de mejoras, sin aplicar ninguna hasta que la apruebes.</p>
+
+<h2 class="salto">3. Cómo correr la app</h2>
+<h3>Para trabajar en ella (modo desarrollo)</h3>
+<pre>cd "C:\Users\Analista BPA\networkeando-rd"
+npm run dev</pre>
+<p>Abre <code>http://localhost:3000</code>. Para ver la demo: <code>http://localhost:3000/#demo</code>. Para pararla: <code>Ctrl + C</code> en la terminal.</p>
+
+<h3>Para el evento (los celulares se conectan por el mismo Wi-Fi)</h3>
+<ol>
+  <li>Si tienes <code>npm run dev</code> abierto, ciérralo primero, porque los dos usan el puerto 3000.</li>
+  <li>Corre:
+<pre>cd "C:\Users\Analista BPA\networkeando-rd"
+npm run evento</pre></li>
+  <li>La primera vez, Windows pregunta si Node.js puede usar la red: marca <b>Redes privadas</b> y acepta. Si no aceptas, los celulares no podrán entrar.</li>
+  <li>En la laptop abre <code>http://localhost:3000/#proyectar</code> y toca "Pantalla completa". El QR ya apunta a tu laptop.</li>
+  <li>Prueba primero con tu celular: escanea el QR y crea un perfil.</li>
+  <li>Durante el evento, no cierres la terminal ni dejes que la laptop se duerma (conéctala a la corriente).</li>
+</ol>
+<div class="caja ojo">
+  <b>Ojo con el Wi-Fi:</b> muchas redes de invitados o corporativas tienen "aislamiento de clientes" y no dejan que un celular vea a la laptop. Si pasa, usa un router normal o el hotspot de un celular. La IP de la laptop cambia según la red; el QR la actualiza solo cuando abres <code>#proyectar</code>.
+</div>
+<h3>Para activar la IA</h3>
+<p>Abre <code>.env.local</code>, pega tu clave después de <code>ANTHROPIC_API_KEY=</code> y vuelve a arrancar la app. Sin clave, todo funciona con el método básico.</p>
+<h3>Para empezar un evento desde cero</h3>
+<p>Para la app, borra <code>prisma\dev.db</code> y corre <code>npx prisma migrate dev</code>. Ahora mismo la base está vacía: borré los perfiles que creé para las pruebas.</p>
+
+<h2>4. Hosting gratuito con SQLite (sin publicar nada todavía)</h2>
+<p>SQLite guarda todo en un archivo, así que necesitas un hosting con <b>disco permanente</b>. Si el disco se borra en cada reinicio, se pierden los perfiles. Estos planes cambian seguido: confirma precios y límites en cada página antes de decidir.</p>
+<table>
+  <tr><th>Opción</th><th>¿Gratis?</th><th>¿Sirve con SQLite?</th><th>Comentario</th></tr>
+  <tr><td><b>Tu laptop en el Wi-Fi del evento</b></td><td>Sí</td><td>Sí, tal como está</td><td>Lo que ya tienes. No necesita cuenta ni cambios. Solo funciona dentro del lugar.</td></tr>
+  <tr><td>Turso + Vercel</td><td>Tienen plan gratis</td><td>Sí: Turso es SQLite en la nube (libSQL)</td><td>Vercel no guarda archivos, así que la base iría en Turso. Hay que agregar el adaptador de Prisma para libSQL y cambiar la conexión. Es un cambio pequeño.</td></tr>
+  <tr><td>Railway</td><td>Crédito de prueba; después, plan pagado bajo</td><td>Sí, con un "volume" (disco permanente)</td><td>Fácil de usar, pero no es gratis de forma permanente.</td></tr>
+  <tr><td>Render</td><td>El plan gratis no tiene disco permanente</td><td>No en el plan gratis</td><td>El servicio gratis se duerme y su disco se borra; el disco permanente es de pago.</td></tr>
+  <tr><td>Fly.io</td><td>Ya no tiene plan gratis para cuentas nuevas</td><td>Sí, con volumen</td><td>Bueno técnicamente, pero de pago.</td></tr>
+</table>
+<div class="caja">
+  <b>Mi recomendación:</b> para un evento presencial, usa <b>tu laptop</b> (<code>npm run evento</code>): es gratis, ya funciona y los datos se quedan contigo. Si después quieres que la app viva en internet, la opción gratuita más sólida es <b>Vercel + Turso</b>, pero necesita ese cambio pequeño en la conexión a la base. Te lo puedo preparar cuando quieras, sin publicar nada sin tu permiso.
+</div>
+
+<h2 class="salto">5. Cosas que conviene saber</h2>
+<ul>
+  <li><b>Sin probar con celulares reales.</b> Probé entrando por la IP desde la misma laptop. La prueba final es escanear el QR con tu celular en el Wi-Fi del evento. Tampoco pude leer el QR con un programa (no se permitió cargar código externo en la página), así que confirma con la cámara que abre la dirección correcta.</li>
+  <li><b>IA en la demo:</b> al entrar a <code>#demo</code>, la primera búsqueda puede empezar antes de saber si hay IA y usar el método básico; "Buscar de nuevo" ya usa la IA. El original tenía el mismo comportamiento.</li>
+  <li><b>Aviso de npm audit:</b> 3 avisos "high" en <code>deepmerge-ts</code>, que usa la herramienta de línea de comandos de Prisma 6 (no la app que ven los usuarios). Se arregla subiendo a Prisma 7, que es un cambio grande. Lo dejé así a propósito.</li>
+  <li><b>CLAUDE.md</b> todavía describe el plan viejo (Firebase/Supabase). Conviene actualizarlo para que futuras sesiones de Claude Code no se confundan.</li>
+  <li>El círculo con una "N" abajo a la izquierda solo aparece en modo desarrollo (es la herramienta de Next.js). En <code>npm run evento</code> no sale.</li>
+  <li>Next.js creó solo un archivo <code>AGENTS.md</code> con notas para asistentes de IA. Es normal.</li>
+</ul>
+
+<h2>6. Historial de git</h2>
+<table>
+  <tr><th>Commit</th><th>Mensaje</th></tr>
+  <tr><td><code>2c7e0ec</code></td><td>Paso 1: proyecto original y notas de referencia</td></tr>
+  <tr><td><code>1588feb</code></td><td>Paso 2: pasar la app a Next.js con React y TypeScript</td></tr>
+  <tr><td><code>4cfe89b</code></td><td>Paso 3: base de datos SQLite con Prisma y rutas de API</td></tr>
+  <tr><td><code>2a14021</code></td><td>Paso 4: elegir el match con IA desde el servidor</td></tr>
+  <tr><td><code>7d40201</code></td><td>Paso 5: QR con la dirección real y uso en el evento</td></tr>
+</table>
+<p>Git no guarda <code>.env</code>, <code>.env.local</code> (tu clave), <code>prisma/dev.db</code> (los perfiles) ni <code>node_modules</code>.</p>
+
+</body>
+</html>
