@@ -1,0 +1,30 @@
+// Base de datos SQLite: un solo archivo (prisma/dev.db) en la carpeta del proyecto.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Un perfil por persona. El id es el id anónimo que guarda la cookie.
+// Mismos campos que limpiar() en el original. SQLite no tiene listas,
+// así que needs y likes se guardan como texto JSON.
+model Perfil {
+  id        String   @id
+  idea      String   @default("")
+  needs     String   @default("[]")
+  power     String
+  anon      Boolean  @default(true)
+  alias     String   @default("")
+  que       String   @default("")
+  contact   String   @default("")
+  likes     String   @default("[]")
+  color     String   @default("")
+  createdAt Float
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}

@@ -16,6 +16,13 @@ import type { Busqueda } from "./Buscando";
 /* Enlace público de esta página: el QR apunta aquí + #perfil */
 const SHARE_URL = "https://claude.ai/artifact/85pBENts7tmwDJfPwNKyry";
 
+/* Cada cuánto se piden los perfiles nuevos (reemplaza al onSnapshot del original). */
+const CADA_MS = 5000;
+
+class ErrorAPI extends Error {
+  constructor(public status: number) { super("HTTP " + status); }
+}
+
 const VISTAS = ["inicio", "perfil", "clics", "proyectar"] as const;
 export type Vista = typeof VISTAS[number];
 function vistaActual(): Vista {
@@ -27,7 +34,7 @@ function vistaActual(): Vista {
 type Estado = {
   vista: Vista;
   demo: boolean; uid: string | null; realUid: string | null;
-  avail: "pending" | "nodb" | "ok" | "error"; slow: boolean; loaded: boolean;
+  avail: "pending" | "ok" | "error"; slow: boolean; loaded: boolean;
   perfiles: Map<string, Perfil>; real: Map<string, Perfil> | null; realLoaded: boolean;
   guardando: boolean; relleno: number; buscarAlLlegar: boolean;
   notificados: Set<string> | null; realNotif: Set<string> | null;
@@ -98,12 +105,27 @@ export default function App() {
 
   /* ---------- guardar y borrar (real o demo) ---------- */
   async function escribirPerfil(body: Record<string, unknown>) {
-    if (S.demo && S.uid) { S.perfiles = new Map(S.perfiles).set(S.uid, limpiar(S.uid, body)); return; }
-    throw new Error("sin base de datos");
+    if (!S.uid) throw new Error("sin sesión");
+    if (S.demo) { S.perfiles = new Map(S.perfiles).set(S.uid, limpiar(S.uid, body)); return; }
+    const r = await fetch("/api/perfiles/" + encodeURIComponent(S.uid), {
+      method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new ErrorAPI(r.status);
+    const p = limpiar(S.uid, await r.json());
+    S.real = new Map(S.real ?? []).set(p.id, p);
+    S.perfiles = S.real;
   }
   async function quitarPerfil() {
-    if (S.demo && S.uid) { const m = new Map(S.perfiles); m.delete(S.uid); S.perfiles = m; return; }
-    throw new Error("sin base de datos");
+    if (!S.uid) throw new Error("sin sesión");
+    if (S.demo) { const m = new Map(S.perfiles); m.delete(S.uid); S.perfiles = m; return; }
+    const r = await fetch("/api/perfiles/" + encodeURIComponent(S.uid), {method: "DELETE"});
+    if (!r.ok) throw new ErrorAPI(r.status);
+    const m = new Map(S.real ?? []); m.delete(S.uid);
+    S.real = m; S.perfiles = m;
+  }
+  function manejarError(err: unknown) {
+    if (err instanceof ErrorAPI && err.status === 403) toast("Tu acceso no permite guardar");
+    else toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
   }
   async function guardar(d: DatosForm) {
     if (!puede()) return false;
@@ -121,8 +143,8 @@ export default function App() {
       S.buscarAlLlegar = true;
       irA("clics");
       return true;
-    } catch {
-      toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+    } catch (err) {
+      manejarError(err);
       return false;
     } finally { S.guardando = false; forzar(); }
   }
@@ -132,8 +154,8 @@ export default function App() {
       toast("Perfil borrado");
       S.relleno++; forzar();
       return true;
-    } catch {
-      toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+    } catch (err) {
+      manejarError(err);
       return false;
     }
   }
@@ -240,8 +262,41 @@ export default function App() {
 
   /* ---------- conexión con los datos ---------- */
   function conectar() {
-    S.avail = "nodb"; forzar();
-    return () => {};
+    let parado = false, primera = true, fallos = 0, firma = "";
+    let siguiente: ReturnType<typeof setTimeout> | undefined;
+    const lento = setTimeout(() => { S.slow = true; forzar(); }, 10000);
+
+    async function cargar() {
+      try {
+        const r = await fetch("/api/perfiles", {cache: "no-store"});
+        if (!r.ok) throw new ErrorAPI(r.status);
+        const data: {yo: string; perfiles: Record<string, unknown>[]} = await r.json();
+        if (parado) return;
+        clearTimeout(lento);
+        S.slow = false; S.avail = "ok"; fallos = 0;
+        if (S.demo) S.realUid = data.yo; else S.uid = data.yo;
+        // Solo se rehace la lista si algo cambió, para no redibujar cada 5 segundos.
+        const nueva = JSON.stringify(data.perfiles);
+        if (nueva !== firma || !S.realLoaded) {
+          firma = nueva;
+          const m = new Map<string, Perfil>();
+          data.perfiles.forEach(d => { const p = limpiar(String(d.id), d); if (p.power) m.set(p.id, p); });
+          S.real = m; S.realLoaded = true;
+          if (!S.demo) { S.perfiles = m; S.loaded = true; }
+        }
+        if (primera) { primera = false; cargarNotificados(); }
+        forzar();
+        if (!S.demo && S.vista === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
+      } catch {
+        if (parado) return;
+        // Un fallo suelto no importa; si se repite, avisamos que se perdió la conexión.
+        if (++fallos >= 2 || !S.realLoaded) { S.avail = "error"; S.loaded = true; forzar(); }
+      } finally {
+        if (!parado) siguiente = setTimeout(cargar, CADA_MS);
+      }
+    }
+    cargar();
+    return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); };
   }
 
   /* ---------- arranque ---------- */
@@ -292,7 +347,6 @@ export default function App() {
   let aviso: ReactNode = null;
   if (!S.demo) {
     if (S.avail === "pending") aviso = "Conectando…";
-    else if (S.avail === "nodb") aviso = <><strong>Los perfiles no cargan en esta vista.</strong> Abre la página desde su enlace de claude.ai con tu sesión iniciada.</>;
     else if (S.avail === "error") aviso = <><strong>Se perdió la conexión.</strong> Recarga la página para volver a intentarlo.</>;
     else if (S.slow) aviso = "Está tardando en responder. Lo que ves puede no estar al día.";
     else if (!S.uid) aviso = <><strong>No pudimos identificar tu sesión.</strong> Recarga la página para volver a intentarlo.</>;
