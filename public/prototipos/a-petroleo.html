@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#061918">
+<title>Networkeando RD · A · Petróleo profundo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#061918;--s:#0E2827;--b:#1D3F3D;--b2:#2E5653;--t:#EEF5F2;--m:#9DB8B4;--a:#14A79D;--h:#F8C000;--on-h:#141414;--glow:rgba(20,167,157,.20);--hglow:rgba(248,192,0,.55);
+  --ease:cubic-bezier(.23,1,.32,1);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--t);font-family:Figtree,system-ui,sans-serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(70vw 42vw at 50% -12%,var(--glow),transparent 70%)}
+::selection{background:var(--h);color:var(--on-h)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--h);outline-offset:3px;border-radius:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cont{max-width:1180px;margin:0 auto;padding:0 32px}
+h1,h2,h3{margin:0;font-weight:900;letter-spacing:-.035em;line-height:1.02}
+p{margin:0}
+
+/* barra */
+header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--b)}
+.barra{display:flex;align-items:center;gap:16px;height:68px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;letter-spacing:-.03em;text-decoration:none;white-space:nowrap}
+.logo svg{width:34px;height:20px}
+nav{margin-left:auto;display:flex;gap:4px}
+nav a{text-decoration:none;color:var(--m);font-weight:700;font-size:15px;padding:8px 14px;border-radius:999px;transition:color .2s,background-color .2s}
+nav a[aria-current]{color:var(--on-h);background:var(--h)}
+@media (hover:hover) and (pointer:fine){nav a:not([aria-current]):hover{color:var(--t);background:var(--s)}}
+
+main{position:relative;z-index:1}
+section{padding:110px 0}
+.titulo{font-size:clamp(38px,5vw,64px)}
+.intro{color:var(--m);font-size:clamp(17px,1.6vw,20px);max-width:620px;margin-top:16px}
+.marca{color:var(--h)}
+
+/* botones */
+.boton{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:14px 26px;border-radius:999px;border:1.5px solid var(--b2);background:transparent;color:var(--t);font:inherit;font-weight:800;font-size:17px;text-decoration:none;cursor:pointer;transition:transform .16s var(--ease),background-color .2s,border-color .2s,box-shadow .2s}
+.boton:active{transform:scale(.97)}
+.boton.fuerte{background:var(--h);border-color:var(--h);color:var(--on-h);box-shadow:0 12px 32px -14px var(--h)}
+@media (hover:hover) and (pointer:fine){.boton:hover{border-color:var(--m)}.boton.fuerte:hover{box-shadow:0 16px 40px -12px var(--h)}}
+.boton[disabled]{opacity:.5;cursor:wait}
+
+/* hilos */
+.hilos{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.hilo{fill:none;stroke:var(--h);stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 0 6px var(--hglow))}
+.hilo.fino{stroke-width:2.5;opacity:.9}
+.hilo.tenue{opacity:.18;transition:opacity .5s}
+.nudo{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;font-size:15px;transform:scale(0);box-shadow:0 0 0 6px var(--bg),0 0 30px var(--hglow)}
+.nudo.ver{animation:pop .45s cubic-bezier(.3,1.5,.5,1) forwards}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* revelar al bajar */
+.rev{opacity:0;transform:translateY(18px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.rev.ver{opacity:1;transform:none}
+
+/* inicio */
+.heroe{padding:70px 0 90px;text-align:center}
+.heroe h1{font-size:clamp(44px,6.4vw,88px);max-width:15ch;margin:0 auto;text-wrap:balance}
+.heroe .intro{margin:20px auto 0}
+.acciones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.escena{position:relative;display:grid;grid-template-columns:1fr minmax(0,440px) 1fr;align-items:center;gap:24px;margin-top:64px}
+.chip{position:relative;z-index:4;background:var(--s);border:1px solid var(--b);border-radius:20px;padding:16px 18px;text-align:left;font-weight:700;font-size:17px;line-height:1.3;max-width:260px;box-shadow:0 20px 40px -24px rgba(0,0,0,.8)}
+.chip small{display:block;font-size:13px;font-weight:700;color:var(--m);margin-bottom:4px;letter-spacing:.01em}
+.chip.izq{justify-self:end}.chip.der{justify-self:start}
+.chip .punto{position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--h);box-shadow:0 0 0 4px var(--s)}
+.chip.izq .punto{right:-6px}.chip.der .punto{left:-6px}
+.duo{position:relative;z-index:1;aspect-ratio:909/553;cursor:pointer}
+.escena .hilos{z-index:3}
+.escena .nudo{z-index:5}
+.duo img{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 20px 30px rgba(0,0,0,.55))}
+.duo .l{animation:duoL .9s cubic-bezier(.3,1.45,.5,1) .1s both}
+.duo .r{animation:duoR .9s cubic-bezier(.3,1.45,.5,1) .1s both}
+@keyframes duoL{0%{transform:translateX(-30%) rotate(-7deg);opacity:0}25%{opacity:1}100%{transform:none}}
+@keyframes duoR{0%{transform:translateX(30%) rotate(7deg);opacity:0}25%{opacity:1}100%{transform:none}}
+
+/* cómo funciona */
+.como{display:grid;grid-template-columns:minmax(0,400px) 1fr;gap:80px;align-items:center}
+.qr-carta{background:#fff;color:#141414;border-radius:28px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 0 0 1px var(--b2),0 40px 80px -36px var(--hglow)}
+.qr-carta canvas{width:100%;height:auto;image-rendering:pixelated}
+.qr-carta b{font-size:24px;font-weight:900;letter-spacing:-.02em}
+.pasos{list-style:none;margin:0;padding:0 0 0 56px;position:relative;display:grid;gap:44px}
+.pasos::before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:4px;border-radius:4px;background:var(--h);transform:scaleY(0);transform-origin:top;transition:transform 1.4s var(--ease);box-shadow:0 0 12px var(--hglow)}
+.pasos.ver::before{transform:scaleY(1)}
+.pasos li{position:relative}
+.pasos li::before{content:attr(data-n);position:absolute;left:-56px;top:-4px;width:46px;height:46px;border-radius:50%;background:var(--s);border:2px solid var(--h);color:var(--h);display:grid;place-items:center;font-weight:900;font-size:18px}
+.pasos h3{font-size:clamp(24px,2.4vw,32px)}
+.pasos p{color:var(--m);margin-top:8px;max-width:520px}
+
+/* perfil */
+.form{margin-top:44px}
+.bloques{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:72px}
+.bloque{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,box-shadow .2s}
+.bloque:focus-within{border-color:var(--h);box-shadow:0 0 0 4px color-mix(in srgb,var(--h) 18%,transparent)}
+.bloque h3{font-size:26px}
+.bloque label{font-weight:700;font-size:16px}
+.bloque textarea{width:100%;min-height:110px;resize:vertical;border-radius:14px;border:1px solid var(--b2);background:var(--bg);color:var(--t);font:inherit;font-size:19px;padding:14px 16px}
+.bloque textarea::placeholder{color:var(--m);opacity:.8}
+.bloque textarea:focus{outline:none;border-color:var(--h)}
+.bloque .cuenta{font-size:13px;color:var(--m);text-align:right;font-variant-numeric:tabular-nums}
+.union{position:absolute;left:50%;top:50%;width:72px;height:4px;margin:-2px 0 0 -36px;background:var(--h);border-radius:4px;transform:scaleX(0);transition:transform .9s var(--ease) .2s;box-shadow:0 0 12px var(--hglow)}
+.union::after{content:"+";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;font-size:22px;box-shadow:0 0 0 6px var(--bg)}
+.bloques.ver .union{transform:scaleX(1)}
+.fila{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:28px}
+.segmento{display:inline-flex;padding:4px;border-radius:999px;background:var(--s);border:1px solid var(--b)}
+.segmento button{border:0;background:transparent;color:var(--m);font:inherit;font-weight:800;font-size:16px;min-height:44px;padding:8px 20px;border-radius:999px;cursor:pointer;transition:background-color .2s,color .2s}
+.segmento button[aria-pressed="true"]{background:var(--t);color:var(--bg)}
+.nota{color:var(--m);font-size:15px;margin-top:12px}
+
+/* búsqueda */
+.radar{position:relative;height:420px;margin-top:40px;border-radius:32px;background:var(--s);border:1px solid var(--b);overflow:hidden}
+.radar::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,var(--glow),transparent 55%)}
+.nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.nodo .av{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:18px;color:#fff;border:3px solid var(--s);box-shadow:0 0 0 1px var(--b2)}
+.nodo small{font-size:13px;font-weight:700;color:var(--m);white-space:nowrap}
+.nodo.yo .av{width:76px;height:76px;background:var(--h);color:var(--on-h);font-size:20px}
+.nodo.gana{transform:translate(-50%,-50%) scale(1.25)}
+.nodo.gana .av{box-shadow:0 0 0 3px var(--h),0 0 30px var(--hglow)}
+.nodo.gana small{color:var(--t)}
+.estado{font-weight:700;color:var(--m);min-height:1.5em}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:20px;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.modal.abierto{display:grid;animation:velo .25s ease-out}
+@keyframes velo{from{opacity:0}}
+.modal-in{position:relative;width:min(640px,100%);background:var(--s);border:1px solid var(--b2);border-radius:36px;padding:44px 32px 36px;text-align:center;box-shadow:0 40px 100px -30px rgba(0,0,0,.9);animation:entra .35s var(--ease) both}
+@keyframes entra{from{opacity:0;transform:scale(.96) translateY(10px)}}
+.pareja{position:relative;display:flex;justify-content:space-between;align-items:center;width:min(360px,100%);margin:0 auto;height:110px}
+.pareja .av{position:relative;z-index:2;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:28px;color:#fff;border:4px solid var(--s)}
+.pareja .av.tu{background:var(--h);color:var(--on-h)}
+.modal h2{font-size:clamp(38px,6vw,60px);margin-top:18px}
+.modal .pct{display:inline-block;margin-top:14px;padding:6px 14px;border-radius:999px;background:var(--h);color:var(--on-h);font-weight:900}
+.modal p{color:var(--m);font-size:18px;margin:14px auto 0;max-width:460px}
+.modal .contacto{margin-top:14px;font-weight:800;font-size:19px}
+.modal .contacto a{color:var(--h);text-decoration:none}
+.modal .sube{opacity:0;transform:translateY(10px);animation:subir .35s var(--ease) forwards}
+@keyframes subir{to{opacity:1;transform:none}}
+
+/* resultados */
+.mejor{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:28px;margin-top:40px;align-items:stretch}
+.carta{background:var(--s);border:1px solid var(--b);border-radius:28px;overflow:hidden;display:flex;flex-direction:column}
+.cabeza{display:flex;align-items:center;gap:14px;padding:22px 22px 0}
+.cabeza .av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:#fff;flex:none}
+.cabeza b{display:block;font-size:19px}
+.cabeza span{font-size:14px;color:var(--m)}
+.cabeza .pct{margin-left:auto;background:var(--h);color:var(--on-h);font-weight:900;font-size:14px;padding:5px 11px;border-radius:999px;font-variant-numeric:tabular-nums}
+.par{position:relative;padding:20px 22px 22px;display:grid;gap:30px}
+.par .lado{background:var(--bg);border:1px solid var(--b);border-radius:18px;padding:14px 16px}
+.par .lado small{display:block;font-size:13px;font-weight:800;color:var(--m)}
+.par .lado p{font-weight:800;font-size:20px;line-height:1.2;margin-top:2px}
+.par .lado.poder p{font-weight:600;font-size:17px}
+.par .cuerda{position:absolute;left:50%;top:50%;width:4px;height:54px;margin:-27px 0 0 -2px;background:var(--h);border-radius:4px;transform:scaleY(0);transition:transform .7s var(--ease) .2s;box-shadow:0 0 10px var(--hglow)}
+.par .cuerda::after{content:"+";position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;box-shadow:0 0 0 5px var(--s)}
+.carta.ver .cuerda{transform:scaleY(1)}
+.pie{border-top:1px solid var(--b);padding:16px 22px;font-weight:700;font-size:16px}
+.pie a{color:var(--h)}
+.porque{background:var(--s);border:1px solid var(--b);border-radius:28px;padding:28px;display:flex;flex-direction:column;gap:18px}
+.anillo{position:relative;width:136px;height:136px}
+.anillo svg{width:136px;height:136px;transform:rotate(-90deg)}
+.anillo .f{fill:none;stroke:var(--b);stroke-width:12}
+.anillo .v{fill:none;stroke:var(--h);stroke-width:12;stroke-linecap:round;stroke-dasharray:364.4;stroke-dashoffset:364.4;transition:stroke-dashoffset 1.2s var(--ease) .2s;filter:drop-shadow(0 0 6px var(--hglow))}
+.anillo b{position:absolute;inset:0;display:grid;place-items:center;font-size:36px;font-weight:900;font-variant-numeric:tabular-nums}
+.porque h3{font-size:30px}
+.porque ul{margin:0;padding-left:20px;font-size:18px;font-weight:600}
+.porque li{margin:4px 0}
+.porque li::marker{color:var(--h)}
+.rompe{background:var(--bg);border:1px dashed var(--b2);border-radius:16px;padding:14px 16px;font-weight:600}
+.rompe small{display:block;color:var(--h);font-weight:800;font-size:13px}
+.otros{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-top:24px}
+.otros .par .lado p{font-size:17px}
+h3.sub{font-size:clamp(26px,2.6vw,34px);margin-top:72px}
+
+/* proyectar */
+.proy{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:80px;align-items:center}
+.cifras{display:flex;gap:16px;flex-wrap:wrap;margin-top:32px}
+.cifra{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:20px 26px;color:var(--m);font-weight:700}
+.cifra b{display:block;font-size:60px;line-height:1;color:var(--t);font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.cifra:last-child b{color:var(--h)}
+
+footer{border-top:1px solid var(--b);padding:28px 0;color:var(--m);font-size:14px}
+
+/* selector de paletas */
+.paletas{position:fixed;right:16px;bottom:16px;z-index:40;display:flex;align-items:center;gap:8px;background:var(--s);border:1px solid var(--b2);border-radius:999px;padding:6px 8px 6px 14px;font-size:13px;font-weight:700;box-shadow:0 18px 40px -16px rgba(0,0,0,.8)}
+.paletas a{width:26px;height:26px;border-radius:50%;display:block;border:2px solid transparent}
+.paletas a[aria-current]{border-color:var(--t)}
+
+@media (max-width:900px){
+  .escena{grid-template-columns:1fr;gap:18px}
+  .chip.izq,.chip.der{justify-self:center}
+  .chip .punto{display:none}
+  .como,.proy,.mejor{grid-template-columns:1fr;gap:40px}
+  .qr-carta{max-width:380px;margin:0 auto}
+  .bloques{grid-template-columns:1fr;gap:56px}
+  .union{width:4px;height:56px;margin:-28px 0 0 -2px;transform:scaleY(0)}
+  .bloques.ver .union{transform:scaleY(1)}
+}
+@media (max-width:640px){
+  .cont{padding:0 18px}
+  section{padding:76px 0}
+  body{padding-bottom:84px}
+  /* Sin desenfoque aquí: si no, la cabecera se vuelve la referencia de la barra fija de abajo. */
+  header{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
+  .barra{justify-content:center}
+  nav{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;z-index:35;justify-content:space-around;background:color-mix(in srgb,var(--s) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--b2);border-radius:22px;padding:6px;box-shadow:0 20px 40px -16px rgba(0,0,0,.8)}
+  nav a{flex:1;text-align:center;padding:11px 6px;font-size:14px;border-radius:16px}
+  nav a.opc{display:none}
+  .paletas{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .radar{height:360px}
+  .nodo .av{width:46px;height:46px;font-size:15px}
+  .nodo.yo .av{width:60px;height:60px}
+  .paletas span{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .rev{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="cont barra">
+    <a class="logo" href="#inicio" aria-label="Networkeando RD, inicio">
+      <svg viewBox="0 0 34 20" aria-hidden="true"><circle cx="5" cy="10" r="4.5" fill="var(--a)"/><circle cx="29" cy="10" r="4.5" fill="var(--t)"/><path d="M9 10 C14 2, 20 18, 25 10" stroke="var(--h)" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      Networkeando RD
+    </a>
+    <nav aria-label="Secciones">
+      <a href="#inicio" aria-current="page">Inicio</a>
+      <a href="#perfil">Mi perfil</a>
+      <a href="#matches">Mis matches</a>
+      <a class="opc" href="#proyectar">Proyectar</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- INICIO -->
+  <section class="heroe" id="inicio" aria-labelledby="t-inicio">
+    <div class="cont">
+      <h1 id="t-inicio">Haz match con quien puede hacer realidad <span class="marca">tu idea</span>.</h1>
+      <p class="intro">Cuenta tu idea y tu superpoder. La app une los hilos y te presenta a la persona que encaja contigo.</p>
+      <div class="acciones">
+        <a class="boton fuerte" href="#perfil">Crear mi perfil</a>
+        <a class="boton" href="#matches">Ver cómo funciona</a>
+      </div>
+      <div class="escena" id="escena">
+        <svg class="hilos" aria-hidden="true"><path class="hilo" id="h-heroe"/></svg>
+        <div class="chip izq"><small>Tu idea</small>Un club de lectura en los parques de la ciudad<span class="punto"></span></div>
+        <div class="duo" id="duo" role="img" aria-label="Dos personas haciendo networking: una con su celular y otra con su laptop" title="Tócalos para que vuelvan a hacer match">
+          <img class="l" src="../duo-l.webp" alt=""><img class="r" src="../duo-r.webp" alt="">
+        </div>
+        <div class="chip der"><small>Su superpoder</small>Organizo eventos y la gente sí llega<span class="punto"></span></div>
+        <div class="nudo" id="n-heroe">98%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO FUNCIONA -->
+  <section aria-labelledby="t-como">
+    <div class="cont como">
+      <figure class="qr-carta rev" style="margin:0" aria-label="Código QR para entrar">
+        <canvas id="qr" role="img" aria-label="Código QR que abre la página para crear tu perfil"></canvas>
+        <b>Escanea con la cámara</b>
+      </figure>
+      <div>
+        <h2 class="titulo rev" id="t-como">Tres pasos y la app hace el resto</h2>
+        <ol class="pasos" id="pasos" style="margin-top:44px">
+          <li data-n="1"><h3>Escanea el código y entra desde el navegador.</h3><p>Sin descargar nada. Te lleva directo a crear tu perfil.</p></li>
+          <li data-n="2"><h3>Cuenta tu idea y tu superpoder, con tus palabras.</h3><p>Con tu nombre o de forma anónima. Si todavía no tienes idea, ofrece tu superpoder.</p></li>
+          <li data-n="3"><h3>La app encuentra tu match.</h3><p>Compara tu idea y tu superpoder con los de todos y te muestra quién encaja mejor contigo. Tú no tienes que elegir.</p></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERFIL -->
+  <section id="perfil" aria-labelledby="t-perfil">
+    <div class="cont">
+      <h2 class="titulo rev" id="t-perfil">Mi perfil</h2>
+      <p class="intro rev">Dos cosas: lo que quieres hacer y lo que mejor haces. El hilo hace el resto.</p>
+      <form class="form" onsubmit="event.preventDefault();document.getElementById('b-buscar').scrollIntoView({behavior:'smooth',block:'center'})">
+        <div class="bloques" id="bloques">
+          <div class="bloque"><h3 style="color:var(--a)">Mi idea</h3><label for="f-idea">¿Qué quieres hacer realidad?</label><textarea id="f-idea" maxlength="280" placeholder="Un club de lectura en los parques de la ciudad"></textarea><span class="cuenta" data-de="f-idea">0/280</span></div>
+          <span class="union" aria-hidden="true"></span>
+          <div class="bloque"><h3 style="color:var(--h)">Mi superpoder</h3><label for="f-poder">¿Qué es lo que mejor haces?</label><textarea id="f-poder" maxlength="140" placeholder="Organizo eventos y la gente sí llega"></textarea><span class="cuenta" data-de="f-poder">0/140</span></div>
+        </div>
+        <div class="fila">
+          <div class="segmento" role="group" aria-label="Cómo quieres aparecer">
+            <button type="button" aria-pressed="true">Anónimo</button>
+            <button type="button" aria-pressed="false">Con mi nombre</button>
+          </div>
+          <button class="boton fuerte" type="submit">Guardar y buscar mi match</button>
+        </div>
+        <p class="nota">Nadie verá tu nombre. Igual puedes hacer match; cuando quieras que te contacten, cambias a Con mi nombre.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- BÚSQUEDA -->
+  <section id="matches" aria-labelledby="t-buscar">
+    <div class="cont">
+      <h2 class="titulo rev" id="t-buscar">La app busca tu match por ti</h2>
+      <p class="intro rev">Tira un hilo hacia cada persona del salón y se queda con la que mejor encaja.</p>
+      <div class="radar rev" id="radar">
+        <svg class="hilos" id="r-hilos" aria-hidden="true"></svg>
+        <div class="nodo yo" id="yo" style="left:16%;top:50%"><span class="av">Tú</span><small>Club de lectura</small></div>
+      </div>
+      <div class="fila">
+        <button class="boton fuerte" id="b-buscar" type="button">Buscar mi match</button>
+        <p class="estado" id="estado" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section id="resultados" aria-labelledby="t-res" style="padding-top:20px">
+    <div class="cont">
+      <h2 class="titulo rev" id="t-res">Mis matches</h2>
+      <p class="intro rev">La app revisó 18 perfiles y eligió quién encaja mejor contigo.</p>
+      <div class="mejor">
+        <article class="carta rev" id="c-mejor">
+          <div class="cabeza"><span class="av" style="background:#00A884">AG</span><div><b>Ana Lucía Gómez</b><span>Comunicación social</span></div><span class="pct">98%</span></div>
+          <div class="par"><div class="lado"><small>Tu idea</small><p>Un club de lectura en los parques de la ciudad</p></div><span class="cuerda" aria-hidden="true"></span><div class="lado poder"><small>Su superpoder</small><p>Escribo guiones y hablo en público sin miedo</p></div></div>
+          <div class="pie">Escríbele: <a href="#">analucia@correo.com</a></div>
+        </article>
+        <div class="porque rev" id="porque">
+          <div class="anillo"><svg viewBox="0 0 136 136" aria-hidden="true"><circle class="f" cx="68" cy="68" r="58"/><circle class="v" cx="68" cy="68" r="58"/></svg><b><span><span id="n-anillo">0</span>%</span></b></div>
+          <h3>Por qué encajan</h3>
+          <ul><li>Su superpoder en comunicación es justo lo que le falta a tu idea.</li><li>Tu superpoder en organización le sirve a su podcast.</li></ul>
+          <p class="rompe"><small>Para romper el hielo</small>“¿Qué historia del Cibao contarías primero en tu podcast?”</p>
+        </div>
+      </div>
+      <h3 class="sub rev">También encajan contigo</h3>
+      <div class="otros" id="otros"></div>
+    </div>
+  </section>
+
+  <!-- PROYECTAR -->
+  <section id="proyectar" aria-labelledby="t-proy">
+    <div class="cont proy">
+      <figure class="qr-carta rev" style="margin:0" aria-label="Código QR para entrar"><canvas id="qr2" role="img" aria-label="Código QR que abre la página para crear tu perfil"></canvas><b>Escanea con la cámara</b></figure>
+      <div>
+        <h2 class="titulo rev" id="t-proy">Escanea y la app te busca tu match.</h2>
+        <p class="intro rev">Así se ve en la pantalla grande del evento.</p>
+        <div class="cifras rev" id="cifras"><div class="cifra"><b data-hasta="124">0</b>perfiles</div><div class="cifra"><b data-hasta="312">0</b>matches encontrados</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="cont">Networkeando RD · Prototipo «A · Petróleo profundo»</div></footer>
+
+<div class="paletas" aria-label="Cambiar de paleta"><span>A · Petróleo profundo</span><a href="a-petroleo.html" title="A · Petróleo profundo" aria-label="A · Petróleo profundo" aria-current=page style="background:linear-gradient(135deg,#061918 50%,#F8C000 50%)"></a><a href="b-tinta-oro.html" title="B · Tinta y oro" aria-label="B · Tinta y oro" style="background:linear-gradient(135deg,#0F0F0D 50%,#F8C000 50%)"></a><a href="c-grafito-menta.html" title="C · Grafito y menta" aria-label="C · Grafito y menta" style="background:linear-gradient(135deg,#111517 50%,#3FE0C5 50%)"></a><a href="d-noche-lima.html" title="D · Noche y lima" aria-label="D · Noche y lima" style="background:linear-gradient(135deg,#07141C 50%,#D6F53C 50%)"></a></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-titulo">
+  <div class="modal-in">
+    <div class="pareja" id="pareja">
+      <svg class="hilos" aria-hidden="true"><path class="hilo" id="h-modal"/></svg>
+      <span class="av tu">Tú</span><span class="av" style="background:#00A884">AG</span>
+    </div>
+    <h2 id="m-titulo" class="sube" style="animation-delay:.35s">¡Hicieron match!</h2>
+    <span class="pct sube" style="animation-delay:.45s">98% compatible</span>
+    <p class="sube" style="animation-delay:.52s">La app eligió a Ana Lucía Gómez. Su superpoder en comunicación es justo lo que le falta a tu idea.</p>
+    <div class="contacto sube" style="animation-delay:.6s">Escríbele: <a href="#">analucia@correo.com</a></div>
+    <div class="acciones sube" style="animation-delay:.68s"><button class="boton fuerte" id="m-ver" type="button">Ver mis matches</button></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- hilos ---------- */
+function punto(el, ref, lado){
+  const r = el.getBoundingClientRect(), R = ref.getBoundingClientRect();
+  const x = lado === 'izq' ? r.left : lado === 'der' ? r.right : r.left + r.width / 2;
+  return [x - R.left, r.top + r.height / 2 - R.top];
+}
+function curva(a, b, comba){
+  const mx = (a[0] + b[0]) / 2;
+  return `M${a[0]} ${a[1]} C${mx} ${a[1] + comba}, ${mx} ${b[1] - comba}, ${b[0]} ${b[1]}`;
+}
+function trazar(path, dur, espera){
+  const L = path.getTotalLength();
+  path.style.transition = 'none';
+  path.style.strokeDasharray = L;
+  path.style.strokeDashoffset = reduce ? 0 : L;
+  path.getBoundingClientRect();
+  if (reduce) return Promise.resolve();
+  return new Promise(ok => setTimeout(() => {
+    path.style.transition = `stroke-dashoffset ${dur}ms cubic-bezier(.23,1,.32,1)`;
+    path.style.strokeDashoffset = 0;
+    setTimeout(ok, dur);
+  }, espera || 0));
+}
+
+/* inicio: el hilo une tu idea con su superpoder pasando por los personajes */
+const escena = document.getElementById('escena'), hHeroe = document.getElementById('h-heroe'), nHeroe = document.getElementById('n-heroe');
+function hiloHeroe(animar){
+  const izq = escena.querySelector('.chip.izq'), der = escena.querySelector('.chip.der');
+  const ancho = innerWidth > 900;
+  const a = ancho ? punto(izq, escena, 'der') : punto(izq, escena, 'centro');
+  const b = ancho ? punto(der, escena, 'izq') : punto(der, escena, 'centro');
+  // En U por debajo de los personajes, como si los uniera por la mesa.
+  const duo = document.getElementById('duo').getBoundingClientRect();
+  const baja = duo.height * .62, dx = (b[0] - a[0]) * .18;
+  hHeroe.setAttribute('d', ancho ? `M${a[0]} ${a[1]} C${a[0] + dx} ${a[1] + baja}, ${b[0] - dx} ${b[1] + baja}, ${b[0]} ${b[1]}` : `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`);
+  const L = hHeroe.getTotalLength(), m = hHeroe.getPointAtLength(L / 2);
+  nHeroe.style.left = m.x + 'px'; nHeroe.style.top = m.y + 'px';
+  nHeroe.style.display = ancho ? '' : 'none';
+  if (animar) {
+    nHeroe.classList.remove('ver');
+    trazar(hHeroe, 1300, 900).then(() => nHeroe.classList.add('ver'));
+  } else { hHeroe.style.strokeDasharray = 'none'; hHeroe.style.strokeDashoffset = 0; }
+}
+document.getElementById('duo').addEventListener('click', e => {
+  const d = e.currentTarget; d.querySelectorAll('img').forEach(i => { i.style.animation = 'none'; i.offsetWidth; i.style.animation = ''; });
+  hiloHeroe(true);
+});
+
+/* ---------- revelar al bajar ---------- */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add('ver');
+  if (e.target.id === 'porque') anillo();
+  if (e.target.id === 'cifras') contar();
+  io.unobserve(e.target);
+}), {threshold: .25});
+document.querySelectorAll('.rev, #pasos, #bloques, .carta').forEach(el => io.observe(el));
+
+function anillo(){
+  const v = document.querySelector('.anillo .v'), n = document.getElementById('n-anillo');
+  v.style.strokeDashoffset = 364.4 * (1 - .98);
+  animarNumero(n, 98, 1200);
+}
+function contar(){ document.querySelectorAll('#cifras b').forEach(b => animarNumero(b, +b.dataset.hasta, 1400)); }
+function animarNumero(el, fin, dur){
+  if (reduce) { el.textContent = fin; return; }
+  const t0 = performance.now();
+  const paso = t => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(fin * e); if (p < 1) requestAnimationFrame(paso); };
+  requestAnimationFrame(paso);
+}
+
+/* ---------- perfil ---------- */
+document.querySelectorAll('.cuenta').forEach(c => { const t = document.getElementById(c.dataset.de); t.addEventListener('input', () => c.textContent = t.value.length + '/' + t.maxLength); });
+document.querySelectorAll('.segmento button').forEach(b => b.addEventListener('click', () => document.querySelectorAll('.segmento button').forEach(x => x.setAttribute('aria-pressed', String(x === b)))));
+
+/* ---------- búsqueda: un hilo hacia cada persona ---------- */
+const GENTE = [
+  ['AG','Ana Lucía','#00A884',[62,18]], ['DR','Daniel','#1E88E5',[80,30]], ['CN','Camila','#7C4DFF',[88,58]],
+  ['ST','Sofía','#E0457B',[74,80]], ['LP','Laura','#F57C00',[56,74]], ['MS','Miguel','#2B9348',[50,40]]
+];
+const radar = document.getElementById('radar'), rh = document.getElementById('r-hilos'), yo = document.getElementById('yo');
+const nodos = GENTE.map(g => {
+  const n = document.createElement('div'); n.className = 'nodo';
+  n.style.left = g[3][0] + '%'; n.style.top = g[3][1] + '%';
+  n.innerHTML = `<span class="av" style="background:${g[2]}">${g[0]}</span><small>${g[1]}</small>`;
+  radar.appendChild(n); return n;
+});
+const NS = 'http://www.w3.org/2000/svg';
+function hiloA(n, clase){
+  const p = document.createElementNS(NS, 'path'); p.setAttribute('class', 'hilo ' + (clase || 'fino'));
+  const a = punto(yo.querySelector('.av'), radar, 'centro'), b = punto(n.querySelector('.av'), radar, 'centro');
+  p.setAttribute('d', curva(a, b, (b[1] - a[1]) * .25)); rh.appendChild(p); return p;
+}
+const espera = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+const bBuscar = document.getElementById('b-buscar'), estado = document.getElementById('estado');
+bBuscar.addEventListener('click', async () => {
+  bBuscar.disabled = true; rh.innerHTML = ''; nodos.forEach(n => n.classList.remove('gana'));
+  const textos = ['Revisando 18 perfiles…', 'Comparando tu idea con sus superpoderes…', 'Viendo a quién le sirve lo que sabes hacer…'];
+  const orden = [5, 1, 4, 2, 3];
+  for (let i = 0; i < orden.length; i++) {
+    estado.textContent = textos[Math.min(i, textos.length - 1)];
+    const p = hiloA(nodos[orden[i]]); await trazar(p, 380); await espera(120); p.classList.add('tenue');
+  }
+  estado.textContent = 'Eligiendo quién encaja mejor contigo…';
+  const g = hiloA(nodos[0], ''); await trazar(g, 700);
+  nodos[0].classList.add('gana'); estado.textContent = '¡Listo! Encontramos tu match.';
+  await espera(600); abrirModal(); bBuscar.disabled = false;
+});
+
+/* ---------- modal ---------- */
+const modal = document.getElementById('modal'), pareja = document.getElementById('pareja'), hModal = document.getElementById('h-modal');
+let foco = null;
+function abrirModal(){
+  foco = document.activeElement;
+  modal.classList.add('abierto');
+  document.querySelector('main').inert = true; document.querySelector('header').inert = true;
+  modal.querySelectorAll('.sube').forEach(s => { s.style.animation = 'none'; s.offsetWidth; s.style.animation = ''; });
+  hModal.style.strokeDashoffset = 9999;
+  // Se mide cuando la tarjeta terminó de entrar (su animación la escala un poco).
+  setTimeout(() => {
+    const avs = pareja.querySelectorAll('.av');
+    const a = punto(avs[0], pareja, 'der'), b = punto(avs[1], pareja, 'izq');
+    hModal.setAttribute('d', curva(a, b, 40)); trazar(hModal, 600);
+  }, reduce ? 0 : 360);
+  document.getElementById('m-ver').focus();
+}
+function cerrarModal(){
+  modal.classList.remove('abierto');
+  document.querySelector('main').inert = false; document.querySelector('header').inert = false;
+  if (foco) foco.focus();
+}
+document.getElementById('m-ver').addEventListener('click', () => { cerrarModal(); document.getElementById('resultados').scrollIntoView({behavior: reduce ? 'auto' : 'smooth'}); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('abierto')) cerrarModal(); });
+
+/* ---------- otros matches ---------- */
+const OTROS = [
+  ['DR','Daniel Rosario','Ingeniería de Software','#1E88E5',62,'Programo páginas web y apps rápidas'],
+  ['CN','Camila Núñez','Medicina','#7C4DFF',58,'Coordino voluntarios y logística'],
+  ['ST','Sofía Taveras','Psicología','#E0457B',51,'Diseño dinámicas de grupo que rompen el hielo'],
+  ['LP','Laura Peña','Arquitectura','#F57C00',47,'Dibujo planos y maquetas']
+];
+const otros = document.getElementById('otros');
+OTROS.forEach(o => {
+  const c = document.createElement('article'); c.className = 'carta rev';
+  c.innerHTML = `<div class="cabeza"><span class="av" style="background:${o[3]}">${o[0]}</span><div><b>${o[1]}</b><span>${o[2]}</span></div><span class="pct">${o[4]}%</span></div>
+  <div class="par"><div class="lado"><small>Tu idea</small><p>Un club de lectura en los parques</p></div><span class="cuerda" aria-hidden="true"></span><div class="lado poder"><small>Su superpoder</small><p>${o[5]}</p></div></div>`;
+  otros.appendChild(c); io.observe(c);
+});
+
+/* ---------- navegación activa ---------- */
+const enlaces = [...document.querySelectorAll('nav a')];
+const secciones = ['inicio','perfil','matches','proyectar'].map(id => document.getElementById(id));
+const io2 = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  enlaces.forEach(a => a.toggleAttribute('aria-current', a.getAttribute('href') === '#' + e.target.id));
+}), {rootMargin: '-45% 0px -50% 0px'});
+secciones.forEach(s => io2.observe(s));
+
+/* ---------- QR ---------- */
+const url = location.origin.startsWith('http') ? location.origin + '/#perfil' : 'https://networkeando.example/#perfil';
+['qr','qr2'].forEach(id => { try { new QRious({element: document.getElementById(id), value: url, size: 560, level: 'M', foreground: '#141414', background: '#FFFFFF', padding: 0}); } catch (e) {} });
+
+/* ---------- arranque ---------- */
+addEventListener('load', () => hiloHeroe(true));
+let tr; addEventListener('resize', () => { clearTimeout(tr); tr = setTimeout(() => hiloHeroe(false), 150); });
+</script>
+</body>
+</html>
