@@ -368,7 +368,7 @@ footer{border-top:1px solid var(--b);padding:28px 0;color:var(--m);font-size:14p
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>{{QRIOUS}}</script>
 <script>
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -532,7 +532,8 @@ const io2 = new IntersectionObserver(es => es.forEach(e => {
 secciones.forEach(s => io2.observe(s));
 
 /* ---------- QR ---------- */
-const url = location.origin.startsWith('http') ? location.origin + '/#perfil' : 'https://networkeando.example/#perfil';
+// Abierto desde la app, el QR usa su propia dirección; abierto como archivo, apunta a la app en la laptop.
+const url = location.origin.startsWith('http') ? location.origin + '/#perfil' : '{{QR_URL}}';
 ['qr','qr2'].forEach(id => { try { new QRious({element: document.getElementById(id), value: url, size: 560, level: 'M', foreground: '#141414', background: '#FFFFFF', padding: 0}); } catch (e) {} });
 
 /* ---------- arranque ---------- */

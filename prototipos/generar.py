@@ -7,6 +7,17 @@ P = [
  ("d-noche-lima", "D · Noche y lima", dict(bg="#07141C", s="#0F222C", b="#1D3843", b2="#2B4D5B", t="#EAF3F5", m="#93AEB8", a="#18B5A6", h="#D6F53C", oh="#0D1A05", glow="rgba(24,181,166,.18)", hglow="rgba(214,245,60,.5)")),
 ]
 base = open(plantilla, encoding="utf-8").read()
+# La librería del QR va dentro de cada página, así se dibuja también sin internet.
+qrious = open("node_modules/qrious/dist/qrious.min.js", encoding="utf-8").read().replace("//# sourceMappingURL=qrious.min.js.map", "")
+# El QR de ejemplo apunta a la app en esta laptop (misma red Wi-Fi).
+import socket
+try:
+    so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); so.connect(("10.255.255.255", 1)); ip = so.getsockname()[0]; so.close()
+except OSError:
+    ip = "localhost"
+qr_url = f"http://{ip}:3000/#perfil"
+base = base.replace("{{QRIOUS}}", qrious).replace("{{QR_URL}}", qr_url)
+print("QR de ejemplo:", qr_url)
 for slug, nombre, c in P:
     vars_ = f"--bg:{c['bg']};--s:{c['s']};--b:{c['b']};--b2:{c['b2']};--t:{c['t']};--m:{c['m']};--a:{c['a']};--h:{c['h']};--on-h:{c['oh']};--glow:{c['glow']};--hglow:{c['hglow']};"
     selector = "".join(
