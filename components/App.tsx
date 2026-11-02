@@ -13,8 +13,11 @@ import { VistaProyectar } from "./VistaProyectar";
 import { MatchModal } from "./MatchModal";
 import type { Busqueda } from "./Buscando";
 
-/* Enlace público de esta página: el QR apunta aquí + #perfil */
-const SHARE_URL = "https://claude.ai/artifact/85pBENts7tmwDJfPwNKyry";
+/* Enlace público de esta página: el QR apunta aquí + #perfil.
+   Por defecto es la dirección donde está corriendo la app. Al publicarla en internet
+   puedes fijarla con la variable NEXT_PUBLIC_SHARE_URL. */
+const SHARE_URL_FIJA = (process.env.NEXT_PUBLIC_SHARE_URL || "").replace(/\/$/, "");
+const ES_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/;
 
 /* Cada cuánto se piden los perfiles nuevos (reemplaza al onSnapshot del original). */
 const CADA_MS = 5000;
@@ -42,6 +45,7 @@ type Estado = {
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
   match: {o: Perfil; r: Analisis} | null;
   toast: {texto: string; ver: boolean};
+  shareUrl: string;
 };
 const estadoInicial = (): Estado => ({
   vista: "inicio",
@@ -53,7 +57,8 @@ const estadoInicial = (): Estado => ({
   busqueda: null, pasoFinal: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
   match: null,
-  toast: {texto: "", ver: false}
+  toast: {texto: "", ver: false},
+  shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
 
 export default function App() {
@@ -310,6 +315,12 @@ export default function App() {
     window.addEventListener("hashchange", alCambiarHash);
     if (location.hash === "#demo") { location.hash = ""; route(); entrarDemo(); } else route();
     const desconectar = conectar();
+    // Abierta como "localhost", el QR no les sirve a los celulares: usamos la IP de la laptop en el Wi-Fi.
+    if (!SHARE_URL_FIJA && ES_LOCAL.test(location.hostname)) {
+      fetch("/api/direccion").then(r => r.json()).then((d: {url?: string | null}) => {
+        if (d.url) { S.shareUrl = d.url; forzar(); }
+      }).catch(() => {});
+    }
     return () => {
       window.removeEventListener("hashchange", alCambiarHash);
       desconectar();
@@ -357,7 +368,7 @@ export default function App() {
     else if (!S.uid) aviso = <><strong>No pudimos identificar tu sesión.</strong> Recarga la página para volver a intentarlo.</>;
   }
 
-  const qrUrl = SHARE_URL ? SHARE_URL + "#perfil" : "";
+  const qrUrl = S.shareUrl ? S.shareUrl + "/#perfil" : "";
 
   return (
     <>
