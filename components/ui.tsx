@@ -95,7 +95,7 @@ export function Porque({x}: {x: Item}) {
     <div className="porque">
       <div className="anillo-pct">
         <svg viewBox="0 0 132 132" aria-hidden="true">
-          <defs><linearGradient id="grad-pct" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#5B2EFF"/><stop offset="1" stopColor="#F0306F"/></linearGradient></defs>
+          <defs><linearGradient id="grad-pct" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#7B61FF"/><stop offset="1" stopColor="#FFD166"/></linearGradient></defs>
           <circle className="fondo" cx="66" cy="66" r="54"/>
           <circle className="valor" cx="66" cy="66" r="54" style={varCSS({"--fin": fin, strokeDashoffset: fin})}/>
         </svg>

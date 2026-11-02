@@ -17,7 +17,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ...resto}: Props
     <section data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
       <h2 className="titulo" id="t-clics">Mis matches</h2>
       <Aviso>{aviso}</Aviso>
-      <div className="buscando" id="buscando" hidden={!busqueda} aria-live="polite">
+      <div className="buscando" id="buscando" hidden={!busqueda}>
         {busqueda && <Buscando key={busqueda.id} b={busqueda} pasoFinal={pasoFinal}/>}
       </div>
       <div id="clics-cuerpo" hidden={!!busqueda}>
@@ -45,7 +45,7 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "acti
         <p className="intro">{todos.length ? (conIA ? "La IA revisó " : "La app revisó ") + todos.length + (todos.length === 1 ? " perfil" : " perfiles") + " y eligió quién encaja mejor contigo." : "Todavía no hay más gente en la mesa."}</p>
         {todos.length > 0 && <button className="boton chico" type="button" id="b-buscar" onClick={onBuscar}>Buscar de nuevo</button>}
       </div>
-      {!conIA && todos.length > 0 && iaFallo && <p className="nota">La IA no respondió a tiempo, así que la app eligió con su método básico. Toca Buscar de nuevo para intentarlo.</p>}
+      {!conIA && todos.length > 0 && iaFallo && <p className="nota">La IA no respondió, así que la app eligió con su método básico. Toca Buscar de nuevo para intentarlo.</p>}
       {me.anon && buenos.length > 0 && <div className="aviso"><strong>Tu perfil es anónimo.</strong> Tus matches no pueden escribirte. <a href="#perfil">Agrega tu nombre y contacto</a>.</div>}
       {!todos.length ? (
         <div className="vacio-grande"><Duo chico/><p>Cuando llegue más gente, la app buscará tu match sola. Vuelve en un rato.</p></div>

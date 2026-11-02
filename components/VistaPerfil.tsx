@@ -23,6 +23,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   const [que, setQue] = useState("");
   const [contacto, setContacto] = useState("");
   const [error, setError] = useState("");
+  const [malo, setMalo] = useState<"poder" | "nombre" | "contacto" | null>(null);
   const [armado, setArmado] = useState(false);
   const poderRef = useRef<HTMLTextAreaElement>(null);
   const nombreRef = useRef<HTMLInputElement>(null);
@@ -38,18 +39,18 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
       setIdea(me.idea); setPoder(me.power); setAnon(me.anon);
       setAlias(me.alias); setQue(me.que); setContacto(me.contact);
     }
-    setArmado(false); setError("");
+    setArmado(false); setError(""); setMalo(null);
   }, [relleno, me, tocadoRef]);
 
   const tocar = () => { tocadoRef.current = true; };
 
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError(""); setMalo(null);
     const d: DatosForm = {idea: idea.trim(), power: poder.trim(), anon, alias: alias.trim(), que: que.trim(), contact: contacto.trim()};
-    if (!d.power) { setError("Escribe tu superpoder para continuar."); poderRef.current?.focus(); return; }
-    if (!anon && !d.alias) { setError("Escribe tu nombre o cambia a Anónimo."); nombreRef.current?.focus(); return; }
-    if (!anon && !d.contact) { setError("Agrega cómo contactarte para que tus matches puedan escribirte."); contactoRef.current?.focus(); return; }
+    if (!d.power) { setError("Escribe tu superpoder para continuar."); setMalo("poder"); poderRef.current?.focus(); return; }
+    if (!anon && !d.alias) { setError("Escribe tu nombre o cambia a Anónimo."); setMalo("nombre"); nombreRef.current?.focus(); return; }
+    if (!anon && !d.contact) { setError("Agrega cómo contactarte para que tus matches puedan escribirte."); setMalo("contacto"); contactoRef.current?.focus(); return; }
     await onGuardar(d);
   };
 
@@ -74,7 +75,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
           <div className="bloque-f poder">
             <h3>Mi superpoder</h3>
             <label className="campo" htmlFor="f-poder">¿Qué es lo que mejor haces?</label>
-            <textarea id="f-poder" ref={poderRef} maxLength={LIMITES.power} placeholder="Organizo eventos y la gente sí llega" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
+            <textarea id="f-poder" ref={poderRef} aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : undefined} maxLength={LIMITES.power} placeholder="Organizo eventos y la gente sí llega" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
           </div>
         </div>
         <div className="fila-acciones">
@@ -83,9 +84,9 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
             <button type="button" aria-pressed={!anon} onClick={() => { tocar(); setAnon(false); }}>Con mi nombre</button>
           </div>
           <div className="campos-nombre" id="campos-nombre" hidden={anon}>
-            <label className="sr" htmlFor="f-nombre">Tu nombre</label><input type="text" id="f-nombre" ref={nombreRef} maxLength={LIMITES.alias} autoComplete="name" placeholder="Tu nombre" value={alias} onChange={e => setAlias(e.target.value)}/>
+            <label className="sr" htmlFor="f-nombre">Tu nombre</label><input type="text" id="f-nombre" ref={nombreRef} aria-invalid={malo === "nombre" || undefined} aria-describedby={malo === "nombre" ? "error" : undefined} maxLength={LIMITES.alias} autoComplete="name" placeholder="Tu nombre" value={alias} onChange={e => setAlias(e.target.value)}/>
             <label className="sr" htmlFor="f-que">A qué te dedicas</label><input type="text" id="f-que" maxLength={LIMITES.que} placeholder="A qué te dedicas (opcional)" value={que} onChange={e => setQue(e.target.value)}/>
-            <label className="sr" htmlFor="f-contacto">Cómo contactarte</label><input type="text" id="f-contacto" ref={contactoRef} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
+            <label className="sr" htmlFor="f-contacto">Cómo contactarte</label><input type="text" id="f-contacto" ref={contactoRef} aria-invalid={malo === "contacto" || undefined} aria-describedby={malo === "contacto" ? "error" : undefined} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
           </div>
           <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
         </div>

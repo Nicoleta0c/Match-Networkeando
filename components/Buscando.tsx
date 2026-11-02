@@ -28,9 +28,9 @@ export function Buscando({b, pasoFinal}: {b: Busqueda; pasoFinal: string | null}
   return (
     <>
       <Duo chico/>
-      <p className="b-paso" id="b-paso">{pasoFinal ?? paso}</p>
-      <div className="b-barra"><span id="b-prog" style={lleno ? {transition: "width " + b.total + "ms linear", width: "100%"} : undefined}></span></div>
-      <div className="b-caras" id="b-caras">{cara && <><Avatar p={cara}/><span>{nombre(cara)}</span></>}</div>
+      <p className="b-paso" id="b-paso" aria-live="polite">{pasoFinal ?? paso}</p>
+      <div className="b-barra"><span id="b-prog" style={lleno ? {transition: "transform " + b.total + "ms linear", transform: "scaleX(1)"} : undefined}></span></div>
+      <div className="b-caras" id="b-caras" aria-hidden="true">{cara && <><Avatar p={cara}/><span>{nombre(cara)}</span></>}</div>
     </>
   );
 }

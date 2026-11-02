@@ -13,13 +13,20 @@ export function MatchModal({me, o, r, onCerrar, onSeguir}: Props) {
   const cerrarRef = useRef(onCerrar);
   cerrarRef.current = onCerrar;
 
-  // Al abrir: foco en el botón principal y Escape para cerrar. Al cerrar: el foco vuelve a donde estaba.
+  // Al abrir: foco en el botón principal, Escape para cerrar y el resto de la página inerte
+  // (el foco no puede salirse del modal). Al cerrar: el foco vuelve a donde estaba.
   useEffect(() => {
     const previo = document.activeElement as HTMLElement | null;
+    const fuera = [...document.querySelectorAll<HTMLElement>("header.barra, main")];
+    fuera.forEach(el => { el.inert = true; });
     seguirRef.current?.focus();
     const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") cerrarRef.current(); };
     document.addEventListener("keydown", tecla);
-    return () => { document.removeEventListener("keydown", tecla); previo?.focus?.(); };
+    return () => {
+      document.removeEventListener("keydown", tecla);
+      fuera.forEach(el => { el.inert = false; });
+      previo?.focus?.();
+    };
   }, []);
 
   const yoA = esAnon(me), otroA = esAnon(o);
@@ -37,7 +44,7 @@ export function MatchModal({me, o, r, onCerrar, onSeguir}: Props) {
         <div className="match-avs" id="m-avs">
           {yoA
             ? <span className="av anon izq" aria-hidden="true">Tú</span>
-            : <span className="av izq" style={{"--c": "#5B2EFF"} as CSSProperties} aria-hidden="true">Tú</span>}
+            : <span className="av izq" style={{"--c": "#7B61FF"} as CSSProperties} aria-hidden="true">Tú</span>}
           <Avatar p={o} extra="der"/>
         </div>
         <div className="m-chips"><span className="m-pct" id="m-pct">{r.pct}% compatible</span><span className="ia-chip" id="m-ia" hidden={!r.ia}>Elegido con IA</span></div>

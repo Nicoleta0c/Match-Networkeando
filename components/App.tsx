@@ -231,7 +231,8 @@ export default function App() {
     const otros = [...S.perfiles.values()].filter(o => o.id !== me.id);
     const pasos = ["Revisando " + otros.length + (otros.length === 1 ? " perfil…" : " perfiles…"), "Comparando tu idea con sus superpoderes…", "Viendo a quién le sirve lo que sabes hacer…", S.iaDisponible ? "La IA está eligiendo quién encaja mejor contigo…" : "Eligiendo quién encaja mejor contigo…"];
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const total = reduce ? 500 : 2800;
+    // La primera búsqueda es un pequeño espectáculo; al repetirla no hacemos esperar tanto.
+    const total = reduce ? 500 : (S.nBusquedas === 0 ? 2800 : 1400);
     const id = ++S.nBusquedas;
     S.busqueda = {id, otros, pasos, total, reduce}; S.pasoFinal = null;
     forzar();
@@ -277,8 +278,11 @@ export default function App() {
     }).catch(() => {});
 
     async function cargar() {
+      // Con la app en segundo plano no gastamos datos ni Wi-Fi del evento.
+      if (document.hidden && S.realLoaded) { siguiente = setTimeout(cargar, CADA_MS); return; }
       try {
-        const r = await fetch("/api/perfiles", {cache: "no-store"});
+        // "no-cache" deja que el navegador pregunte "¿cambió algo?" (ETag) y reciba un 304 vacío si no.
+        const r = await fetch("/api/perfiles", {cache: "no-cache"});
         if (!r.ok) throw new ErrorAPI(r.status);
         const data: {yo: string; perfiles: Record<string, unknown>[]} = await r.json();
         if (parado) return;
