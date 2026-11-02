@@ -1,0 +1,317 @@
+"use client";
+/* La app completa. Funciona igual que el <script> del index.html original:
+   un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
+import { useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
+import { UMBRAL, aplicarIA, analizar, limpiar, ordenarMatches, type Analisis, type Perfil, type ResIA } from "@/lib/match";
+import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
+import { Iconos } from "./ui";
+import { Barra } from "./Barra";
+import { VistaInicio } from "./VistaInicio";
+import { VistaPerfil, type DatosForm } from "./VistaPerfil";
+import { VistaClics } from "./VistaClics";
+import { VistaProyectar } from "./VistaProyectar";
+import { MatchModal } from "./MatchModal";
+import type { Busqueda } from "./Buscando";
+
+/* Enlace público de esta página: el QR apunta aquí + #perfil */
+const SHARE_URL = "https://claude.ai/artifact/85pBENts7tmwDJfPwNKyry";
+
+const VISTAS = ["inicio", "perfil", "clics", "proyectar"] as const;
+export type Vista = typeof VISTAS[number];
+function vistaActual(): Vista {
+  const h = location.hash.slice(1);
+  if (h === "descubrir") return "clics";
+  return (VISTAS as readonly string[]).includes(h) ? h as Vista : "inicio";
+}
+
+type Estado = {
+  vista: Vista;
+  demo: boolean; uid: string | null; realUid: string | null;
+  avail: "pending" | "nodb" | "ok" | "error"; slow: boolean; loaded: boolean;
+  perfiles: Map<string, Perfil>; real: Map<string, Perfil> | null; realLoaded: boolean;
+  guardando: boolean; relleno: number; buscarAlLlegar: boolean;
+  notificados: Set<string> | null; realNotif: Set<string> | null;
+  busqueda: Busqueda | null; pasoFinal: string | null; nBusquedas: number;
+  iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
+  match: {o: Perfil; r: Analisis} | null;
+  toast: {texto: string; ver: boolean};
+};
+const estadoInicial = (): Estado => ({
+  vista: "inicio",
+  demo: false, uid: null, realUid: null,
+  avail: "pending", slow: false, loaded: false,
+  perfiles: new Map(), real: null, realLoaded: false,
+  guardando: false, relleno: 0, buscarAlLlegar: false,
+  notificados: null, realNotif: null,
+  busqueda: null, pasoFinal: null, nBusquedas: 0,
+  iaDisponible: false, iaRes: null, iaFallo: false,
+  match: null,
+  toast: {texto: "", ver: false}
+});
+
+export default function App() {
+  const ref = useRef<Estado | null>(null);
+  if (!ref.current) ref.current = estadoInicial();
+  const S = ref.current;
+  const [, forzar] = useReducer((n: number) => n + 1, 0);
+  const formTocado = useRef(false);
+  const timers = useRef({busqueda: [] as ReturnType<typeof setTimeout>[], toast: undefined as ReturnType<typeof setTimeout> | undefined});
+
+  const yo = () => S.uid ? S.perfiles.get(S.uid) ?? null : null;
+  const misMatches = (me: Perfil) => aplicarIA(me, ordenarMatches(me, S.perfiles.values()), S.iaRes);
+
+  /* ---------- toast ---------- */
+  function toast(t: string) {
+    S.toast = {texto: t, ver: true}; forzar();
+    clearTimeout(timers.current.toast);
+    timers.current.toast = setTimeout(() => { S.toast = {...S.toast, ver: false}; forzar(); }, 2600);
+  }
+
+  /* ---------- matches ya avisados (localStorage) ---------- */
+  function cargarNotificados() {
+    if (S.notificados) return S.notificados;
+    let arr: unknown = [];
+    try { arr = JSON.parse(localStorage.getItem("clic-notificados") || "[]"); } catch {}
+    S.notificados = new Set(Array.isArray(arr) ? arr : []);
+    return S.notificados;
+  }
+  function marcarNotificado(id: string) {
+    const vistos = cargarNotificados();
+    if (vistos.has(id)) return;
+    vistos.add(id);
+    if (S.demo) return;
+    try { localStorage.setItem("clic-notificados", JSON.stringify([...vistos].slice(-500))); } catch {}
+  }
+
+  /* ---------- rutas ---------- */
+  function irA(v: Vista) { if (location.hash !== "#" + v) location.hash = v; else route(); }
+  function route() {
+    const v = vistaActual();
+    S.vista = v;
+    document.body.dataset.view = v;
+    if (v === "perfil") { formTocado.current = false; S.relleno++; }
+    if (v !== "clics") cancelarBusqueda();
+    forzar();
+    window.scrollTo(0, 0);
+    if (v === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
+  }
+
+  /* ---------- guardar y borrar (real o demo) ---------- */
+  async function escribirPerfil(body: Record<string, unknown>) {
+    if (S.demo && S.uid) { S.perfiles = new Map(S.perfiles).set(S.uid, limpiar(S.uid, body)); return; }
+    throw new Error("sin base de datos");
+  }
+  async function quitarPerfil() {
+    if (S.demo && S.uid) { const m = new Map(S.perfiles); m.delete(S.uid); S.perfiles = m; return; }
+    throw new Error("sin base de datos");
+  }
+  async function guardar(d: DatosForm) {
+    if (!puede()) return false;
+    const prev = yo();
+    const body = {
+      idea: d.idea, needs: d.idea ? (prev?.tagsNeeds ?? []).slice(0, 3) : [], power: d.power,
+      anon: d.anon, alias: d.anon ? "" : d.alias, que: d.anon ? "" : d.que, contact: d.anon ? "" : d.contact,
+      createdAt: prev && prev.createdAt ? prev.createdAt : Date.now()
+    };
+    S.guardando = true; forzar();
+    try {
+      await escribirPerfil(body);
+      toast(prev ? "Cambios guardados" : "Perfil listo");
+      formTocado.current = false;
+      S.buscarAlLlegar = true;
+      irA("clics");
+      return true;
+    } catch {
+      toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+      return false;
+    } finally { S.guardando = false; forzar(); }
+  }
+  async function borrar() {
+    try {
+      await quitarPerfil();
+      toast("Perfil borrado");
+      S.relleno++; forzar();
+      return true;
+    } catch {
+      toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+      return false;
+    }
+  }
+
+  /* ---------- demo ---------- */
+  function entrarDemo() {
+    if (S.demo) return;
+    S.demo = true; S.realUid = S.uid; S.realNotif = S.notificados;
+    S.uid = "demo-yo"; S.notificados = new Set();
+    const m = new Map<string, Perfil>();
+    const real = S.realUid && S.real ? S.real.get(S.realUid) : null;
+    const base = real ? {idea: real.idea, needs: real.tagsNeeds, power: real.power, anon: real.anon, alias: real.alias, que: real.que, contact: real.contact} : DEMO_YO;
+    m.set("demo-yo", limpiar("demo-yo", {...base, createdAt: Date.now()}));
+    DEMO.concat(DEMO_MATCHES).forEach((d, i) => m.set(d.id, limpiar(d.id, {anon: false, ...d, createdAt: 1000 - i})));
+    S.perfiles = m; S.loaded = true;
+    S.buscarAlLlegar = true;
+    irA("clics");
+  }
+  function salirDemo() {
+    if (!S.demo) return;
+    cancelarBusqueda();
+    S.demo = false; S.uid = S.realUid; S.notificados = S.realNotif || null;
+    S.perfiles = S.real || new Map(); S.loaded = S.realLoaded;
+    S.match = null;
+    forzar();
+  }
+  function demoComo(anon: boolean) {
+    const m = yo(); if (!S.demo || !m) return;
+    S.perfiles = new Map(S.perfiles).set(m.id, {...m, anon, alias: !anon && !m.alias ? "Invitado" : m.alias});
+    formTocado.current = false;
+    if (S.vista === "perfil") S.relleno++;
+    forzar();
+    toast(anon ? "Ahora pruebas como anónimo" : "Ahora pruebas con tu nombre");
+  }
+
+  /* ---------- la app busca tu match ---------- */
+  function cancelarBusqueda() {
+    timers.current.busqueda.forEach(clearTimeout); timers.current.busqueda = [];
+    if (S.busqueda) { S.busqueda = null; S.pasoFinal = null; forzar(); }
+  }
+  async function pedirIA(me: Perfil, candidatos: Perfil[]): Promise<ResIA | null> {
+    const cand = candidatos.slice(0, 30);
+    if (!cand.length) return null;
+    try {
+      const resp = await fetch("/api/match", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({persona: me, candidatos: cand})
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      const ids = new Set(cand.map(p => p.id));
+      const mapa: ResIA["mapa"] = new Map();
+      (data && Array.isArray(data.matches) ? data.matches : []).forEach((m: {id?: unknown; pct?: unknown; razon?: unknown; rompehielos?: unknown}) => {
+        if (!m || typeof m.id !== "string" || !ids.has(m.id) || mapa.has(m.id)) return;
+        const pct = Math.max(1, Math.min(99, Math.round(Number(m.pct) || 0)));
+        mapa.set(m.id, {pct, razon: String(m.razon || "").slice(0, 200).trim(), rompe: String(m.rompehielos || "").slice(0, 200).trim()});
+      });
+      if (!mapa.size) return null;
+      return {clave: me.id + "|" + me.idea + "|" + me.power, enviados: ids, mapa};
+    } catch {
+      return null;
+    }
+  }
+  function buscarMatch() {
+    const me = yo();
+    cancelarBusqueda();
+    if (!me || !S.loaded) { forzar(); return; }
+    const otros = [...S.perfiles.values()].filter(o => o.id !== me.id);
+    const pasos = ["Revisando " + otros.length + (otros.length === 1 ? " perfil…" : " perfiles…"), "Comparando tu idea con sus superpoderes…", "Viendo a quién le sirve lo que sabes hacer…", S.iaDisponible ? "La IA está eligiendo quién encaja mejor contigo…" : "Eligiendo quién encaja mejor contigo…"];
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const total = reduce ? 500 : 2800;
+    const id = ++S.nBusquedas;
+    S.busqueda = {id, otros, pasos, total, reduce}; S.pasoFinal = null;
+    forzar();
+    const usarIA = S.iaDisponible && otros.length > 0;
+    let iaListo = !usarIA, animListo = false;
+    const terminar = () => {
+      if (!iaListo || !animListo || S.busqueda?.id !== id) return;
+      cancelarBusqueda();
+      const ahora = yo(); if (!ahora) return;
+      const lista = misMatches(ahora);
+      if (lista.length) mostrarMatch(lista[0].o, lista[0].r);
+    };
+    if (usarIA) {
+      const limite = new Promise<null>(res => timers.current.busqueda.push(setTimeout(() => res(null), 20000)));
+      Promise.race([pedirIA(me, ordenarMatches(me, otros).map(x => x.o)), limite]).then(res => {
+        if (res) S.iaRes = res; else S.iaFallo = true;
+        iaListo = true; terminar();
+      });
+    }
+    timers.current.busqueda.push(setTimeout(() => {
+      animListo = true;
+      if (!iaListo && S.busqueda?.id === id) { S.pasoFinal = "La IA está terminando de elegir…"; forzar(); }
+      terminar();
+    }, total + 150));
+  }
+
+  /* ---------- match ---------- */
+  function mostrarMatch(o: Perfil, r: Analisis) {
+    marcarNotificado(o.id);
+    S.match = {o, r}; forzar();
+  }
+  function cerrarMatch() { S.match = null; forzar(); }
+
+  /* ---------- conexión con los datos ---------- */
+  function conectar() {
+    S.avail = "nodb"; forzar();
+    return () => {};
+  }
+
+  /* ---------- arranque ---------- */
+  useEffect(() => {
+    const alCambiarHash = () => { if (location.hash === "#demo") { entrarDemo(); return; } route(); };
+    window.addEventListener("hashchange", alCambiarHash);
+    if (location.hash === "#demo") { location.hash = ""; route(); entrarDemo(); } else route();
+    const desconectar = conectar();
+    return () => {
+      window.removeEventListener("hashchange", alCambiarHash);
+      desconectar();
+      cancelarBusqueda();
+      clearTimeout(timers.current.toast);
+    };
+    // Solo al montar: las funciones leen S en el momento en que se llaman.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ---------- lo que se dibuja ---------- */
+  const me = yo();
+  const todos = me ? misMatches(me) : [];
+  const conIA = !!(me && S.iaRes && S.iaRes.clave === me.id + "|" + me.idea + "|" + me.power);
+  function puede() { return S.demo || (S.avail === "ok" && !!S.uid); }
+
+  let burbuja = 0;
+  if (me && S.vista !== "clics") {
+    const vistos = cargarNotificados();
+    burbuja = todos.filter(x => x.r.pct >= UMBRAL && !vistos.has(x.o.id)).length;
+  }
+
+  // En Mis matches, los matches que ya viste dejan de contar en la burbuja.
+  useEffect(() => {
+    if (S.vista === "clics" && !S.busqueda && S.loaded && me) todos.filter(x => x.r.pct >= UMBRAL).forEach(x => marcarNotificado(x.o.id));
+  });
+
+  const enProyectar = S.vista === "proyectar";
+  const perfilesMap = S.perfiles;
+  const pares = useMemo(() => {
+    if (!enProyectar) return 0;
+    const muestra = [...perfilesMap.values()].slice(0, 300);
+    let n = 0;
+    for (let i = 0; i < muestra.length; i++) for (let j = i + 1; j < muestra.length; j++) {
+      if (Math.max(analizar(muestra[i], muestra[j]).pct, analizar(muestra[j], muestra[i]).pct) >= UMBRAL) n++;
+    }
+    return n;
+  }, [perfilesMap, enProyectar]);
+
+  let aviso: ReactNode = null;
+  if (!S.demo) {
+    if (S.avail === "pending") aviso = "Conectando…";
+    else if (S.avail === "nodb") aviso = <><strong>Los perfiles no cargan en esta vista.</strong> Abre la página desde su enlace de claude.ai con tu sesión iniciada.</>;
+    else if (S.avail === "error") aviso = <><strong>Se perdió la conexión.</strong> Recarga la página para volver a intentarlo.</>;
+    else if (S.slow) aviso = "Está tardando en responder. Lo que ves puede no estar al día.";
+    else if (!S.uid) aviso = <><strong>No pudimos identificar tu sesión.</strong> Recarga la página para volver a intentarlo.</>;
+  }
+
+  const qrUrl = SHARE_URL ? SHARE_URL + "#perfil" : "";
+
+  return (
+    <>
+      <Iconos/>
+      <Barra vista={S.vista} burbuja={burbuja} demo={S.demo} demoAnon={!!(me && (me.anon || !me.alias))} onDemoComo={demoComo} onSalirDemo={salirDemo}/>
+      <main>
+        <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
+        <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
+        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
+        <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
+      </main>
+      {S.match && me && <MatchModal me={me} o={S.match.o} r={S.match.r} onCerrar={cerrarMatch} onSeguir={() => { cerrarMatch(); if (S.vista !== "clics") location.hash = "clics"; }}/>}
+      <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
+    </>
+  );
+}

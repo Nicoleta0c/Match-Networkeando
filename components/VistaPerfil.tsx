@@ -1,0 +1,99 @@
+"use client";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
+import { LIMITES, type Perfil } from "@/lib/match";
+import { Aviso } from "./ui";
+
+export type DatosForm = {idea: string; power: string; anon: boolean; alias: string; que: string; contact: string};
+
+type Props = {
+  activo: boolean; aviso: ReactNode; me: Perfil | null;
+  puede: boolean; guardando: boolean;
+  /* Cada vez que cambia, el formulario se vuelve a llenar con el perfil guardado (llenarForm del original). */
+  relleno: number;
+  tocadoRef: RefObject<boolean>;
+  onGuardar: (d: DatosForm) => Promise<boolean>;
+  onBorrar: () => Promise<boolean>;
+};
+
+export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocadoRef, onGuardar, onBorrar}: Props) {
+  const [idea, setIdea] = useState("");
+  const [poder, setPoder] = useState("");
+  const [anon, setAnon] = useState(true);
+  const [alias, setAlias] = useState("");
+  const [que, setQue] = useState("");
+  const [contacto, setContacto] = useState("");
+  const [error, setError] = useState("");
+  const [armado, setArmado] = useState(false);
+  const poderRef = useRef<HTMLTextAreaElement>(null);
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const contactoRef = useRef<HTMLInputElement>(null);
+  const ultimoRelleno = useRef(-1);
+
+  useEffect(() => {
+    const pedido = relleno !== ultimoRelleno.current;
+    ultimoRelleno.current = relleno;
+    // Si llegan perfiles nuevos mientras la persona escribe, no le borramos lo escrito.
+    if (!pedido && tocadoRef.current) return;
+    if (me) {
+      setIdea(me.idea); setPoder(me.power); setAnon(me.anon);
+      setAlias(me.alias); setQue(me.que); setContacto(me.contact);
+    }
+    setArmado(false); setError("");
+  }, [relleno, me, tocadoRef]);
+
+  const tocar = () => { tocadoRef.current = true; };
+
+  const enviar = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const d: DatosForm = {idea: idea.trim(), power: poder.trim(), anon, alias: alias.trim(), que: que.trim(), contact: contacto.trim()};
+    if (!d.power) { setError("Escribe tu superpoder para continuar."); poderRef.current?.focus(); return; }
+    if (!anon && !d.alias) { setError("Escribe tu nombre o cambia a Anónimo."); nombreRef.current?.focus(); return; }
+    if (!anon && !d.contact) { setError("Agrega cómo contactarte para que tus matches puedan escribirte."); contactoRef.current?.focus(); return; }
+    await onGuardar(d);
+  };
+
+  const quitar = async () => {
+    if (!armado) { setArmado(true); return; }
+    if (await onBorrar()) {
+      setIdea(""); setPoder(""); setAlias(""); setQue(""); setContacto(""); setAnon(true);
+    }
+  };
+
+  return (
+    <section data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
+      <h2 className="titulo chico" id="t-perfil">Mi perfil</h2>
+      <Aviso>{aviso}</Aviso>
+      <form className="form-perfil" id="form" noValidate onSubmit={enviar} onInput={tocar}>
+        <div className="bloques">
+          <div className="bloque-f idea">
+            <h3>Mi idea</h3>
+            <label className="campo" htmlFor="f-idea">¿Qué quieres hacer realidad?</label>
+            <textarea id="f-idea" maxLength={LIMITES.idea} placeholder="Un club de lectura en los parques de la ciudad" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
+          </div>
+          <div className="bloque-f poder">
+            <h3>Mi superpoder</h3>
+            <label className="campo" htmlFor="f-poder">¿Qué es lo que mejor haces?</label>
+            <textarea id="f-poder" ref={poderRef} maxLength={LIMITES.power} placeholder="Organizo eventos y la gente sí llega" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
+          </div>
+        </div>
+        <div className="fila-acciones">
+          <div className="segmento" role="group" aria-label="Cómo quieres aparecer">
+            <button type="button" aria-pressed={anon} onClick={() => { tocar(); setAnon(true); }}>Anónimo</button>
+            <button type="button" aria-pressed={!anon} onClick={() => { tocar(); setAnon(false); }}>Con mi nombre</button>
+          </div>
+          <div className="campos-nombre" id="campos-nombre" hidden={anon}>
+            <label className="sr" htmlFor="f-nombre">Tu nombre</label><input type="text" id="f-nombre" ref={nombreRef} maxLength={LIMITES.alias} autoComplete="name" placeholder="Tu nombre" value={alias} onChange={e => setAlias(e.target.value)}/>
+            <label className="sr" htmlFor="f-que">A qué te dedicas</label><input type="text" id="f-que" maxLength={LIMITES.que} placeholder="A qué te dedicas (opcional)" value={que} onChange={e => setQue(e.target.value)}/>
+            <label className="sr" htmlFor="f-contacto">Cómo contactarte</label><input type="text" id="f-contacto" ref={contactoRef} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
+          </div>
+          <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
+        </div>
+        <p className="nota" id="nota-anon" hidden={!anon}>Nadie verá tu nombre. Igual puedes hacer match; cuando quieras que te contacten, cambias a Con mi nombre.</p>
+        <p className="nota" id="nota-nombre" hidden={anon}>Tu nombre y tu contacto se ven en tu tarjeta.</p>
+        <p className="error" id="error" role="alert">{error}</p>
+        <button className="borrar" type="button" id="b-quitar" hidden={!me} disabled={!puede} onClick={quitar}>{armado ? "Toca otra vez para borrarlo" : "Borrar mi perfil"}</button>
+      </form>
+    </section>
+  );
+}
