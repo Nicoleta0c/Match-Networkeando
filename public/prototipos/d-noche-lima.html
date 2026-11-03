@@ -537,8 +537,9 @@ const io2 = new IntersectionObserver(es => es.forEach(e => {
 secciones.forEach(s => io2.observe(s));
 
 /* ---------- QR ---------- */
-// Abierto desde la app, el QR usa su propia dirección; abierto como archivo, apunta a la app en la laptop.
-const url = location.origin.startsWith('http') ? location.origin + '/#perfil' : 'http://192.168.32.194:3000/#perfil';
+// El QR abre esta misma landing en el celular: servida por la app, usa su propia dirección;
+// abierta como archivo, la versión que sirve la laptop por el Wi-Fi.
+const url = location.origin.startsWith('http') && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin + location.pathname : 'http://192.168.32.19:3000/prototipos/d-noche-lima.html';
 ['qr','qr2'].forEach(id => { try { new QRious({element: document.getElementById(id), value: url, size: 560, level: 'M', foreground: '#141414', background: '#FFFFFF', padding: 0}); } catch (e) {} });
 
 /* ---------- arranque ---------- */

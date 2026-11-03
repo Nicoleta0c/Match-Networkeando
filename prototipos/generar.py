@@ -15,14 +15,13 @@ try:
     so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); so.connect(("10.255.255.255", 1)); ip = so.getsockname()[0]; so.close()
 except OSError:
     ip = "localhost"
-qr_url = f"http://{ip}:3000/#perfil"
-base = base.replace("{{QRIOUS}}", qrious).replace("{{QR_URL}}", qr_url)
-print("QR de ejemplo:", qr_url)
+base = base.replace("{{QRIOUS}}", qrious)
+print("Los QR abren las landings en:", f"http://{ip}:3000/prototipos/")
 for slug, nombre, c in P:
     vars_ = f"--bg:{c['bg']};--s:{c['s']};--b:{c['b']};--b2:{c['b2']};--t:{c['t']};--m:{c['m']};--a:{c['a']};--h:{c['h']};--on-h:{c['oh']};--glow:{c['glow']};--hglow:{c['hglow']};"
     selector = "".join(
         f'<a href="{s2}.html" title="{n2}" aria-label="{n2}"{" aria-current=page" if s2 == slug else ""} style="background:linear-gradient(135deg,{c2["bg"]} 50%,{c2["h"]} 50%)"></a>'
         for s2, n2, c2 in P)
-    html = base.replace("{{VARS}}", vars_).replace("{{NOMBRE}}", nombre).replace("{{BG}}", c["bg"]).replace("{{SELECTOR}}", selector)
+    html = base.replace("{{VARS}}", vars_).replace("{{NOMBRE}}", nombre).replace("{{BG}}", c["bg"]).replace("{{SELECTOR}}", selector).replace("{{QR_URL}}", f"http://{ip}:3000/prototipos/{slug}.html")
     open(f"{out}/{slug}.html", "w", encoding="utf-8").write(html)
 print("4 prototipos regenerados")
