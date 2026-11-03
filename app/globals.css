@@ -9,6 +9,10 @@
   --ease:cubic-bezier(.23,1,.32,1);
   color-scheme:dark;
 }
+/* Las otras tres paletas. B (Tinta y oro) es la de :root. */
+html[data-paleta="a"]{--bg:#061918;--s:#0E2827;--b:#1D3F3D;--b2:#2E5653;--t:#EEF5F2;--m:#9DB8B4;--a:#14A79D;--h:#F8C000;--on-h:#141414;--glow:rgba(20,167,157,.20);--hglow:rgba(248,192,0,.55)}
+html[data-paleta="c"]{--bg:#111517;--s:#1A2023;--b:#2A3236;--b2:#3A454A;--t:#EDF2F2;--m:#9AA7AA;--a:#F8C000;--h:#3FE0C5;--on-h:#0B1A17;--glow:rgba(63,224,197,.12);--hglow:rgba(63,224,197,.5)}
+html[data-paleta="d"]{--bg:#07141C;--s:#0F222C;--b:#1D3843;--b2:#2B4D5B;--t:#EAF3F5;--m:#93AEB8;--a:#18B5A6;--h:#D6F53C;--on-h:#0D1A05;--glow:rgba(24,181,166,.18);--hglow:rgba(214,245,60,.5)}
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--t);font-family:var(--texto);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
@@ -138,17 +142,20 @@ main{position:relative;z-index:1}
 .error{color:#FF8A6B;font-weight:700;margin-top:14px;min-height:1px}
 .borrar{border:0;background:none;color:var(--m);font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;margin-top:12px;padding:12px 0;min-height:44px}
 
-/* búsqueda: hilos hacia cada persona */
-.radar{position:relative;height:420px;margin-top:40px;border-radius:32px;background:var(--s);border:1px solid var(--b);overflow:hidden}
-.radar::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,var(--glow),transparent 55%)}
-.nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .5s cubic-bezier(.3,1.4,.5,1);animation:aparecer .4s var(--ease) both}
-@keyframes aparecer{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}}
-.nodo .av{width:58px;height:58px;font-size:18px;border:3px solid var(--s);box-shadow:0 0 0 1px var(--b2)}
-.nodo small{font-size:13px;font-weight:700;color:var(--m);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
-.nodo.yo .av{width:76px;height:76px;background:var(--h);color:var(--on-h);font-size:20px}
-.nodo.gana{transform:translate(-50%,-50%) scale(1.25)}
-.nodo.gana .av{box-shadow:0 0 0 3px var(--h),0 0 30px var(--hglow)}
-.nodo.gana small{color:var(--t)}
+/* búsqueda: tu carita y la de cada persona, unidas por una onda que se teje */
+.tejido{position:relative;margin-top:40px;border-radius:32px;background:var(--s);border:1px solid var(--b);padding:56px 40px 44px;display:grid;grid-template-columns:1fr 1fr;column-gap:140px;row-gap:28px;overflow:hidden}
+.tejido::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,var(--glow),transparent 60%);pointer-events:none}
+.tejido .hilos{z-index:1}
+.tejido.listo .hilo{stroke-width:6}
+.extremo{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.extremo .cara{width:76px;height:76px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.5))}
+.otro{animation:llega .35s var(--ease) both}
+@keyframes llega{from{opacity:0;transform:translateX(18px) scale(.94)}}
+.ficha{width:100%;max-width:300px;background:var(--bg);border:1px solid var(--b);border-radius:18px;padding:14px 16px}
+.ficha small{display:block;font-size:13px;font-weight:700;color:var(--m)}
+.ficha p{font-weight:800;font-size:17px;line-height:1.25;margin-top:2px;overflow-wrap:anywhere}
+.tejido.listo .otro .ficha{border-color:var(--h)}
+.compatible{grid-column:1/-1;justify-self:center;position:relative;z-index:2;background:var(--h);color:var(--on-h);font-weight:900;font-size:18px;padding:10px 22px;border-radius:999px;box-shadow:0 12px 30px -12px var(--h);animation:pop .45s cubic-bezier(.3,1.5,.5,1) .5s both}
 .estado{font-weight:700;color:var(--m);min-height:1.5em;margin-top:18px}
 
 /* match */
@@ -234,6 +241,13 @@ body[data-view="proyectar"] .barra{display:none}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translate(-50%,16px);background:var(--t);color:var(--bg);padding:12px 22px;border-radius:999px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--ease);z-index:60}
 .toast.ver{opacity:1;transform:translate(-50%,0)}
 
+/* selector de paletas */
+.paletas{position:fixed;right:16px;bottom:16px;z-index:40;display:flex;align-items:center;gap:6px;background:var(--s);border:1px solid var(--b2);border-radius:999px;padding:6px 6px 6px 14px;font-size:13px;font-weight:800;color:var(--m);box-shadow:0 18px 40px -16px rgba(0,0,0,.8)}
+.paletas button{width:28px;height:28px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;transition:transform .16s var(--ease),border-color .2s}
+.paletas button[aria-pressed="true"]{border-color:var(--t)}
+.paletas button:active{transform:scale(.9)}
+body[data-view="proyectar"] .paletas{display:none}
+
 @media (max-width:900px){
   .escena{grid-template-columns:1fr;gap:18px}
   .chip.izq,.chip.der{justify-self:center}
@@ -262,10 +276,12 @@ body[data-view="proyectar"] .barra{display:none}
   .demo-como > span{display:none}
   .heroe{padding-top:40px}
   .como{padding-top:64px}
-  .radar{height:360px}
-  .nodo .av{width:46px;height:46px;font-size:15px}
-  .nodo.yo .av{width:60px;height:60px}
-  .nodo small{max-width:84px}
+  .tejido{padding:36px 16px 28px;column-gap:28px}
+  .extremo .cara{width:58px;height:58px}
+  .ficha{padding:10px 12px}
+  .ficha p{font-size:14px}
+  .paletas{bottom:calc(84px + env(safe-area-inset-bottom,0px));right:12px}
+  .paletas span{display:none}
   .modal-in{padding:36px 20px 28px;border-radius:30px}
   .pareja .av{width:80px;height:80px;font-size:24px}
 }

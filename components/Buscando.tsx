@@ -1,74 +1,76 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { nombre, type Perfil } from "@/lib/match";
+import { colorDe, esAnon, nombre, type Perfil } from "@/lib/match";
 import { curva, punto, trazar } from "@/lib/hilo";
-import { Avatar } from "./ui";
 
-/* muestra: hasta 6 personas del salón a las que se les tira un hilo mientras la app busca. */
+/* muestra: hasta 6 personas del salón con las que la app prueba el hilo mientras busca. */
 export type Busqueda = {id: number; muestra: Perfil[]; pasos: string[]; total: number; reduce: boolean};
 
-/* Dónde se dibuja cada persona dentro del recuadro (porcentajes). */
-const POS: [number, number][] = [[62, 18], [80, 30], [88, 58], [74, 80], [56, 74], [50, 40]];
-const NS = "http://www.w3.org/2000/svg";
+/* Carita de los personajes de Networkeando, en el color de cada persona. */
+export function Cara({color}: {color: string}) {
+  return (
+    <svg className="cara" viewBox="0 0 40 40" aria-hidden="true">
+      <rect x="3" y="7" width="34" height="30" rx="9" fill={color} stroke="#141414" strokeWidth="2.5"/>
+      <rect x="9" y="13" width="22" height="18" rx="5" fill="#F8F8F2"/>
+      <circle cx="16" cy="20.5" r="2" fill="#141414"/><circle cx="24" cy="20.5" r="2" fill="#141414"/>
+      <path d="M16 25.5q4 4 8 0" stroke="#141414" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <rect x="14" y="2" width="12" height="7" rx="2.5" fill={color} stroke="#141414" strokeWidth="2"/>
+    </svg>
+  );
+}
 
-/* La app tira un hilo hacia cada persona y se queda con la que mejor encaja (ganador). */
-export function Buscando({b, me, pasoFinal, ganador}: {b: Busqueda; me: Perfil; pasoFinal: string | null; ganador: string | null}) {
+const recortar = (t: string, n: number) => t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
+
+/* Tu carita a la izquierda; a la derecha va pasando cada persona del salón y la onda se teje
+   entre los dos. Al final se queda con tu match y muestra cuánto encajan. */
+export function Buscando({b, me, pasoFinal, ganador, pct}: {b: Busqueda; me: Perfil; pasoFinal: string | null; ganador: string | null; pct: number | null}) {
   const caja = useRef<HTMLDivElement>(null);
-  const svg = useRef<SVGSVGElement>(null);
+  const hilo = useRef<SVGPathElement>(null);
+  const [i, setI] = useState(0);
   const [paso, setPaso] = useState(b.pasos[0]);
+  const otro = ganador ? b.muestra.find(p => p.id === ganador) ?? b.muestra[i] : b.muestra[i];
 
-  function hiloHacia(id: string, clase: string) {
-    const c = caja.current, s = svg.current;
-    const yo = c?.querySelector(".nodo.yo .av"), otro = c?.querySelector(`.nodo[data-id="${CSS.escape(id)}"] .av`);
-    if (!c || !s || !yo || !otro) return null;
-    const p = document.createElementNS(NS, "path");
-    p.setAttribute("class", "hilo " + clase);
-    const a = punto(yo, c, "centro"), z = punto(otro, c, "centro");
-    p.setAttribute("d", curva(a, z, (z[1] - a[1]) * .25));
-    s.appendChild(p);
-    return p;
+  function tejer(dur: number) {
+    const c = caja.current, h = hilo.current;
+    const izq = c?.querySelector(".tu .cara"), der = c?.querySelector(".otro .cara");
+    if (!c || !h || !izq || !der) return;
+    h.setAttribute("d", curva(punto(izq, c, "der"), punto(der, c, "izq"), -46));
+    trazar(h, b.reduce ? 0 : dur);
   }
 
-  // Un hilo fino hacia cada persona, uno detrás de otro, repartidos en el tiempo de la búsqueda.
+  // Prueba el hilo con cada persona, una tras otra, repartidas en el tiempo de la búsqueda.
   useEffect(() => {
-    let vivo = true;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const tramo = b.total / Math.max(1, b.muestra.length);
-    const dur = Math.min(380, tramo * .7);
-    b.muestra.forEach((p, i) => timers.push(setTimeout(async () => {
-      if (!vivo) return;
-      setPaso(b.pasos[Math.min(b.pasos.length - 1, Math.floor(i * b.pasos.length / b.muestra.length))]);
-      const h = hiloHacia(p.id, "fino");
-      if (!h) return;
-      await trazar(h, b.reduce ? 0 : dur);
-      timers.push(setTimeout(() => h.classList.add("tenue"), 120));
-    }, i * tramo)));
-    return () => { vivo = false; timers.forEach(clearTimeout); if (svg.current) svg.current.innerHTML = ""; };
+    const n = Math.max(1, b.muestra.length), tramo = b.total / n;
+    const timers = b.muestra.map((_, k) => setTimeout(() => {
+      setI(k);
+      setPaso(b.pasos[Math.min(b.pasos.length - 1, Math.floor(k * b.pasos.length / n))]);
+    }, k * tramo));
+    return () => timers.forEach(clearTimeout);
   }, [b]);
 
-  // Cuando la app ya eligió, el hilo grueso va hacia tu match.
+  // Cada vez que cambia la persona de la derecha (o llega el ganador), la onda se vuelve a tejer.
   useEffect(() => {
-    if (!ganador) return;
-    const h = hiloHacia(ganador, "");
-    if (h) trazar(h, b.reduce ? 0 : 650);
-  }, [ganador, b.reduce]);
+    const t = setTimeout(() => tejer(ganador ? 700 : Math.min(420, b.total / Math.max(1, b.muestra.length) * .7)), 30);
+    return () => clearTimeout(t);
+  }, [i, ganador, b]);
 
   return (
     <>
-      <div className="radar" ref={caja}>
-        <svg className="hilos" ref={svg} aria-hidden="true"></svg>
-        <div className="nodo yo" style={{left: "16%", top: "50%"}}>
-          <span className="av">Tú</span><small>{me.idea ? recortar(me.idea) : recortar(me.power)}</small>
+      <div className={"tejido" + (ganador ? " listo" : "")} ref={caja}>
+        <svg className="hilos" aria-hidden="true"><path className="hilo" ref={hilo}/></svg>
+        <div className="extremo tu">
+          <Cara color="var(--a)"/>
+          <div className="ficha"><small>Tu idea</small><p>{recortar(me.idea || me.power, 70)}</p></div>
         </div>
-        {b.muestra.map((p, i) => (
-          <div key={p.id} className={"nodo" + (ganador === p.id ? " gana" : "")} data-id={p.id} style={{left: POS[i][0] + "%", top: POS[i][1] + "%", animationDelay: i * 60 + "ms"}}>
-            <Avatar p={p}/><small>{nombre(p).split(" ")[0]}</small>
+        {otro && (
+          <div className="extremo otro" key={otro.id}>
+            <Cara color={esAnon(otro) ? "#3A3A34" : colorDe(otro)}/>
+            <div className="ficha"><small>{nombre(otro)}</small><p>{recortar(otro.power, 70)}</p></div>
           </div>
-        ))}
+        )}
+        {ganador && pct != null && <div className="compatible">{pct}% compatible</div>}
       </div>
       <p className="estado" aria-live="polite">{ganador ? "¡Listo! Encontramos tu match." : (pasoFinal ?? paso)}</p>
     </>
   );
 }
-
-function recortar(t: string) { return t.length > 22 ? t.slice(0, 21).trimEnd() + "…" : t; }

@@ -6,25 +6,25 @@ import { Buscando, type Busqueda } from "./Buscando";
 
 type Props = {
   activo: boolean; aviso: ReactNode;
-  busqueda: Busqueda | null; pasoFinal: string | null; ganador: string | null;
+  busqueda: Busqueda | null; pasoFinal: string | null; ganador: string | null; ganadorPct: number | null;
   loaded: boolean; me: Perfil | null; todos: Item[];
   conIA: boolean; iaFallo: boolean;
   onBuscar: () => void;
 };
 
-export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ...resto}: Props) {
+export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, ...resto}: Props) {
   return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
       <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : "Mis matches"}</h2>
       <Aviso>{aviso}</Aviso>
       {busqueda && resto.me
-        ? <Buscando key={busqueda.id} b={busqueda} me={resto.me} pasoFinal={pasoFinal} ganador={ganador}/>
+        ? <Buscando key={busqueda.id} b={busqueda} me={resto.me} pasoFinal={pasoFinal} ganador={ganador} pct={ganadorPct}/>
         : <Cuerpo {...resto}/>}
     </section>
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador">) {
+function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">
