@@ -79,6 +79,25 @@ function pal(p: Perfil, campo: "idea" | "power") { const k = p.id + "|" + campo 
 function comunes(a: Set<string>, b: Set<string>) { const out: string[] = []; a.forEach(w => { if (b.has(w)) out.push(w); }); return out; }
 function listaAreas(arr: number[]) { const n = arr.map(v => area(v).toLowerCase()); return n.length > 1 ? n.slice(0, -1).join(", ") + " y " + n[n.length - 1] : (n[0] || ""); }
 
+/* Qué puede hacer de verdad alguien de cada área por una idea, dicho como lo diría un joven.
+   puede: "Ana puede ___ para tu idea". pedir: "¿Me ayudarías a ___?" */
+const ACCIONES: Record<number, {puede: string; pedir: string}> = {
+  1: {puede: "armarte una página o un formulario para que la gente se inscriba", pedir: "armar una página o un formulario para que la gente se inscriba"},
+  2: {puede: "diseñarte el logo, los flyers y las publicaciones para que se vea profesional", pedir: "diseñar el logo y los flyers"},
+  3: {puede: "escribir los textos, presentar o grabar un video corto que invite a más gente", pedir: "escribir los textos o grabar un video corto que invite a más gente"},
+  4: {puede: "moverlo en Instagram y TikTok para que llegue a más jóvenes", pedir: "moverlo en Instagram y TikTok"},
+  5: {puede: "hacer el presupuesto y buscar cómo financiarlo sin perder dinero", pedir: "hacer el presupuesto y buscar cómo financiarlo"},
+  6: {puede: "organizar el día, conseguir el lugar y coordinar a los voluntarios", pedir: "organizar el día y conseguir voluntarios"},
+  7: {puede: "convertirlo en un taller fácil de entender", pedir: "convertirlo en un taller fácil de entender"},
+  8: {puede: "cuidar la parte de salud y bienestar de quienes participen", pedir: "cuidar la parte de salud y bienestar"},
+  9: {puede: "conectarte con juntas de vecinos, fundaciones y la comunidad", pedir: "conectar con juntas de vecinos y fundaciones"},
+  10: {puede: "construir el prototipo o montar lo que haga falta", pedir: "construir el prototipo"},
+  11: {puede: "hacer una encuesta rápida para saber qué quiere la gente", pedir: "hacer una encuesta rápida para saber qué quiere la gente"},
+  12: {puede: "ayudarte con los permisos y a registrar el proyecto", pedir: "sacar los permisos y registrar el proyecto"}
+};
+/* "Un club de lectura en los parques" -> "un club de lectura en los parques" (sin punto final). */
+const enFrase = (t: string) => (t.charAt(0).toLowerCase() + t.slice(1)).replace(/[.\s]+$/, "");
+
 export const UMBRAL = 40;
 const PESO_NECESIDAD = [46, 32, 22, 14];
 export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; ia?: boolean };
@@ -107,14 +126,23 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   // Si su superpoder no le aporta nada a tu idea, no puede ser un gran match.
   if (me.idea && !a.length && !kwA.length) pts = Math.min(pts, UMBRAL - 2);
   const pct = Math.max(8, Math.min(98, Math.round(pts)));
+  // Razones concretas: qué puede hacer esa persona por tu idea y qué puedes hacer tú por la suya.
+  const quien = esAnon(o) ? "Esta persona" : o.alias.split(/\s+/)[0];
   const razones: string[] = [];
-  if (a.length) razones.push("Su superpoder en " + listaAreas(a) + " es justo lo que le falta a tu idea.");
-  if (b.length) razones.push("Tu superpoder en " + listaAreas(b) + " le sirve a su idea.");
-  if (kw.length) razones.push("Hablan de lo mismo: " + kw.slice(0, 2).join(" y ") + ".");
-  if (!razones.length && me.idea && distinto.length) razones.push("Sabe de " + listaAreas(distinto.slice(0, 1)) + ", algo que tú no cubres.");
-  if (mismoPoder && razones.length) razones.push("Ojo: los dos saben hacer lo mismo.");
+  if (a.length) {
+    razones.push(`${quien} sabe de ${listaAreas(a.slice(0, 1))}: puede ${ACCIONES[a[0]].puede} para tu idea.`);
+    if (a.length > 1) razones.push(`También puede ${ACCIONES[a[1]].puede}.`);
+  }
+  if (b.length) razones.push(`Y tú también le sirves: puedes ${ACCIONES[b[0]].puede}${o.idea ? " para " + enFrase(o.idea) : ""}.`);
+  if (kwA.length) razones.push(`Los dos hablan de lo mismo: ${kwA.slice(0, 2).join(" y ")}.`);
+  if (!razones.length && me.idea && distinto.length) razones.push(`${quien} sabe de ${listaAreas(distinto.slice(0, 1))}, algo que tú no cubres.`);
+  if (mismoPoder && razones.length) razones.push("Ojo: los dos saben hacer lo mismo, así que entre ustedes no se completan tanto.");
   if (!razones.length) razones.push("Podrían complementarse si conversan.");
-  return {pct, a, b, razones};
+  // Una primera pregunta para empezar a hablar.
+  const rompe = a.length && me.idea
+    ? `¿Me ayudarías a ${ACCIONES[a[0]].pedir}? Mi idea es ${enFrase(me.idea)}.`
+    : (b.length && o.idea ? `Vi tu idea de ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${ACCIONES[b[0]].pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
+  return {pct, a, b, razones, rompe};
 }
 
 /* El match es "al revés" cuando tú le sirves a su idea pero su superpoder no le aporta a la tuya. */
