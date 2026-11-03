@@ -41,7 +41,7 @@ type Estado = {
   perfiles: Map<string, Perfil>; real: Map<string, Perfil> | null; realLoaded: boolean;
   guardando: boolean; relleno: number; buscarAlLlegar: boolean;
   notificados: Set<string> | null; realNotif: Set<string> | null;
-  busqueda: Busqueda | null; pasoFinal: string | null; nBusquedas: number;
+  busqueda: Busqueda | null; pasoFinal: string | null; ganador: string | null; nBusquedas: number;
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
   match: {o: Perfil; r: Analisis} | null;
   toast: {texto: string; ver: boolean};
@@ -54,7 +54,7 @@ const estadoInicial = (): Estado => ({
   perfiles: new Map(), real: null, realLoaded: false,
   guardando: false, relleno: 0, buscarAlLlegar: false,
   notificados: null, realNotif: null,
-  busqueda: null, pasoFinal: null, nBusquedas: 0,
+  busqueda: null, pasoFinal: null, ganador: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
   match: null,
   toast: {texto: "", ver: false},
@@ -199,7 +199,7 @@ export default function App() {
   /* ---------- la app busca tu match ---------- */
   function cancelarBusqueda() {
     timers.current.busqueda.forEach(clearTimeout); timers.current.busqueda = [];
-    if (S.busqueda) { S.busqueda = null; S.pasoFinal = null; forzar(); }
+    if (S.busqueda) { S.busqueda = null; S.pasoFinal = null; S.ganador = null; forzar(); }
   }
   async function pedirIA(me: Perfil, candidatos: Perfil[]): Promise<ResIA | null> {
     const cand = candidatos.slice(0, 30);
@@ -234,16 +234,25 @@ export default function App() {
     // La primera búsqueda es un pequeño espectáculo; al repetirla no hacemos esperar tanto.
     const total = reduce ? 500 : (S.nBusquedas === 0 ? 2800 : 1400);
     const id = ++S.nBusquedas;
-    S.busqueda = {id, otros, pasos, total, reduce}; S.pasoFinal = null;
+    // Hasta 6 personas del salón para tirarles un hilo: las más cercanas a tu perfil, en orden mezclado.
+    const muestra = ordenarMatches(me, otros).slice(0, 6).map(x => x.o).sort(() => Math.random() - .5);
+    S.busqueda = {id, muestra, pasos, total, reduce}; S.pasoFinal = null; S.ganador = null;
     forzar();
     const usarIA = S.iaDisponible && otros.length > 0;
     let iaListo = !usarIA, animListo = false;
     const terminar = () => {
-      if (!iaListo || !animListo || S.busqueda?.id !== id) return;
-      cancelarBusqueda();
-      const ahora = yo(); if (!ahora) return;
-      const lista = misMatches(ahora);
-      if (lista.length) mostrarMatch(lista[0].o, lista[0].r);
+      if (!iaListo || !animListo || !S.busqueda || S.busqueda.id !== id) return;
+      const ahora = yo();
+      const lista = ahora ? misMatches(ahora) : [];
+      if (!lista.length) { cancelarBusqueda(); return; }
+      // El hilo final va hacia tu match; si no estaba entre los dibujados, toma el lugar del último.
+      const g = lista[0];
+      if (!S.busqueda.muestra.some(p => p.id === g.o.id)) {
+        const m = S.busqueda.muestra.slice(); m[Math.max(0, m.length - 1)] = g.o;
+        S.busqueda = {...S.busqueda, muestra: m};
+      }
+      S.ganador = g.o.id; forzar();
+      timers.current.busqueda.push(setTimeout(() => { cancelarBusqueda(); mostrarMatch(g.o, g.r); }, reduce ? 0 : 1100));
     };
     if (usarIA) {
       const limite = new Promise<null>(res => timers.current.busqueda.push(setTimeout(() => res(null), 20000)));
@@ -381,7 +390,7 @@ export default function App() {
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
-        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
+        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
       </main>
       {S.match && me && <MatchModal me={me} o={S.match.o} r={S.match.r} onCerrar={cerrarMatch} onSeguir={() => { cerrarMatch(); if (S.vista !== "clics") location.hash = "clics"; }}/>}

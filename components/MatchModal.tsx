@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 import { claveMatch, esAnon, nombre, sinComillas, type Analisis, type Perfil } from "@/lib/match";
+import { curva, punto, trazar } from "@/lib/hilo";
 import { Avatar, Contacto } from "./ui";
 
 const TITULOS = {nombre: "¡Hicieron match!", yoanon: "¡Hicieron match!", anon: "¡Match con alguien anónimo!", secreto: "¡Match en secreto!"};
@@ -10,6 +11,8 @@ type Props = {me: Perfil; o: Perfil; r: Analisis; onCerrar: () => void; onSeguir
 
 export function MatchModal({me, o, r, onCerrar, onSeguir}: Props) {
   const seguirRef = useRef<HTMLButtonElement>(null);
+  const pareja = useRef<HTMLDivElement>(null);
+  const hilo = useRef<SVGPathElement>(null);
   const cerrarRef = useRef(onCerrar);
   cerrarRef.current = onCerrar;
 
@@ -22,7 +25,16 @@ export function MatchModal({me, o, r, onCerrar, onSeguir}: Props) {
     seguirRef.current?.focus();
     const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") cerrarRef.current(); };
     document.addEventListener("keydown", tecla);
+    // El hilo que une a los dos se mide cuando la tarjeta terminó de entrar (su animación la escala).
+    const t = setTimeout(() => {
+      const p = pareja.current, h = hilo.current;
+      if (!p || !h) return;
+      const avs = p.querySelectorAll(".av");
+      h.setAttribute("d", curva(punto(avs[0], p, "der"), punto(avs[1], p, "izq"), 40));
+      trazar(h, 600);
+    }, 360);
     return () => {
+      clearTimeout(t);
       document.removeEventListener("keydown", tecla);
       fuera.forEach(el => { el.inert = false; });
       previo?.focus?.();
@@ -36,27 +48,27 @@ export function MatchModal({me, o, r, onCerrar, onSeguir}: Props) {
   if (tipo === "nombre" || tipo === "yoanon") texto = (r.ia ? "La IA eligió a " : "La app eligió a ") + nombre(o) + " como tu mejor match. " + porque;
   else if (tipo === "anon") texto = "Tu mejor match todavía no muestra su nombre, pero puede ver tu contacto y escribirte. " + porque;
   else texto = "Ninguno de los dos muestra su nombre todavía. " + porque;
+  const sube = (ms: number) => ({className: "sube", style: {animationDelay: ms + "ms"}});
 
   return (
-    <div className="match" id="match" role="dialog" aria-modal="true" aria-labelledby="m-titulo">
-      <div className={"match-in " + tipo}>
-        <div className={"m-sello " + (tipo === "yoanon" ? "amarillo" : "oscuro")} id="m-sello" hidden={tipo === "nombre"}>{SELLOS[tipo]}</div>
-        <div className="match-avs" id="m-avs">
-          {yoA
-            ? <span className="av anon izq" aria-hidden="true">Tú</span>
-            : <span className="av izq" style={{"--c": "#7B61FF"} as CSSProperties} aria-hidden="true">Tú</span>}
-          <Avatar p={o} extra="der"/>
+    <div className="modal" id="match" role="dialog" aria-modal="true" aria-labelledby="m-titulo">
+      <div className="modal-in">
+        {tipo !== "nombre" && <div className="m-sello">{SELLOS[tipo]}</div>}
+        <div className="pareja" ref={pareja}>
+          <svg className="hilos" aria-hidden="true"><path className="hilo" ref={hilo} style={{strokeDashoffset: 9999}}/></svg>
+          <span className={"av tu" + (yoA ? " anon" : "")} aria-hidden="true">Tú</span>
+          <Avatar p={o}/>
         </div>
-        <div className="m-chips"><span className="m-pct" id="m-pct">{r.pct}% compatible</span><span className="ia-chip" id="m-ia" hidden={!r.ia}>Elegido con IA</span></div>
-        <h2 id="m-titulo">{TITULOS[tipo]}</h2>
-        <p id="m-texto">{texto.trim()}</p>
-        {r.rompe && <p className="rompe m-rompe" id="m-rompe"><small>Para romper el hielo</small>“{sinComillas(r.rompe)}”</p>}
-        {!otroA && o.contact && <div className="match-contacto" id="m-contacto">Escríbele: <Contacto t={o.contact}/></div>}
-        <div className="m-clave" id="m-clave" hidden={!otroA}><small>Clave para encontrarse en el evento</small><b id="m-clave-txt">{claveMatch(me.id, o.id)}</b></div>
-        <div className="m-nota" id="m-nota" hidden={!yoA}>{otroA ? "Si te revelas, le llegará tu nombre y tu contacto." : nombre(o) + " no puede escribirte mientras sigas en anónimo."}</div>
-        <div className="acciones">
-          <button className="boton fuerte" type="button" id="m-seguir" ref={seguirRef} onClick={onSeguir}>Ver todos mis matches</button>
-          <a className="boton" href="#perfil" id="m-revelar" hidden={!yoA} onClick={onCerrar}>Mostrar mi nombre</a>
+        <h2 id="m-titulo" {...sube(350)}>{TITULOS[tipo]}</h2>
+        <div {...sube(450)}><span className="pct">{r.pct}% compatible{r.ia && <span className="ia-chip">IA</span>}</span></div>
+        <p {...sube(520)}>{texto.trim()}</p>
+        {r.rompe && <p className="rompe sube" style={{animationDelay: "560ms", textAlign: "left"}}><small>Para romper el hielo</small>“{sinComillas(r.rompe)}”</p>}
+        {!otroA && o.contact && <div className="contacto sube" style={{animationDelay: "600ms"}}>Escríbele: <Contacto t={o.contact}/></div>}
+        {otroA && <div className="m-clave sube" style={{animationDelay: "600ms"}}><small>Clave para encontrarse en el evento</small><b>{claveMatch(me.id, o.id)}</b></div>}
+        {yoA && <div className="m-nota sube" style={{animationDelay: "640ms"}}>{otroA ? "Si te revelas, le llegará tu nombre y tu contacto." : nombre(o) + " no puede escribirte mientras sigas en anónimo."}</div>}
+        <div className="acciones sube" style={{animationDelay: "680ms"}}>
+          <button className="boton fuerte" type="button" ref={seguirRef} onClick={onSeguir}>Ver mis matches</button>
+          {yoA && <a className="boton" href="#perfil" onClick={onCerrar}>Mostrar mi nombre</a>}
         </div>
       </div>
     </div>

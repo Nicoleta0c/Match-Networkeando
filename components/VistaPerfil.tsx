@@ -62,23 +62,27 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   };
 
   return (
-    <section data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
-      <h2 className="titulo chico" id="t-perfil">Mi perfil</h2>
+    <section className="cont vista" data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
+      <h2 className="titulo" id="t-perfil">Mi perfil</h2>
+      <p className="intro">Dos cosas: lo que quieres hacer y lo que mejor haces. El hilo hace el resto.</p>
       <Aviso>{aviso}</Aviso>
-      <form className="form-perfil" id="form" noValidate onSubmit={enviar} onInput={tocar}>
+      <form className="form" id="form" noValidate onSubmit={enviar} onInput={tocar}>
         <div className="bloques">
-          <div className="bloque-f idea">
+          <div className="bloque idea">
             <h3>Mi idea</h3>
-            <label className="campo" htmlFor="f-idea">¿Qué quieres hacer realidad?</label>
-            <textarea id="f-idea" maxLength={LIMITES.idea} placeholder="Un club de lectura en los parques de la ciudad" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
+            <label htmlFor="f-idea">¿Qué quieres hacer realidad?</label>
+            <textarea id="f-idea" maxLength={LIMITES.idea} placeholder="Dar una charla gratis sobre finanzas para jóvenes" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
+            <span className="cuenta" aria-hidden="true">{idea.length}/{LIMITES.idea}</span>
           </div>
-          <div className="bloque-f poder">
+          <span className="union" aria-hidden="true"></span>
+          <div className="bloque poder">
             <h3>Mi superpoder</h3>
-            <label className="campo" htmlFor="f-poder">¿Qué es lo que mejor haces?</label>
-            <textarea id="f-poder" ref={poderRef} aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : undefined} maxLength={LIMITES.power} placeholder="Organizo eventos y la gente sí llega" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
+            <label htmlFor="f-poder">¿Qué es lo que mejor haces?</label>
+            <textarea id="f-poder" ref={poderRef} aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : undefined} maxLength={LIMITES.power} placeholder="Coordinador de voluntariados" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
+            <span className="cuenta" aria-hidden="true">{poder.length}/{LIMITES.power}</span>
           </div>
         </div>
-        <div className="fila-acciones">
+        <div className="fila">
           <div className="segmento" role="group" aria-label="Cómo quieres aparecer">
             <button type="button" aria-pressed={anon} onClick={() => { tocar(); setAnon(true); }}>Anónimo</button>
             <button type="button" aria-pressed={!anon} onClick={() => { tocar(); setAnon(false); }}>Con mi nombre</button>

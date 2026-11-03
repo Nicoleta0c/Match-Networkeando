@@ -7,20 +7,31 @@ type Props = {
   onDemoComo: (anon: boolean) => void; onSalirDemo: () => void;
 };
 
+/* Logo: dos personas unidas por el hilo dorado. */
+export function Logo() {
+  return (
+    <svg viewBox="0 0 34 20" aria-hidden="true">
+      <circle cx="5" cy="10" r="4.5" fill="var(--a)"/><circle cx="29" cy="10" r="4.5" fill="var(--t)"/>
+      <path d="M9 10 C14 2, 20 18, 25 10" stroke="var(--h)" strokeWidth="3" fill="none" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 export function Barra({vista, burbuja, demo, demoAnon, onDemoComo, onSalirDemo}: Props) {
   const actual = (v: Vista) => vista === v ? "page" as const : undefined;
   return (
     <header className="barra">
-      <div className="barra-in">
-        <a className="marca" href="#inicio" aria-label="Networkeando RD, inicio">Networkeando RD</a>
+      <div className="cont barra-in">
+        <a className="logo" href="#inicio" aria-label="Networkeando RD, inicio"><Logo/>Networkeando RD</a>
         <nav className="nav" aria-label="Secciones">
-          <a href="#inicio" aria-current={actual("inicio")}><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a>
-          <a href="#perfil" aria-current={actual("perfil")}><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>Mi perfil</a>
-          <a href="#clics" aria-current={actual("clics")}><svg className="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-si"/></svg>Mis matches<span className="burbuja" id="burbuja" hidden={!burbuja}>{burbuja || ""}</span></a>
+          <a href="#inicio" aria-current={actual("inicio")}>Inicio</a>
+          <a href="#perfil" aria-current={actual("perfil")}>Mi perfil</a>
+          <a href="#clics" aria-current={actual("clics")}>Mis matches<span className="burbuja" id="burbuja" hidden={!burbuja}>{burbuja || ""}</span></a>
+          <a className="opc" href="#proyectar">Proyectar</a>
         </nav>
       </div>
       <div className="demo-barra" id="demo-barra" hidden={!demo}>
-        <div className="demo-barra-in">
+        <div className="cont demo-barra-in">
           <span><span className="d-largo">Estás en la demo con perfiles de ejemplo. Nada de esto se guarda.</span><span className="d-corto">Demo: nada de esto se guarda</span></span>
           <div className="demo-como">
             <span>Probar como:</span>
