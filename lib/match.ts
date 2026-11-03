@@ -20,6 +20,22 @@ export const CLAVES: Record<number, string[]> = {
 export const norm = (t: string) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const CLAVES_RE = Object.entries(CLAVES).map(([v, arr]) => [+v, new RegExp("(^|[^a-z0-9])(" + arr.join("|") + ")")] as const);
 export function inferir(t: string) { const n = norm(t); return CLAVES_RE.filter(([, re]) => re.test(n)).map(([v]) => v); }
+/* Qué suele necesitar cada tipo de idea, además de su tema.
+   Ej.: una charla necesita quien organice y consiga voluntarios, quien la difunda y quien diseñe. */
+const NECESIDADES: [RegExp, number[]][] = [
+  [/charla|conferencia|ponencia|taller|evento|feria|festival|jornada|encuentro|concierto|torneo|competencia|hackat|congreso/, [6, 4, 2]],
+  [/(^|[^a-z])(app|aplicacion|plataforma|pagina web|sitio web|sistema|software|bot)/, [1, 2]],
+  [/podcast|video|canal|documental|revista|blog|contenido|libro|cuento|programa de radio/, [3, 2, 4]],
+  [/negocio|empresa|emprend|tienda|marca|vender|producto|cafeteria|restaurante|colmado|feria/, [5, 4, 12]],
+  [/comunidad|barrio|voluntari|fundacion|campana|donacion|social|reciclaje/, [6, 9, 4]],
+  [/salud|medic|bienestar|deporte|nutric|mental|terapia/, [8, 6]],
+  [/clase|tutoria|curso|escuela|liceo|estudiante|ensen|educa|aprend/, [7, 6]],
+  [/investig|estudio|encuesta|datos|mapa/, [11, 1]],
+  [/kit|prototipo|construir|fabricar|energia|solar|robot|maquina/, [10, 5]],
+  [/(^|[^a-z])(ley|legal|registro|tramite|permiso)/, [12]]
+];
+function necesita(idea: string) { const n = norm(idea); return NECESIDADES.filter(([re]) => re.test(n)).flatMap(([, v]) => v); }
+
 export const COLORES = ["#5B2EFF","#F0306F","#00A884","#FF8A00","#1E88E5","#B5179E","#2B9348","#E85D04"];
 
 export type Perfil = {
@@ -37,9 +53,13 @@ export function limpiar(id: string, d: Record<string, unknown>): Perfil {
   const str = (s: unknown, n: number) => typeof s === "string" ? s.slice(0, n).trim() : "";
   const idea = str(d.idea, LIMITES.idea), power = str(d.power, LIMITES.power);
   const elegidas = idea ? ints(d.needs, 3) : [];
+  const powers = inferir(power);
+  // Lo que tu idea necesita y tú no sabes hacer: lo que ya cubres con tu superpoder no cuenta.
+  const base = elegidas.length ? elegidas : (idea ? [...new Set([...necesita(idea), ...inferir(idea)])] : []);
+  const faltan = base.filter(x => !powers.includes(x));
   return {
-    id, idea, tagsNeeds: elegidas, needs: elegidas.length ? elegidas : (idea ? inferir(idea).slice(0, 3) : []),
-    power, powers: inferir(power),
+    id, idea, tagsNeeds: elegidas, needs: (faltan.length ? faltan : base).slice(0, 4),
+    power, powers,
     anon: d.anon !== false, alias: str(d.alias, LIMITES.alias), que: str(d.que, LIMITES.que), contact: str(d.contact, LIMITES.contact),
     likes: Array.isArray(d.likes) ? d.likes.filter((x): x is string => typeof x === "string").slice(-500) : [],
     color: typeof d.color === "string" && /^#[0-9a-f]{6}$/i.test(d.color) ? d.color : "",
@@ -60,6 +80,7 @@ function comunes(a: Set<string>, b: Set<string>) { const out: string[] = []; a.f
 function listaAreas(arr: number[]) { const n = arr.map(v => area(v).toLowerCase()); return n.length > 1 ? n.slice(0, -1).join(", ") + " y " + n[n.length - 1] : (n[0] || ""); }
 
 export const UMBRAL = 40;
+const PESO_NECESIDAD = [46, 32, 22, 14];
 export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; ia?: boolean };
 export type Item = { o: Perfil; r: Analisis };
 
@@ -67,25 +88,37 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   if (!me || !o || me.id === o.id) return {pct: 0, a: [], b: [], razones: []};
   const a = me.needs.filter(x => o.powers.includes(x));
   const b = o.needs.filter(x => me.powers.includes(x));
-  const kw = [...new Set(comunes(pal(me, "idea"), pal(o, "power")).concat(comunes(pal(o, "idea"), pal(me, "power"))))];
+  // kwA: su superpoder habla de lo mismo que tu idea. kwB: tu superpoder, de lo mismo que su idea.
+  const kwA = comunes(pal(me, "idea"), pal(o, "power")), kwB = comunes(pal(o, "idea"), pal(me, "power"));
+  const kw = [...new Set(kwA.concat(kwB))];
   const distinto = o.powers.filter(x => !me.powers.includes(x));
+  const mismoPoder = o.powers.length > 0 && !distinto.length;
+  // Lo más importante es que su superpoder le sirva a TU idea; que tú le sirvas a la suya suma menos.
   let pts = 0;
-  if (a.length) pts += 40 + 6 * (a.length - 1);
-  if (b.length) pts += 34 + 5 * (b.length - 1);
-  if (a.length && b.length) pts += 12;
-  pts += Math.min(kw.length, 3) * 6;
+  // Las necesidades de tu idea van en orden de importancia: cubrir la primera vale más.
+  a.forEach(x => { pts += PESO_NECESIDAD[me.needs.indexOf(x)] ?? 10; });
+  if (b.length) pts += 10 + 3 * (b.length - 1);
+  if (a.length && b.length) pts += 6;
+  pts += Math.min(kwA.length, 3) * 8 + Math.min(kwB.length, 2) * 3;
   if (me.idea && distinto.length) pts += 8;
+  if (mismoPoder) pts -= 15;
   if (!me.idea && !o.idea) pts -= 10;
   pts += hash([me.id, o.id].sort().join("|")) % 6;
+  // Si su superpoder no le aporta nada a tu idea, no puede ser un gran match.
+  if (me.idea && !a.length && !kwA.length) pts = Math.min(pts, UMBRAL - 2);
   const pct = Math.max(8, Math.min(98, Math.round(pts)));
   const razones: string[] = [];
   if (a.length) razones.push("Su superpoder en " + listaAreas(a) + " es justo lo que le falta a tu idea.");
   if (b.length) razones.push("Tu superpoder en " + listaAreas(b) + " le sirve a su idea.");
   if (kw.length) razones.push("Hablan de lo mismo: " + kw.slice(0, 2).join(" y ") + ".");
   if (!razones.length && me.idea && distinto.length) razones.push("Sabe de " + listaAreas(distinto.slice(0, 1)) + ", algo que tú no cubres.");
+  if (mismoPoder && razones.length) razones.push("Ojo: los dos saben hacer lo mismo.");
   if (!razones.length) razones.push("Podrían complementarse si conversan.");
   return {pct, a, b, razones};
 }
+
+/* El match es "al revés" cuando tú le sirves a su idea pero su superpoder no le aporta a la tuya. */
+export const alReves = (me: Perfil, r: Analisis) => !!me.idea && r.a.length === 0 && r.b.length > 0;
 
 /* ---------- IA ---------- */
 export type ResIA = { clave: string; enviados: Set<string>; mapa: Map<string, {pct: number; razon: string; rompe: string}> };

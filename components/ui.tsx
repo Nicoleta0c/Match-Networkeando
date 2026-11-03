@@ -1,7 +1,7 @@
 "use client";
 /* Piezas pequeñas de la interfaz. Cada una reemplaza una función *HTML() del original. */
 import { useRef, type CSSProperties, type ReactNode } from "react";
-import { claveMatch, colorDe, esAnon, iniciales, nombre, sinComillas, type Item, type Perfil } from "@/lib/match";
+import { alReves, claveMatch, colorDe, esAnon, iniciales, nombre, sinComillas, type Analisis, type Item, type Perfil } from "@/lib/match";
 
 const varCSS = (vars: Record<string, string>) => vars as CSSProperties;
 
@@ -44,9 +44,9 @@ export function Contacto({t}: {t: string}) {
 }
 
 /* Tarjeta de un match: tu idea y su superpoder unidos por la cuerda dorada.
-   Si no tienes idea propia, se invierte: su idea y tu superpoder. */
-export function Carta({p, me, analisis, pie}: {p: Perfil; me: Perfil; analisis: {pct: number}; pie?: ReactNode}) {
-  const t = me.idea
+   Se invierte (su idea y tu superpoder) si no tienes idea propia o si eres tú quien le sirve a su idea. */
+export function Carta({p, me, analisis, pie}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode}) {
+  const t = me.idea && !alReves(me, analisis)
     ? {ideaLbl: "Tu idea", ideaTxt: me.idea, poderLbl: "Su superpoder", poderTxt: p.power}
     : {ideaLbl: "Su idea", ideaTxt: p.idea, poderLbl: "Tu superpoder", poderTxt: me.power};
   return (
@@ -74,7 +74,7 @@ export function Pie({me, x, conRazones}: {me: Perfil; x: Item; conRazones?: bool
   const o = x.o;
   return (
     <div className="pie">
-      {me.idea && o.idea && <p className="su-idea"><b>Su idea:</b> {o.idea}</p>}
+      {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>Su idea:</b> {o.idea}</p>}
       {conRazones && <>
         <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>
         {x.r.rompe && <p className="rompe-mini">Rompehielos: “{sinComillas(x.r.rompe)}”</p>}
