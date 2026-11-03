@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "evento": "prisma migrate deploy && next build && next start -H 0.0.0.0 -p 3000",
+    "ejemplos": "node scripts/ejemplos.mjs",
+    "ejemplos:rapido": "node scripts/ejemplos.mjs rapido",
+    "ejemplos:borrar": "node scripts/ejemplos.mjs borrar",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate"
   },
