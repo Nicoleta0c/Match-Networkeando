@@ -28,3 +28,25 @@ model Perfil {
 
   @@index([createdAt])
 }
+
+// Chat temporal entre matches: para ponerse de acuerdo y encontrarse en el evento.
+// Los mensajes se borran solos a las 12 horas.
+model Mensaje {
+  id     Int    @id @default(autoincrement())
+  de     String
+  para   String
+  texto  String
+  creado Float
+
+  @@index([de])
+  @@index([para])
+  @@index([creado])
+}
+
+// Si alguien te molesta, lo bloqueas: ya no puede escribirte ni ver tu chat.
+model Bloqueo {
+  de   String
+  para String
+
+  @@id([de, para])
+}
