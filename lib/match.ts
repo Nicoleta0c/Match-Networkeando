@@ -215,7 +215,4 @@ export function ordenarMatches(me: Perfil, perfiles: Iterable<Perfil>): Item[] {
     .sort((x, y) => (y.r.pct - x.r.pct) || (y.o.createdAt - x.o.createdAt));
 }
 
-/* ---------- clave para encontrarse ---------- */
-const CLAVES_ENC = ["MANGO","COCO","PALMA","CIBAO","CARIBE","BACHATA","MERENGUE","GUAYABA","CAFÉ","LAMBÍ","SOL","LUNA","YUCA","CACAO","GÜIRA","TAMBORA"];
-export function claveMatch(a: string, b: string) { const k = [a, b].sort().join("|"); const h = hash(k); return CLAVES_ENC[h % CLAVES_ENC.length] + "-" + (10 + (Math.floor(h / 7) % 90)); }
 export const sinComillas = (t: string) => t.replace(/^[“"]|[”"]$/g, "");

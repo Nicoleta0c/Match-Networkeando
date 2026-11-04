@@ -1,7 +1,7 @@
 "use client";
 /* Chat temporal con un match: para ponerse de acuerdo y encontrarse en el evento. */
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
-import { claveMatch, esAnon, nombre, type Perfil } from "@/lib/match";
+import { esAnon, nombre, type Perfil } from "@/lib/match";
 import { HORAS, MAX_TEXTO, RAPIDAS, type Mensaje } from "@/lib/chat";
 import { Avatar } from "./ui";
 
@@ -55,11 +55,6 @@ export function Chat({me, otroId, otro, mensajes, onEnviar, onBloquear, onCerrar
           </div>
           <button type="button" className="chat-x" onClick={onCerrar} aria-label="Cerrar chat">×</button>
         </header>
-
-        <p className="chat-clave">
-          Clave para encontrarse <span className="clave-chip">{claveMatch(me.id, otroId)}</span>
-          <small>Díganla al verse para saber que son ustedes.</small>
-        </p>
 
         <div className="chat-lista" ref={lista} aria-live="polite">
           {nada && <p className="chat-vacio">Escríbele para ponerse de acuerdo y encontrarse en el evento.</p>}
