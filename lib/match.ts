@@ -90,7 +90,6 @@ function palabras(t: string) { return new Set(norm(t).split(/[^a-z0-9ñ]+/).filt
 const PAL_CACHE = new Map<string, Set<string>>();
 function pal(p: Perfil, campo: "idea" | "power") { const k = p.id + "|" + campo + "|" + p[campo]; let w = PAL_CACHE.get(k); if (!w) { w = palabras(p[campo]); PAL_CACHE.set(k, w); } return w; }
 function comunes(a: Set<string>, b: Set<string>) { const out: string[] = []; a.forEach(w => { if (b.has(w)) out.push(w); }); return out; }
-function listaAreas(arr: number[]) { const n = arr.map(v => area(v).toLowerCase()); return n.length > 1 ? n.slice(0, -1).join(", ") + " y " + n[n.length - 1] : (n[0] || ""); }
 
 /* Qué puede hacer de verdad alguien de cada área por una idea, dicho como lo diría un joven.
    puede: "Ana puede ___ para tu idea". pedir: "¿Me ayudarías a ___?" */
@@ -118,8 +117,13 @@ const PRECISAS: [number, RegExp, {puede: string; pedir: string}][] = [
   [12, /registr|marca|negocio/, {puede: "ayudarte a registrar el nombre y sacar los permisos que hagan falta", pedir: "registrar el nombre y sacar los permisos"}]
 ];
 function accion(p: Perfil, v: number) { const n = norm(p.power); return PRECISAS.find(([a, re]) => a === v && re.test(n))?.[2] ?? ACCIONES[v]; }
-/* "armarte una página" -> "armarle una página": lo que TÚ haces por la otra persona. */
-const aEl = (t: string) => t.replace(/([a-zñ]+r)te(?![a-zñ])/g, "$1le");
+/* Lo que a una idea le falta, según el área que la otra persona cubre. */
+const FALTA: Record<number, string> = {
+  1: "alguien que arme la parte digital", 2: "alguien que la haga verse bien", 3: "alguien que la cuente y la presente",
+  4: "alguien que la mueva en redes", 5: "alguien que maneje el dinero", 6: "alguien que organice y coordine a la gente",
+  7: "alguien que la enseñe fácil", 8: "alguien que cuide la salud de quienes participen", 9: "alguien que conecte con la comunidad",
+  10: "alguien que construya lo que haga falta", 11: "alguien que investigue y saque datos", 12: "alguien que se encargue de los permisos"
+};
 /* "Un club de lectura en los parques" -> "un club de lectura en los parques" (sin punto final). */
 const enFrase = (t: string) => (t.charAt(0).toLowerCase() + t.slice(1)).replace(/[.\s]+$/, "");
 
@@ -154,15 +158,20 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   // Razones concretas: qué puede hacer esa persona por tu idea y qué puedes hacer tú por la suya.
   const quien = esAnon(o) ? "Esta persona" : o.alias.split(/\s+/)[0];
   const razones: string[] = [];
-  // Lo que más sabe hacer la persona va primero (su área principal).
+  // Las razones citan lo que cada uno escribió: su idea, su superpoder y lo que a tu idea le falta.
   const aT = [...a].sort((x, y) => o.powers.indexOf(x) - o.powers.indexOf(y));
-  if (aT.length) {
-    razones.push(`${quien} sabe de ${listaAreas(aT.slice(0, 1))}. Para tu idea, puede ${accion(o, aT[0]).puede}.`);
-    if (aT.length > 1) razones.push(`También puede ${accion(o, aT[1]).puede}.`);
+  const dijo = esAnon(o) ? "Esta persona dijo" : quien + " dijo";
+  if (aT.length && me.idea) {
+    const falta = aT.slice(0, 2).map(v => FALTA[v]);
+    razones.push(`Tu idea es ${enFrase(me.idea)}. Para lograrla te hace falta ${falta.join(" y ")}.`);
+    razones.push(`${dijo} que su superpoder es «${o.power}». Eso es justo lo que te falta.`);
+  } else if (kwA.length && me.idea) {
+    razones.push(`${dijo} que su superpoder es «${o.power}», y habla de lo mismo que tu idea: ${kwA.slice(0, 2).join(" y ")}.`);
   }
-  if (b.length) razones.push(`Y tú también le sirves: ${o.idea ? "para " + enFrase(o.idea) + ", " : ""}puedes ${aEl(accion(me, b[0]).puede)}.`);
-  if (kwA.length) razones.push(`Los dos hablan de lo mismo: ${kwA.slice(0, 2).join(" y ")}.`);
-  if (!razones.length && me.idea && distinto.length) razones.push(`${quien} sabe de ${listaAreas(distinto.slice(0, 1))}, algo que tú no cubres.`);
+  if (b.length) razones.push(o.idea
+    ? `Y tú también le sirves: su idea es ${enFrase(o.idea)}, y tu superpoder («${me.power}») le ayuda con eso.`
+    : `Y tú también le sirves: tu superpoder («${me.power}») le puede ayudar.`);
+  if (!razones.length && me.idea && distinto.length) razones.push(`${dijo} que su superpoder es «${o.power}», algo que tú no cubres.`);
   if (mismoPoder && razones.length) razones.push("Ojo: los dos saben hacer lo mismo, así que entre ustedes no se completan tanto.");
   if (!razones.length) razones.push("Podrían complementarse si conversan.");
   // Una primera pregunta para empezar a hablar.

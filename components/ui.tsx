@@ -43,7 +43,7 @@ export function Contacto({t}: {t: string}) {
   return <>{t}</>;
 }
 
-/* Tarjeta de un match: tu idea y su superpoder unidos por la cuerda dorada.
+/* Tarjeta de un match: tu idea y su superpoder.
    Se invierte (su idea y tu superpoder) si no tienes idea propia o si eres tú quien le sirve a su idea. */
 export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode; sinCabeza?: boolean}) {
   // Cada parte dice de quién es: "Idea de Luis", "Superpoder de Camila".
@@ -63,7 +63,6 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
       </div>}
       <div className="par">
         <div className="lado"><small>{t.ideaLbl}</small>{t.ideaTxt ? <p>{t.ideaTxt}</p> : <p className="vacio">Todavía sin idea propia. Quiere sumarse a la de alguien.</p>}</div>
-        <span className="cuerda" aria-hidden="true"></span>
         <div className="lado poder"><small>{t.poderLbl}</small><p>{t.poderTxt}</p></div>
       </div>
       {pie}

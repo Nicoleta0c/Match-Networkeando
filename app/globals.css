@@ -192,14 +192,13 @@ main{position:relative;z-index:1}
 .cabeza b{display:block;font-size:19px;line-height:1.2}
 .cabeza span.sub{font-size:14px;color:var(--m)}
 .cabeza .pct{margin-left:auto;background:var(--h);color:var(--on-h);font-weight:900;font-size:14px;padding:5px 11px;border-radius:999px;font-variant-numeric:tabular-nums;flex:none}
-.par{position:relative;padding:20px 22px 22px;display:grid;gap:30px;flex:1}
-.par .lado{background:var(--bg);border:1px solid var(--b);border-radius:18px;padding:14px 16px}
+.par{position:relative;padding:20px 22px 22px;display:grid;gap:10px;flex:1;align-content:center}
+.par .lado{background:var(--bg);border:1px solid var(--b);border-left:3px solid var(--a);border-radius:18px;padding:14px 16px}
+.par .lado.poder{border-left-color:var(--h)}
 .par .lado small{display:block;font-size:13px;font-weight:800;color:var(--m)}
 .par .lado p{font-weight:800;font-size:20px;line-height:1.2;margin-top:2px;overflow-wrap:anywhere}
 .par .lado p.vacio{font-weight:600;font-size:16px;color:var(--m)}
 .par .lado.poder p{font-weight:600;font-size:17px}
-.par .cuerda{position:absolute;left:50%;top:50%;width:4px;height:54px;margin:-27px 0 0 -2px;background:var(--h);border-radius:4px;box-shadow:0 0 10px var(--hglow);transform-origin:top;animation:linea .7s var(--ease) .3s both}
-.par .cuerda::after{content:"+";position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;box-shadow:0 0 0 5px var(--s)}
 .pie{border-top:1px solid var(--b);padding:16px 22px;font-weight:700;font-size:16px}
 .pie a{color:var(--h)}
 .pie .su-idea{margin-bottom:8px;font-weight:600;font-size:14px;color:var(--m)}
