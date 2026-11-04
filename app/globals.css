@@ -165,10 +165,20 @@ main{position:relative;z-index:1}
 .m-cabeza{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin-top:16px}
 .m-cabeza .intro{margin:0}
 .mejor{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:28px;margin-top:40px;align-items:stretch}
-/* La tarjeta del mejor match mide lo que su contenido, sin estirarse al alto del panel de al lado. */
-.mejor>.carta{align-self:start}
-.mejor .par{grid-template-rows:auto auto}
-.mejor .par .lado{justify-content:flex-start}
+/* Mejor match: la tarjeta y "Por qué encajan" a la misma altura (como en el prototipo).
+   En cada bloque la etiqueta y el texto van juntos, centrados, sin hueco entre ellos. */
+.mejor .par .lado{justify-content:center}
+@media (min-width:901px){
+  /* Por qué encajan más compacto: el anillo al lado del título. */
+  .mejor .porque{display:grid;grid-template-columns:auto 1fr;align-content:start;column-gap:20px;row-gap:16px}
+  .mejor .porque>*{grid-column:1/-1}
+  .mejor .porque .anillo{grid-column:1;width:96px;height:96px}
+  .mejor .porque .anillo svg{width:96px;height:96px}
+  .mejor .porque .anillo b{font-size:26px}
+  .mejor .porque h3{grid-column:2;align-self:center;font-size:28px}
+  .mejor .porque ul{font-size:16px}
+  .mejor .porque-accion{margin-top:0}
+}
 .carta{background:var(--s);border:1px solid var(--b);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;animation:sube .5s var(--ease) both}
 .cabeza{display:flex;align-items:center;gap:14px;padding:22px 22px 0}
 .cabeza b{display:block;font-size:19px;line-height:1.2}
@@ -328,7 +338,7 @@ body[data-view="proyectar"] .paletas{display:none}
 .conv-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--h);color:var(--on-h);font-size:12px;font-weight:900}
 .boton.fuerte .conv-n{background:var(--on-h);color:var(--h)}
 .convs{margin-top:36px}
-.convs ul{list-style:none;display:grid;gap:10px;margin-top:14px;max-width:640px}
+.convs ul{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:14px;max-width:640px}
 .convs button{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 16px;border-radius:20px;border:1px solid var(--b);background:var(--s);color:var(--t);font:inherit;cursor:pointer;transition:border-color .2s}
 .convs button.nuevo{border-color:var(--a)}
 .convs .av{width:42px;height:42px;font-size:15px}
