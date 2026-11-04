@@ -1,8 +1,9 @@
 "use client";
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
-import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, limpiar, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
+import { UMBRAL, aplicarIA, analizar, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
+import type { Mensaje } from "@/lib/chat";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
 import { Barra } from "./Barra";
@@ -12,6 +13,7 @@ import { VistaClics } from "./VistaClics";
 import { VistaProyectar } from "./VistaProyectar";
 import { Paletas } from "./Paletas";
 import type { Busqueda } from "./Buscando";
+import { Chat } from "./Chat";
 
 /* Enlace público de esta página: el QR apunta aquí + #perfil.
    Por defecto es la dirección donde está corriendo la app. Al publicarla en internet
@@ -45,7 +47,11 @@ type Estado = {
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
+  chat: Charla; chatDemo: Charla; chatCon: string | null; leido: Record<string, number> | null;
 };
+type Charla = {mensajes: Mensaje[]; bloqueados: Set<string>};
+const charlaVacia = (): Charla => ({mensajes: [], bloqueados: new Set()});
+export type Conv = {id: string; ultimo: Mensaje; sinLeer: number};
 const estadoInicial = (): Estado => ({
   vista: "inicio",
   demo: false, uid: null, realUid: null,
@@ -56,7 +62,8 @@ const estadoInicial = (): Estado => ({
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
   toast: {texto: "", ver: false},
-  shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
+  shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, ""),
+  chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, leido: null
 });
 
 export default function App() {
@@ -68,7 +75,8 @@ export default function App() {
   const timers = useRef({busqueda: [] as ReturnType<typeof setTimeout>[], toast: undefined as ReturnType<typeof setTimeout> | undefined});
 
   const yo = () => S.uid ? S.perfiles.get(S.uid) ?? null : null;
-  const misMatches = (me: Perfil) => aplicarIA(me, ordenarMatches(me, S.perfiles.values()), S.iaRes);
+  // Las personas que bloqueaste ya no aparecen entre tus matches.
+  const misMatches = (me: Perfil) => aplicarIA(me, ordenarMatches(me, [...S.perfiles.values()].filter(p => !charla().bloqueados.has(p.id))), S.iaRes);
 
   /* ---------- toast ---------- */
   function toast(t: string) {
@@ -93,6 +101,85 @@ export default function App() {
     try { localStorage.setItem("clic-notificados", JSON.stringify([...vistos].slice(-500))); } catch {}
   }
 
+  /* ---------- chat temporal con los matches ---------- */
+  const charla = () => S.demo ? S.chatDemo : S.chat;
+  function cargarLeido() {
+    if (S.leido) return S.leido;
+    let o: unknown = {};
+    try { o = JSON.parse(localStorage.getItem("chat-leido") || "{}"); } catch {}
+    S.leido = o && typeof o === "object" && !Array.isArray(o) ? o as Record<string, number> : {};
+    return S.leido;
+  }
+  /** Marca como leído lo que te escribió esta persona. */
+  function marcarLeido(id: string) {
+    const l = cargarLeido();
+    const ult = charla().mensajes.filter(m => m.de === id).at(-1);
+    if (!ult || (l[id] ?? 0) >= ult.creado) return;
+    l[id] = ult.creado;
+    if (!S.demo) try { localStorage.setItem("chat-leido", JSON.stringify(l)); } catch {}
+  }
+  /** Una conversación por persona, la más reciente primero. */
+  function conversaciones(): Conv[] {
+    const yoId = S.uid, l = cargarLeido(), c = charla(), m = new Map<string, Conv>();
+    for (const x of c.mensajes) {
+      const otro = x.de === yoId ? x.para : x.de;
+      if (c.bloqueados.has(otro)) continue;
+      const v = m.get(otro) ?? {id: otro, ultimo: x, sinLeer: 0};
+      v.ultimo = x;
+      if (x.de === otro && x.creado > (l[otro] ?? 0)) v.sinLeer++;
+      m.set(otro, v);
+    }
+    return [...m.values()].sort((a, b) => b.ultimo.creado - a.ultimo.creado);
+  }
+  function abrirChat(id: string) { S.chatCon = id; marcarLeido(id); forzar(); }
+  const cerrarChat = useCallback(() => { S.chatCon = null; forzar(); }, [S]);
+  async function enviarMensaje(texto: string) {
+    const para = S.chatCon;
+    if (!para || !S.uid) return false;
+    if (S.demo) {
+      const ahora = Date.now();
+      const contesto = S.chatDemo.mensajes.some(m => m.de === para);
+      S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -ahora, de: S.uid, para, texto, creado: ahora}]};
+      forzar();
+      // En la demo, la otra persona contesta sola la primera vez.
+      if (!contesto) setTimeout(() => {
+        if (!S.demo || !S.uid) return;
+        const t = Date.now();
+        S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -t, de: para, para: S.uid, texto: "¡Hola! Sí, me encantaría. Te busco con la clave 👋", creado: t}]};
+        if (S.chatCon === para) marcarLeido(para);
+        forzar();
+      }, 1800);
+      return true;
+    }
+    try {
+      const r = await fetch("/api/chat", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({para, texto})});
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || "No se pudo enviar."); return false; }
+      S.chat = {...S.chat, mensajes: [...S.chat.mensajes, d as Mensaje]};
+      forzar();
+      return true;
+    } catch {
+      toast("No se pudo enviar. Revisa tu conexión.");
+      return false;
+    }
+  }
+  async function bloquearChat() {
+    const id = S.chatCon; if (!id) return;
+    const p = S.perfiles.get(id);
+    if (!confirm(`¿Bloquear a ${p ? nombre(p) : "esta persona"}? Ya no podrá escribirte y se borra esta conversación.`)) return;
+    if (!S.demo) {
+      try {
+        const r = await fetch("/api/chat/bloquear", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id})});
+        if (!r.ok) throw new Error();
+      } catch { toast("No se pudo bloquear. Inténtalo otra vez."); return; }
+    }
+    const c = charla();
+    const nueva = {mensajes: c.mensajes.filter(m => m.de !== id && m.para !== id), bloqueados: new Set(c.bloqueados).add(id)};
+    if (S.demo) S.chatDemo = nueva; else S.chat = nueva;
+    S.chatCon = null; forzar();
+    toast("Persona bloqueada");
+  }
+
   /* ---------- rutas ---------- */
   function irA(v: Vista) { if (location.hash !== "#" + v) location.hash = v; else route(); }
   function route() {
@@ -101,6 +188,7 @@ export default function App() {
     document.body.dataset.view = v;
     if (v === "perfil") { formTocado.current = false; S.relleno++; }
     if (v !== "clics") cancelarBusqueda();
+    S.chatCon = null;
     forzar();
     if (v === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
   }
@@ -166,7 +254,7 @@ export default function App() {
   function entrarDemo() {
     if (S.demo) return;
     S.demo = true; S.realUid = S.uid; S.realNotif = S.notificados;
-    S.uid = "demo-yo"; S.notificados = new Set();
+    S.uid = "demo-yo"; S.notificados = new Set(); S.chatDemo = charlaVacia(); S.chatCon = null;
     const m = new Map<string, Perfil>();
     const real = S.realUid && S.real ? S.real.get(S.realUid) : null;
     const base = real ? {idea: real.idea, needs: real.tagsNeeds, power: real.power, anon: real.anon, alias: real.alias, que: real.que, contact: real.contact} : DEMO_YO;
@@ -179,7 +267,7 @@ export default function App() {
   function salirDemo() {
     if (!S.demo) return;
     cancelarBusqueda();
-    S.demo = false; S.uid = S.realUid; S.notificados = S.realNotif || null;
+    S.demo = false; S.uid = S.realUid; S.notificados = S.realNotif || null; S.chatCon = null;
     S.perfiles = S.real || new Map(); S.loaded = S.realLoaded;
     forzar();
   }
@@ -307,8 +395,33 @@ export default function App() {
         if (!parado) siguiente = setTimeout(cargar, CADA_MS);
       }
     }
+    // El chat se revisa aparte: más seguido mientras tienes una conversación abierta.
+    let firmaChat = "", sigChat: ReturnType<typeof setTimeout> | undefined;
+    async function cargarChat() {
+      try {
+        if (!S.demo && !document.hidden && S.uid) {
+          const r = await fetch("/api/chat", {cache: "no-cache"});
+          const txt = r.ok ? await r.text() : "";
+          if (txt && !parado && txt !== firmaChat) {
+            const primeraVez = !firmaChat;
+            firmaChat = txt;
+            const d: {mensajes: Mensaje[]; bloqueados: string[]} = JSON.parse(txt);
+            const antes = new Set(S.chat.mensajes.map(m => m.id));
+            S.chat = {mensajes: d.mensajes, bloqueados: new Set(d.bloqueados)};
+            if (S.chatCon) marcarLeido(S.chatCon);
+            // Aviso de mensajes nuevos que llegan mientras no tienes ese chat abierto.
+            const nuevo = primeraVez ? null : d.mensajes.findLast(m => !antes.has(m.id) && m.de !== S.uid && m.de !== S.chatCon);
+            if (nuevo) { const p = S.perfiles.get(nuevo.de); toast("Nuevo mensaje de " + (p ? nombre(p) : "un match")); }
+            forzar();
+          }
+        }
+      } catch {} finally {
+        if (!parado) sigChat = setTimeout(cargarChat, S.chatCon ? 2500 : CADA_MS);
+      }
+    }
     cargar();
-    return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); };
+    cargarChat();
+    return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); clearTimeout(sigChat); };
   }
 
   // Cada vista empieza arriba. Va después de pintar la vista nueva; si no, el navegador
@@ -344,10 +457,12 @@ export default function App() {
   const conIA = !!(me && S.iaRes && S.iaRes.clave === me.id + "|" + me.idea + "|" + me.power);
   function puede() { return S.demo || (S.avail === "ok" && !!S.uid); }
 
-  let burbuja = 0;
+  if (S.chatCon) marcarLeido(S.chatCon);
+  const convs = me ? conversaciones() : [];
+  let burbuja = convs.reduce((n, c) => n + c.sinLeer, 0);
   if (me && S.vista !== "clics") {
     const vistos = cargarNotificados();
-    burbuja = todos.filter(x => x.r.pct >= UMBRAL && !vistos.has(x.o.id)).length;
+    burbuja += todos.filter(x => x.r.pct >= UMBRAL && !vistos.has(x.o.id)).length;
   }
 
   // En Mis matches, los matches que ya viste dejan de contar en la burbuja.
@@ -384,9 +499,13 @@ export default function App() {
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
-        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
+        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}
+          convs={convs} perfiles={S.perfiles} onChat={abrirChat}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
       </main>
+      {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}
+        mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}
+        onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>

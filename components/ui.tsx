@@ -80,7 +80,7 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
 }
 
 /* Pie de la tarjeta: su idea, razones y cómo contactarle. */
-export function Pie({me, x, conRazones}: {me: Perfil; x: Item; conRazones?: boolean}) {
+export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazones?: boolean; accion?: ReactNode}) {
   const o = x.o;
   return (
     <div className="pie">
@@ -92,12 +92,13 @@ export function Pie({me, x, conRazones}: {me: Perfil; x: Item; conRazones?: bool
       {(!esAnon(o) && o.contact)
         ? <>Escríbele: <Contacto t={o.contact}/></>
         : <>Clave para encontrarse:<span className="clave-chip">{claveMatch(me.id, o.id)}</span></>}
+      {accion && <div className="pie-accion">{accion}</div>}
     </div>
   );
 }
 
 /* Panel "Por qué encajan" con el anillo que se llena hasta el porcentaje. */
-export function Porque({x}: {x: Item}) {
+export function Porque({x, accion}: {x: Item; accion?: ReactNode}) {
   const fin = (364.4 * (1 - x.r.pct / 100)).toFixed(1);
   return (
     <div className="porque">
@@ -110,6 +111,7 @@ export function Porque({x}: {x: Item}) {
       </div>
       <h3>Por qué encajan {x.r.ia && <span className="ia-chip">Según la IA</span>}</h3>
       <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      {accion && <div className="porque-accion">{accion}<small>Pónganse de acuerdo y encuéntrense en el evento.</small></div>}
     </div>
   );
 }
