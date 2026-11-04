@@ -45,7 +45,7 @@ export function Contacto({t}: {t: string}) {
 
 /* Tarjeta de un match: tu idea y su superpoder unidos por la cuerda dorada.
    Se invierte (su idea y tu superpoder) si no tienes idea propia o si eres tú quien le sirve a su idea. */
-export function Carta({p, me, analisis, pie}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode}) {
+export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode; sinCabeza?: boolean}) {
   // Cada parte dice de quién es: "Idea de Luis", "Superpoder de Camila".
   const de = (x: Perfil, campo: string, tuyo: string) => esAnon(x) ? (x === me ? tuyo : campo + " de esta persona") : campo + " de " + x.alias.split(/\s+/)[0];
   const t = me.idea && !alReves(me, analisis)
@@ -53,14 +53,14 @@ export function Carta({p, me, analisis, pie}: {p: Perfil; me: Perfil; analisis: 
     : {ideaLbl: de(p, "Idea", ""), ideaTxt: p.idea, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
   return (
     <article className="carta" data-id={p.id}>
-      <div className="cabeza">
+      {!sinCabeza && <div className="cabeza">
         <Avatar p={p}/>
         <div>
           <b>{nombre(p)}</b>
           {p.que ? <span className="sub">{p.que}</span> : null}
         </div>
         <span className="pct">{analisis.pct}%</span>
-      </div>
+      </div>}
       <div className="par">
         <div className="lado"><small>{t.ideaLbl}</small>{t.ideaTxt ? <p>{t.ideaTxt}</p> : <p className="vacio">Todavía sin idea propia. Quiere sumarse a la de alguien.</p>}</div>
         <span className="cuerda" aria-hidden="true"></span>
