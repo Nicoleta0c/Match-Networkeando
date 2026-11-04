@@ -165,6 +165,10 @@ main{position:relative;z-index:1}
 .m-cabeza{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin-top:16px}
 .m-cabeza .intro{margin:0}
 .mejor{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:28px;margin-top:40px;align-items:stretch}
+/* La tarjeta del mejor match mide lo que su contenido, sin estirarse al alto del panel de al lado. */
+.mejor>.carta{align-self:start}
+.mejor .par{grid-template-rows:auto auto}
+.mejor .par .lado{justify-content:flex-start}
 .carta{background:var(--s);border:1px solid var(--b);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;animation:sube .5s var(--ease) both}
 .cabeza{display:flex;align-items:center;gap:14px;padding:22px 22px 0}
 .cabeza b{display:block;font-size:19px;line-height:1.2}
