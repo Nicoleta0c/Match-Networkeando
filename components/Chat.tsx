@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { esAnon, nombre, type Perfil } from "@/lib/match";
 import { HORAS, MAX_TEXTO, RAPIDAS, type Mensaje } from "@/lib/chat";
-import { Avatar } from "./ui";
+import { Avatar, PuntoEncuentro } from "./ui";
 
 type Props = {
   me: Perfil; otroId: string; otro: Perfil | null; mensajes: Mensaje[];
@@ -72,9 +72,10 @@ export function Chat({me, otroId, otro, mensajes, onEnviar, onBloquear, onCerrar
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" fill="none"/></svg>
           </button>
         </header>
+        {otro && <div className="chat-punto"><PuntoEncuentro a={me.id} b={otroId} chico/></div>}
 
         <div className="chat-lista" ref={lista} aria-live="polite">
-          {nada && <p className="chat-vacio">Escríbele para ponerse de acuerdo y encontrarse en el evento.</p>}
+          {nada && <p className="chat-vacio">La app ya les asignó dónde verse. Avísale cuando vayas para allá.</p>}
           {mensajes.map(m => (
             <div key={m.id} className={"burb " + (m.de === me.id ? "mia" : "suya")}>
               <p>{m.texto}</p>

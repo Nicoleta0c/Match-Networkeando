@@ -145,7 +145,7 @@ export default function App() {
       if (!contesto) setTimeout(() => {
         if (!S.demo || !S.uid) return;
         const t = Date.now();
-        S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -t, de: para, para: S.uid, texto: "¡Hola! Sí, me encantaría. Dime dónde estás y te busco 👋", creado: t}]};
+        S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -t, de: para, para: S.uid, texto: "¡Perfecto! Nos vemos en el punto de encuentro 👋", creado: t}]};
         if (S.chatCon === para) marcarLeido(para);
         forzar();
       }, 1800);

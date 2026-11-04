@@ -308,6 +308,18 @@ body[data-view="proyectar"] .paletas{display:none}
 .porque-accion{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:6px}
 .porque-accion small{color:var(--m);font-size:14px;font-weight:600}
 .pie-accion{margin-top:14px}
+/* Punto de encuentro asignado por la app */
+.encuentro{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:var(--bg);border:1px dashed var(--b2)}
+.encuentro-n{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--h);color:var(--on-h);font-weight:900;font-size:20px}
+.encuentro-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.encuentro-txt small{color:var(--m);font-size:13px;font-weight:700}
+.encuentro-txt b{font-size:19px;line-height:1.2}
+.encuentro-txt span{color:var(--m);font-size:14px}
+.encuentro.chico{padding:10px 12px;gap:10px;margin-top:12px}
+.encuentro.chico .encuentro-n{width:34px;height:34px;font-size:16px}
+.encuentro.chico .encuentro-txt b{font-size:16px}
+.chat-punto{padding:10px 16px 0}
+.chat-punto .encuentro{margin-top:0}
 .chat-abrir{position:relative}
 .conv-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--h);color:var(--on-h);font-size:12px;font-weight:900}
 .boton.fuerte .conv-n{background:var(--on-h);color:var(--h)}

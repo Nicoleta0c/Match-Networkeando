@@ -53,7 +53,7 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, perfiles, o
       ) : <>
         <div className="mejor" aria-label={buenos.length ? "Tu mejor match" : "Lo más cercano por ahora"}>
           <Carta p={mejor.o} me={me} analisis={mejor.r} sinCabeza/>
-          <Porque x={mejor} accion={<Escribir id={mejor.o.id} convs={convs} onChat={onChat}/>}/>
+          <Porque me={me} x={mejor} accion={<Escribir id={mejor.o.id} convs={convs} onChat={onChat}/>}/>
         </div>
         {lista.length > 1 && <>
           <h3 className="sub-t">También encajan contigo</h3>
