@@ -4,8 +4,8 @@
 export const AREAS = ["Tecnología","Diseño y arte","Comunicación","Ventas y marketing","Negocios y finanzas","Liderazgo y organización","Educación","Salud y bienestar","Impacto social","Hacer con las manos","Investigación","Legal y trámites"];
 export const area = (v: number) => AREAS[v - 1] || "";
 export const CLAVES: Record<number, string[]> = {
-  1:["program","codig","software","app","aplicacion","web","desarroll","react","python","java","flutter","tecnolog","sistemas","base de datos","bases de datos","inteligencia artificial","automatiz","ciberseg","computad","plataforma"],
-  2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","grafic","pint","music","animac","moda","decor"],
+  1:["program","codig","software","app","aplicacion","web","desarroll","react","python","java","flutter","tecnolog","sistemas","base de datos","bases de datos","inteligencia artificial","automatiz","ciberseg","segurid","computad","plataforma"],
+  2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","pint","music","animac","moda","decor"],
   3:["escrib","redact","comunic","hablo","hablar","publico","present","video","podcast","contenido","edit","locu","period","tiktok","youtube","guion","guiones","cuento","historia"],
   4:["vend","venta","market","mercad","publicid","marca","cliente","redes","anunc","promo","crecer cuentas","influen","instagram"],
   5:["negoci","finanz","contab","dinero","invers","presupuest","empren","excel","administr","econom","ahorr","patrocin","costos","precios","fondos"],
@@ -22,16 +22,22 @@ const CLAVES_RE = Object.entries(CLAVES).map(([v, arr]) => [+v, new RegExp("(^|[
 /* Frases que engañan a las palabras clave: "redes sociales" no es impacto social, "estudio psicología" es
    psicología (no investigación) y
    "registrar tu marca" es un trámite, no mercadeo. */
-const preparar = (t: string) => norm(t).replace(/^(yo\s+)?estudi[oa]\s+/, "").replace(/redes sociales/g, "redes")
+const preparar = (t: string) => norm(t).replace(/^(yo\s+)?estudi[oa]\s+/, "").replace(/redes sociales/g, "redes").replace(/entren\w*\s+(?=modelos|redes neuronales|inteligencia|ia)/g, "")
   .replace(/(registr\w*)\s+((tu|su|el|la|mi)\s+)?(negocio|marca|empresa)(\s+y\s+((tu|su|el|la|mi)\s+)?(negocio|marca|empresa))?/g, "$1");
 export function inferir(t: string) { const n = preparar(t); return CLAVES_RE.filter(([, re]) => re.test(n)).map(([v]) => v); }
-/* Áreas de un superpoder, de la principal a la secundaria (en el orden en que aparecen).
-   Lo que va después de "para" suele ser el contexto, no la habilidad:
-   "Diseño flyers para eventos" es diseño, no organización de eventos. */
+/** El núcleo de un superpoder, sin el contexto que va después de "para" o "en"
+    (si lo de antes ya dice qué sabe hacer). */
+export function nucleo(t: string) {
+  const n = preparar(t).replace(/disen\w*\s+(de\s+)?(?=dinamic|actividad|juego|taller|clase|curso)/g, "");
+  const antes = n.split(/\s+(?:para|en)\s+/)[0];
+  return antes !== n && CLAVES_RE.some(([, re]) => re.test(antes)) ? antes : n;
+}
+/* Áreas de un superpoder, de la principal a la secundaria (en el orden en que aparecen),
+   mirando solo su núcleo. Lo que va después de "para" suele ser el contexto, no la habilidad:
+   "Diseño flyers para eventos" es diseño, no organización de eventos.
+   Lo mismo con "en": "Encuentro fallas en apps" no es programar apps. */
 export function inferirPoder(t: string) {
-  let n = preparar(t).replace(/disen\w*\s+(de\s+)?(?=dinamic|actividad|juego|taller|clase|curso)/g, "");
-  const antes = n.split(/\s+para\s+/)[0];
-  if (antes !== n && CLAVES_RE.some(([, re]) => re.test(antes))) n = antes;
+  const n = nucleo(t);
   return CLAVES_RE.map(([v, re]) => [v, n.search(re)] as const).filter(([, i]) => i >= 0).sort((x, y) => x[1] - y[1]).map(([v]) => v);
 }
 /* Qué suele necesitar cada tipo de idea, además de su tema.
@@ -87,9 +93,11 @@ export function iniciales(p: Perfil) { const w = p.alias.split(/\s+/).filter(Boo
 export const colorDe = (p: Perfil) => p.color || COLORES[hash(p.id) % COLORES.length];
 
 const STOP = new Set("para como esta este estos estas desde donde cuando sobre entre hacer tengo tiene quiero puedo nuestra nuestro todos todas pero porque mucho muchos mejor gente cosas algo".split(" "));
-function palabras(t: string) { return new Set(norm(t).split(/[^a-z0-9ñ]+/).filter(w => w.length > 3 && !STOP.has(w))); }
+// Singular y plural cuentan igual: "apps" y "app" son la misma palabra.
+const CORTAS = new Set(["app", "web", "bot", "api", "ia"]);
+function palabras(t: string) { return new Set(norm(t).split(/[^a-z0-9ñ]+/).map(w => w.length > 4 ? w.replace(/(es|s)$/, "") : w.replace(/s$/, "")).filter(w => (w.length > 3 || CORTAS.has(w)) && !STOP.has(w))); }
 const PAL_CACHE = new Map<string, Set<string>>();
-function pal(p: Perfil, campo: "idea" | "power") { const k = p.id + "|" + campo + "|" + p[campo]; let w = PAL_CACHE.get(k); if (!w) { w = palabras(p[campo]); PAL_CACHE.set(k, w); } return w; }
+function pal(p: Perfil, campo: "idea" | "power") { const k = p.id + "|" + campo + "|" + p[campo]; let w = PAL_CACHE.get(k); if (!w) { w = palabras(campo === "power" ? nucleo(p.power) : p.idea); PAL_CACHE.set(k, w); } return w; }
 function comunes(a: Set<string>, b: Set<string>) { const out: string[] = []; a.forEach(w => { if (b.has(w)) out.push(w); }); return out; }
 
 /* Qué puede hacer de verdad alguien de cada área por una idea, dicho como lo diría un joven.

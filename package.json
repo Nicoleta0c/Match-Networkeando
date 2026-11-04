@@ -10,6 +10,7 @@
     "ejemplos": "node scripts/ejemplos.mjs",
     "ejemplos:rapido": "node scripts/ejemplos.mjs rapido",
     "ejemplos:borrar": "node scripts/ejemplos.mjs borrar",
+    "ejemplos:tech": "node scripts/ejemplos.mjs tech",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate"
   },
