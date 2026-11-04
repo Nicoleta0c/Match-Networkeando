@@ -12,6 +12,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Android: al abrir el teclado la página se achica y el campo del chat queda a la vista.
+  interactiveWidget: "resizes-content",
   colorScheme: "dark",
   themeColor: "#0F0F0D"
 };

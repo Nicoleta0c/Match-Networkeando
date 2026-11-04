@@ -21,6 +21,21 @@ export function Chat({me, otroId, otro, mensajes, onEnviar, onBloquear, onCerrar
   // Siempre se ve el último mensaje.
   useLayoutEffect(() => { const l = lista.current; if (l) l.scrollTop = l.scrollHeight; }, [mensajes.length]);
 
+  // El panel ocupa solo la parte visible de la pantalla: con el teclado abierto (iPhone y Android)
+  // la caja para escribir sigue a la vista.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const raiz = document.documentElement.style;
+    const medir = () => { raiz.setProperty("--vv-h", vv.height + "px"); raiz.setProperty("--vv-top", vv.offsetTop + "px"); };
+    medir();
+    vv.addEventListener("resize", medir); vv.addEventListener("scroll", medir);
+    return () => {
+      vv.removeEventListener("resize", medir); vv.removeEventListener("scroll", medir);
+      raiz.removeProperty("--vv-h"); raiz.removeProperty("--vv-top");
+    };
+  }, []);
+
   // Escape cierra el chat; mientras está abierto, la página de atrás no se mueve.
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") onCerrar(); };
@@ -53,7 +68,9 @@ export function Chat({me, otroId, otro, mensajes, onEnviar, onBloquear, onCerrar
             <b id="chat-t">{titulo}</b>
             <span>{otro ? (otro.que || (esAnon(otro) ? "Superpoder: " + otro.power : otro.power)) : "Ya no puede recibir mensajes."}</span>
           </div>
-          <button type="button" className="chat-x" onClick={onCerrar} aria-label="Cerrar chat">×</button>
+          <button type="button" className="chat-x" onClick={onCerrar} aria-label="Cerrar chat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" fill="none"/></svg>
+          </button>
         </header>
 
         <div className="chat-lista" ref={lista} aria-live="polite">
