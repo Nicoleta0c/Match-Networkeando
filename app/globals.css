@@ -192,13 +192,16 @@ main{position:relative;z-index:1}
 .cabeza b{display:block;font-size:19px;line-height:1.2}
 .cabeza span.sub{font-size:14px;color:var(--m)}
 .cabeza .pct{margin-left:auto;background:var(--h);color:var(--on-h);font-weight:900;font-size:14px;padding:5px 11px;border-radius:999px;font-variant-numeric:tabular-nums;flex:none}
-.par{position:relative;padding:20px 22px 22px;display:grid;gap:10px;flex:1;align-content:center}
-.par .lado{background:var(--bg);border:1px solid var(--b);border-left:3px solid var(--a);border-radius:18px;padding:14px 16px}
-.par .lado.poder{border-left-color:var(--h)}
-.par .lado small{display:block;font-size:13px;font-weight:800;color:var(--m)}
-.par .lado p{font-weight:800;font-size:20px;line-height:1.2;margin-top:2px;overflow-wrap:anywhere}
+/* Dos mitades que llenan la tarjeta: arriba la idea, abajo el superpoder que la completa. */
+.par{position:relative;padding:18px;display:grid;grid-template-rows:1fr 1fr;gap:12px;flex:1}
+.par .lado{--tono:var(--a);display:flex;flex-direction:column;justify-content:space-between;gap:18px;padding:20px 22px;border-radius:20px;border:1px solid color-mix(in srgb,var(--tono) 28%,var(--b));background:linear-gradient(155deg,color-mix(in srgb,var(--tono) 14%,var(--bg)),var(--bg) 65%)}
+.par .lado.poder{--tono:var(--h)}
+.par .quien{display:flex;align-items:center;gap:10px}
+.par .quien .cara{width:34px;height:34px;flex:none}
+.par .lado small{font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--tono)}
+.par .lado p{font-weight:800;font-size:24px;line-height:1.18;letter-spacing:-.01em;overflow-wrap:anywhere;text-wrap:pretty}
 .par .lado p.vacio{font-weight:600;font-size:16px;color:var(--m)}
-.par .lado.poder p{font-weight:600;font-size:17px}
+.par .lado.poder p{font-size:21px}
 .pie{border-top:1px solid var(--b);padding:16px 22px;font-weight:700;font-size:16px}
 .pie a{color:var(--h)}
 .pie .su-idea{margin-bottom:8px;font-weight:600;font-size:14px;color:var(--m)}

@@ -1,6 +1,7 @@
 "use client";
 /* Piezas pequeñas de la interfaz. Cada una reemplaza una función *HTML() del original. */
 import { useRef, type CSSProperties, type ReactNode } from "react";
+import { Cara } from "./Buscando";
 import { alReves, claveMatch, colorDe, esAnon, iniciales, nombre, sinComillas, type Analisis, type Item, type Perfil } from "@/lib/match";
 
 const varCSS = (vars: Record<string, string>) => vars as CSSProperties;
@@ -49,8 +50,10 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
   // Cada parte dice de quién es: "Idea de Luis", "Superpoder de Camila".
   const de = (x: Perfil, campo: string, tuyo: string) => esAnon(x) ? (x === me ? tuyo : campo + " de esta persona") : campo + " de " + x.alias.split(/\s+/)[0];
   const t = me.idea && !alReves(me, analisis)
-    ? {ideaLbl: de(me, "Idea", "Tu idea"), ideaTxt: me.idea, poderLbl: de(p, "Superpoder", ""), poderTxt: p.power}
-    : {ideaLbl: de(p, "Idea", ""), ideaTxt: p.idea, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
+    ? {ideaDe: me, ideaLbl: de(me, "Idea", "Tu idea"), ideaTxt: me.idea, poderDe: p, poderLbl: de(p, "Superpoder", ""), poderTxt: p.power}
+    : {ideaDe: p, ideaLbl: de(p, "Idea", ""), ideaTxt: p.idea, poderDe: me, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
+  // La carita de quien escribió cada parte: la tuya en el color de la app, la del otro en su color.
+  const cara = (x: Perfil) => <Cara color={x === me ? "var(--a)" : esAnon(x) ? "#3A3A34" : colorDe(x)}/>;
   return (
     <article className="carta" data-id={p.id}>
       {!sinCabeza && <div className="cabeza">
@@ -62,8 +65,14 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
         <span className="pct">{analisis.pct}%</span>
       </div>}
       <div className="par">
-        <div className="lado"><small>{t.ideaLbl}</small>{t.ideaTxt ? <p>{t.ideaTxt}</p> : <p className="vacio">Todavía sin idea propia. Quiere sumarse a la de alguien.</p>}</div>
-        <div className="lado poder"><small>{t.poderLbl}</small><p>{t.poderTxt}</p></div>
+        <div className="lado idea">
+          <div className="quien">{cara(t.ideaDe)}<small>{t.ideaLbl}</small></div>
+          {t.ideaTxt ? <p>{t.ideaTxt}</p> : <p className="vacio">Todavía sin idea propia. Quiere sumarse a la de alguien.</p>}
+        </div>
+        <div className="lado poder">
+          <div className="quien">{cara(t.poderDe)}<small>{t.poderLbl}</small></div>
+          <p>{t.poderTxt}</p>
+        </div>
       </div>
       {pie}
     </article>
