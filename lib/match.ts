@@ -5,7 +5,7 @@ export const AREAS = ["Tecnología","Diseño y arte","Comunicación","Ventas y m
 export const area = (v: number) => AREAS[v - 1] || "";
 export const CLAVES: Record<number, string[]> = {
   1:["program","codig","software","app","aplicacion","web","desarroll","react","python","java","flutter","tecnolog","sistemas","base de datos","bases de datos","inteligencia artificial","automatiz","ciberseg","computad","plataforma"],
-  2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","grafic","pint","music","animac","maqueta","planos","moda","decor"],
+  2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","grafic","pint","music","animac","moda","decor"],
   3:["escrib","redact","comunic","hablo","hablar","publico","present","video","podcast","contenido","edit","locu","period","tiktok","youtube","guion","guiones","cuento","historia"],
   4:["vend","venta","market","mercad","publicid","marca","cliente","redes","anunc","promo","crecer cuentas","influen","instagram"],
   5:["negoci","finanz","contab","dinero","invers","presupuest","empren","excel","administr","econom","ahorr","patrocin","costos","precios","fondos"],
@@ -13,15 +13,16 @@ export const CLAVES: Record<number, string[]> = {
   7:["ensen","educ","tutor","clase","explic","profe","capacit","mentor","taller","aprend","dinamic"],
   8:["salud","psicol","nutri","deport","entren","medic","enferm","bienestar","yoga","fisio","emocional","estres","escucho"],
   9:["comunidad","social","volunt","ong","fundaci","ambient","recicl","inclus","barrio","accesib"],
-  10:["constru","repar","arregl","electric","carpint","cocin","coser","costur","manualid","mecan","fabric","impresion 3d","hardware","solda","prototip","arduino","herramient"],
+  10:["constru","repar","arregl","maqueta","planos","electric","carpint","cocin","coser","costur","manualid","mecan","fabric","impresion 3d","hardware","solda","prototip","arduino","herramient"],
   11:["investig","datos","analiz","analisis","estadist","encuest","cienci","estudio"],
   12:["legal","ley","leyes","abogad","derecho","contrato","tramit","registr","permiso","impuest"]
 };
 export const norm = (t: string) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const CLAVES_RE = Object.entries(CLAVES).map(([v, arr]) => [+v, new RegExp("(^|[^a-z0-9])(" + arr.join("|") + ")")] as const);
-/* Frases que engañan a las palabras clave: "redes sociales" no es impacto social y
+/* Frases que engañan a las palabras clave: "redes sociales" no es impacto social, "estudio psicología" es
+   psicología (no investigación) y
    "registrar tu marca" es un trámite, no mercadeo. */
-const preparar = (t: string) => norm(t).replace(/redes sociales/g, "redes")
+const preparar = (t: string) => norm(t).replace(/^(yo\s+)?estudi[oa]\s+/, "").replace(/redes sociales/g, "redes")
   .replace(/(registr\w*)\s+((tu|su|el|la|mi)\s+)?(negocio|marca|empresa)(\s+y\s+((tu|su|el|la|mi)\s+)?(negocio|marca|empresa))?/g, "$1");
 export function inferir(t: string) { const n = preparar(t); return CLAVES_RE.filter(([, re]) => re.test(n)).map(([v]) => v); }
 /* Áreas de un superpoder, de la principal a la secundaria (en el orden en que aparecen).
@@ -109,7 +110,7 @@ const ACCIONES: Record<number, {puede: string; pedir: string}> = {
 };
 /* Acciones más precisas según lo que la persona escribió (ganan sobre las generales del área). */
 const PRECISAS: [number, RegExp, {puede: string; pedir: string}][] = [
-  [2, /planos|maqueta/, {puede: "dibujarte el plano del lugar para saber dónde va cada cosa", pedir: "dibujar el plano del lugar"}],
+  [10, /planos|maqueta/, {puede: "dibujarte el plano del lugar para saber dónde va cada cosa", pedir: "dibujar el plano del lugar"}],
   [2, /foto/, {puede: "tomar las fotos del día para que se vea bien en redes", pedir: "tomar las fotos del día"}],
   [3, /guion|hablo|hablar|public|present/, {puede: "presentar el día y escribir lo que se va a decir", pedir: "presentar o escribir el guion"}],
   [5, /patrocin/, {puede: "conseguirte patrocinadores que cubran parte de los gastos", pedir: "conseguir patrocinadores"}],
@@ -128,7 +129,7 @@ const FALTA: Record<number, string> = {
 const enFrase = (t: string) => (t.charAt(0).toLowerCase() + t.slice(1)).replace(/[.\s]+$/, "");
 
 export const UMBRAL = 40;
-const PESO_NECESIDAD = [46, 32, 22, 14];
+const PESO_NECESIDAD = [50, 24, 14, 8];
 export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; ia?: boolean };
 export type Item = { o: Perfil; r: Analisis };
 
