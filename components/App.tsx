@@ -264,21 +264,6 @@ export default function App() {
     S.buscarAlLlegar = true;
     irA("clics");
   }
-  function salirDemo() {
-    if (!S.demo) return;
-    cancelarBusqueda();
-    S.demo = false; S.uid = S.realUid; S.notificados = S.realNotif || null; S.chatCon = null;
-    S.perfiles = S.real || new Map(); S.loaded = S.realLoaded;
-    forzar();
-  }
-  function demoComo(anon: boolean) {
-    const m = yo(); if (!S.demo || !m) return;
-    S.perfiles = new Map(S.perfiles).set(m.id, {...m, anon, alias: !anon && !m.alias ? "Invitado" : m.alias});
-    formTocado.current = false;
-    if (S.vista === "perfil") S.relleno++;
-    forzar();
-    toast(anon ? "Ahora pruebas como anónimo" : "Ahora pruebas con tu nombre");
-  }
 
   /* ---------- la app busca tu match ---------- */
   function cancelarBusqueda() {
@@ -495,7 +480,7 @@ export default function App() {
   return (
     <>
       <Iconos/>
-      <Barra vista={S.vista} burbuja={burbuja} demo={S.demo} demoAnon={!!(me && (me.anon || !me.alias))} onDemoComo={demoComo} onSalirDemo={salirDemo}/>
+      <Barra vista={S.vista} burbuja={burbuja}/>
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>

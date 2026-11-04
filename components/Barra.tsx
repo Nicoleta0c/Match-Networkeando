@@ -1,11 +1,7 @@
 "use client";
 import type { Vista } from "./App";
 
-type Props = {
-  vista: Vista; burbuja: number;
-  demo: boolean; demoAnon: boolean;
-  onDemoComo: (anon: boolean) => void; onSalirDemo: () => void;
-};
+type Props = {vista: Vista; burbuja: number};
 
 /* Logo: dos personas unidas por el hilo dorado. */
 export function Logo() {
@@ -17,7 +13,7 @@ export function Logo() {
   );
 }
 
-export function Barra({vista, burbuja, demo, demoAnon, onDemoComo, onSalirDemo}: Props) {
+export function Barra({vista, burbuja}: Props) {
   const actual = (v: Vista) => vista === v ? "page" as const : undefined;
   return (
     <header className="barra">
@@ -29,19 +25,6 @@ export function Barra({vista, burbuja, demo, demoAnon, onDemoComo, onSalirDemo}:
           <a href="#clics" aria-current={actual("clics")}>Mis matches<span className="burbuja" id="burbuja" hidden={!burbuja}>{burbuja || ""}</span></a>
           <a className="opc" href="#proyectar">Proyectar</a>
         </nav>
-      </div>
-      <div className="demo-barra" id="demo-barra" hidden={!demo}>
-        <div className="cont demo-barra-in">
-          <span><span className="d-largo">Estás en la demo con perfiles de ejemplo. Nada de esto se guarda.</span><span className="d-corto">Demo: nada de esto se guarda</span></span>
-          <div className="demo-como">
-            <span>Probar como:</span>
-            <div className="demo-seg" role="group" aria-label="Probar la demo como">
-              <button type="button" aria-pressed={!demoAnon} onClick={() => onDemoComo(false)}>Con nombre</button>
-              <button type="button" aria-pressed={demoAnon} onClick={() => onDemoComo(true)}>Anónimo</button>
-            </div>
-          </div>
-          <button type="button" id="b-salir-demo" onClick={onSalirDemo}>Salir</button>
-        </div>
       </div>
     </header>
   );
