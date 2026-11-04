@@ -100,7 +100,6 @@ export function Porque({x}: {x: Item}) {
       </div>
       <h3>Por qué encajan {x.r.ia && <span className="ia-chip">Según la IA</span>}</h3>
       <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>
-      {x.r.rompe && <p className="rompe"><small>Para romper el hielo</small>“{sinComillas(x.r.rompe)}”</p>}
     </div>
   );
 }

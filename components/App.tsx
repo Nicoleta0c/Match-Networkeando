@@ -2,7 +2,7 @@
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
 import { useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, limpiar, ordenarMatches, type Analisis, type Perfil, type ResIA } from "@/lib/match";
+import { UMBRAL, aplicarIA, analizar, limpiar, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
 import { Barra } from "./Barra";
@@ -10,7 +10,6 @@ import { VistaInicio } from "./VistaInicio";
 import { VistaPerfil, type DatosForm } from "./VistaPerfil";
 import { VistaClics } from "./VistaClics";
 import { VistaProyectar } from "./VistaProyectar";
-import { MatchModal } from "./MatchModal";
 import { Paletas } from "./Paletas";
 import type { Busqueda } from "./Buscando";
 
@@ -44,7 +43,6 @@ type Estado = {
   notificados: Set<string> | null; realNotif: Set<string> | null;
   busqueda: Busqueda | null; pasoFinal: string | null; ganador: string | null; ganadorPct: number | null; nBusquedas: number;
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
-  match: {o: Perfil; r: Analisis} | null;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
 };
@@ -57,7 +55,6 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
-  match: null,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -185,7 +182,6 @@ export default function App() {
     cancelarBusqueda();
     S.demo = false; S.uid = S.realUid; S.notificados = S.realNotif || null;
     S.perfiles = S.real || new Map(); S.loaded = S.realLoaded;
-    S.match = null;
     forzar();
   }
   function demoComo(anon: boolean) {
@@ -253,7 +249,7 @@ export default function App() {
         S.busqueda = {...S.busqueda, muestra: m};
       }
       S.ganador = g.o.id; S.ganadorPct = g.r.pct; forzar();
-      timers.current.busqueda.push(setTimeout(() => { cancelarBusqueda(); mostrarMatch(g.o, g.r); }, reduce ? 0 : 1600));
+      timers.current.busqueda.push(setTimeout(() => { cancelarBusqueda(); marcarNotificado(g.o.id); }, reduce ? 0 : 1600));
     };
     if (usarIA) {
       const limite = new Promise<null>(res => timers.current.busqueda.push(setTimeout(() => res(null), 20000)));
@@ -268,13 +264,6 @@ export default function App() {
       terminar();
     }, total + 150));
   }
-
-  /* ---------- match ---------- */
-  function mostrarMatch(o: Perfil, r: Analisis) {
-    marcarNotificado(o.id);
-    S.match = {o, r}; forzar();
-  }
-  function cerrarMatch() { S.match = null; forzar(); }
 
   /* ---------- conexión con los datos ---------- */
   function conectar() {
@@ -394,7 +383,6 @@ export default function App() {
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
       </main>
-      {S.match && me && <MatchModal me={me} o={S.match.o} r={S.match.r} onCerrar={cerrarMatch} onSeguir={() => { cerrarMatch(); if (S.vista !== "clics") location.hash = "clics"; }}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>

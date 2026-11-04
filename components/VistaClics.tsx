@@ -48,7 +48,7 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "acti
         <div className="vacio-grande"><Duo chico/><p>Cuando llegue más gente, la app buscará tu match sola. Vuelve en un rato.</p></div>
       ) : <>
         <div className="mejor" aria-label={buenos.length ? "Tu mejor match" : "Lo más cercano por ahora"}>
-          <Carta p={mejor.o} me={me} analisis={mejor.r} pie={<Pie me={me} x={mejor}/>}/>
+          <Carta p={mejor.o} me={me} analisis={mejor.r}/>
           <Porque x={mejor}/>
         </div>
         {lista.length > 1 && <>
