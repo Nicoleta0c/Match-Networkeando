@@ -55,7 +55,7 @@ export function Carta({p, me, analisis, pie}: {p: Perfil; me: Perfil; analisis: 
         <Avatar p={p}/>
         <div>
           <b>{nombre(p)}</b>
-          {p.anon ? <span className="sub">Perfil anónimo{p.que ? ", " + p.que : ""}</span> : (p.que ? <span className="sub">{p.que}</span> : null)}
+          {p.que ? <span className="sub">{p.que}</span> : null}
         </div>
         <span className="pct">{analisis.pct}%</span>
       </div>

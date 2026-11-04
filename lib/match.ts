@@ -8,9 +8,9 @@ export const CLAVES: Record<number, string[]> = {
   2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","grafic","pint","music","animac","maqueta","planos","moda","decor"],
   3:["escrib","redact","comunic","hablo","hablar","publico","present","video","podcast","contenido","edit","locu","period","tiktok","youtube","guion","guiones","cuento","historia"],
   4:["vend","venta","market","mercad","publicid","marca","cliente","redes","anunc","promo","crecer cuentas","influen","instagram"],
-  5:["negoci","finanz","contab","dinero","invers","presupuest","empren","excel","administr","econom","patrocin","cuentas","costos","precios","fondos"],
+  5:["negoci","finanz","contab","dinero","invers","presupuest","empren","excel","administr","econom","ahorr","patrocin","costos","precios","fondos"],
   6:["organiz","lider","coordin","gestion","equipo","evento","planific","logist","proyecto","convenz","motiv"],
-  7:["ensen","educ","tutor","clase","explic","profe","capacit","mentor","taller","aprend"],
+  7:["ensen","educ","tutor","clase","explic","profe","capacit","mentor","taller","aprend","dinamic"],
   8:["salud","psicol","nutri","deport","entren","medic","enferm","bienestar","yoga","fisio","emocional","estres","escucho"],
   9:["comunidad","social","volunt","ong","fundaci","ambient","recicl","inclus","barrio","accesib"],
   10:["constru","repar","arregl","electric","carpint","cocin","coser","costur","manualid","mecan","fabric","impresion 3d","hardware","solda","prototip","arduino","herramient"],
@@ -19,7 +19,20 @@ export const CLAVES: Record<number, string[]> = {
 };
 export const norm = (t: string) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const CLAVES_RE = Object.entries(CLAVES).map(([v, arr]) => [+v, new RegExp("(^|[^a-z0-9])(" + arr.join("|") + ")")] as const);
-export function inferir(t: string) { const n = norm(t); return CLAVES_RE.filter(([, re]) => re.test(n)).map(([v]) => v); }
+/* Frases que engañan a las palabras clave: "redes sociales" no es impacto social y
+   "registrar tu marca" es un trámite, no mercadeo. */
+const preparar = (t: string) => norm(t).replace(/redes sociales/g, "redes")
+  .replace(/(registr\w*)\s+((tu|su|el|la|mi)\s+)?(negocio|marca|empresa)(\s+y\s+((tu|su|el|la|mi)\s+)?(negocio|marca|empresa))?/g, "$1");
+export function inferir(t: string) { const n = preparar(t); return CLAVES_RE.filter(([, re]) => re.test(n)).map(([v]) => v); }
+/* Áreas de un superpoder, de la principal a la secundaria (en el orden en que aparecen).
+   Lo que va después de "para" suele ser el contexto, no la habilidad:
+   "Diseño flyers para eventos" es diseño, no organización de eventos. */
+export function inferirPoder(t: string) {
+  let n = preparar(t).replace(/disen\w*\s+(de\s+)?(?=dinamic|actividad|juego|taller|clase|curso)/g, "");
+  const antes = n.split(/\s+para\s+/)[0];
+  if (antes !== n && CLAVES_RE.some(([, re]) => re.test(antes))) n = antes;
+  return CLAVES_RE.map(([v, re]) => [v, n.search(re)] as const).filter(([, i]) => i >= 0).sort((x, y) => x[1] - y[1]).map(([v]) => v);
+}
 /* Qué suele necesitar cada tipo de idea, además de su tema.
    Ej.: una charla necesita quien organice y consiga voluntarios, quien la difunda y quien diseñe. */
 const NECESIDADES: [RegExp, number[]][] = [
@@ -53,7 +66,7 @@ export function limpiar(id: string, d: Record<string, unknown>): Perfil {
   const str = (s: unknown, n: number) => typeof s === "string" ? s.slice(0, n).trim() : "";
   const idea = str(d.idea, LIMITES.idea), power = str(d.power, LIMITES.power);
   const elegidas = idea ? ints(d.needs, 3) : [];
-  const powers = inferir(power);
+  const powers = inferirPoder(power);
   // Lo que tu idea necesita y tú no sabes hacer: lo que ya cubres con tu superpoder no cuenta.
   const base = elegidas.length ? elegidas : (idea ? [...new Set([...necesita(idea), ...inferir(idea)])] : []);
   const faltan = base.filter(x => !powers.includes(x));
@@ -68,7 +81,7 @@ export function limpiar(id: string, d: Record<string, unknown>): Perfil {
 }
 export function hash(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 export const esAnon = (p: Perfil) => p.anon || !p.alias;
-export function nombre(p: Perfil) { return esAnon(p) ? "Anónimo " + hash(p.id).toString(36).toUpperCase().slice(-3) : p.alias; }
+export function nombre(p: Perfil) { return esAnon(p) ? "Persona anónima" : p.alias; }
 export function iniciales(p: Perfil) { const w = p.alias.split(/\s+/).filter(Boolean); if (!w.length) return "?"; return (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : "")).toUpperCase(); }
 export const colorDe = (p: Perfil) => p.color || COLORES[hash(p.id) % COLORES.length];
 
@@ -95,6 +108,18 @@ const ACCIONES: Record<number, {puede: string; pedir: string}> = {
   11: {puede: "hacer una encuesta rápida para saber qué quiere la gente", pedir: "hacer una encuesta rápida para saber qué quiere la gente"},
   12: {puede: "ayudarte con los permisos y a registrar el proyecto", pedir: "sacar los permisos y registrar el proyecto"}
 };
+/* Acciones más precisas según lo que la persona escribió (ganan sobre las generales del área). */
+const PRECISAS: [number, RegExp, {puede: string; pedir: string}][] = [
+  [2, /planos|maqueta/, {puede: "dibujarte el plano del lugar para saber dónde va cada cosa", pedir: "dibujar el plano del lugar"}],
+  [2, /foto/, {puede: "tomar las fotos del día para que se vea bien en redes", pedir: "tomar las fotos del día"}],
+  [3, /guion|hablo|hablar|public|present/, {puede: "presentar el día y escribir lo que se va a decir", pedir: "presentar o escribir el guion"}],
+  [5, /patrocin/, {puede: "conseguirte patrocinadores que cubran parte de los gastos", pedir: "conseguir patrocinadores"}],
+  [7, /dinamic/, {puede: "prepararte dinámicas para que la gente se suelte y participe", pedir: "preparar unas dinámicas para que la gente participe"}],
+  [12, /registr|marca|negocio/, {puede: "ayudarte a registrar el nombre y sacar los permisos que hagan falta", pedir: "registrar el nombre y sacar los permisos"}]
+];
+function accion(p: Perfil, v: number) { const n = norm(p.power); return PRECISAS.find(([a, re]) => a === v && re.test(n))?.[2] ?? ACCIONES[v]; }
+/* "armarte una página" -> "armarle una página": lo que TÚ haces por la otra persona. */
+const aEl = (t: string) => t.replace(/([a-zñ]+r)te(?![a-zñ])/g, "$1le");
 /* "Un club de lectura en los parques" -> "un club de lectura en los parques" (sin punto final). */
 const enFrase = (t: string) => (t.charAt(0).toLowerCase() + t.slice(1)).replace(/[.\s]+$/, "");
 
@@ -129,19 +154,21 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   // Razones concretas: qué puede hacer esa persona por tu idea y qué puedes hacer tú por la suya.
   const quien = esAnon(o) ? "Esta persona" : o.alias.split(/\s+/)[0];
   const razones: string[] = [];
-  if (a.length) {
-    razones.push(`${quien} sabe de ${listaAreas(a.slice(0, 1))}: puede ${ACCIONES[a[0]].puede} para tu idea.`);
-    if (a.length > 1) razones.push(`También puede ${ACCIONES[a[1]].puede}.`);
+  // Lo que más sabe hacer la persona va primero (su área principal).
+  const aT = [...a].sort((x, y) => o.powers.indexOf(x) - o.powers.indexOf(y));
+  if (aT.length) {
+    razones.push(`${quien} sabe de ${listaAreas(aT.slice(0, 1))}. Para tu idea, puede ${accion(o, aT[0]).puede}.`);
+    if (aT.length > 1) razones.push(`También puede ${accion(o, aT[1]).puede}.`);
   }
-  if (b.length) razones.push(`Y tú también le sirves: puedes ${ACCIONES[b[0]].puede}${o.idea ? " para " + enFrase(o.idea) : ""}.`);
+  if (b.length) razones.push(`Y tú también le sirves: ${o.idea ? "para " + enFrase(o.idea) + ", " : ""}puedes ${aEl(accion(me, b[0]).puede)}.`);
   if (kwA.length) razones.push(`Los dos hablan de lo mismo: ${kwA.slice(0, 2).join(" y ")}.`);
   if (!razones.length && me.idea && distinto.length) razones.push(`${quien} sabe de ${listaAreas(distinto.slice(0, 1))}, algo que tú no cubres.`);
   if (mismoPoder && razones.length) razones.push("Ojo: los dos saben hacer lo mismo, así que entre ustedes no se completan tanto.");
   if (!razones.length) razones.push("Podrían complementarse si conversan.");
   // Una primera pregunta para empezar a hablar.
-  const rompe = a.length && me.idea
-    ? `¿Me ayudarías a ${ACCIONES[a[0]].pedir}? Mi idea es ${enFrase(me.idea)}.`
-    : (b.length && o.idea ? `Vi tu idea de ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${ACCIONES[b[0]].pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
+  const rompe = aT.length && me.idea
+    ? `¿Me ayudarías a ${accion(o, aT[0]).pedir}? Mi idea es ${enFrase(me.idea)}.`
+    : (b.length && o.idea ? `Vi tu idea de ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${accion(me, b[0]).pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
   return {pct, a, b, razones, rompe};
 }
 

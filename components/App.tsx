@@ -1,7 +1,7 @@
 "use client";
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
-import { useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { UMBRAL, aplicarIA, analizar, limpiar, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
@@ -102,7 +102,6 @@ export default function App() {
     if (v === "perfil") { formTocado.current = false; S.relleno++; }
     if (v !== "clics") cancelarBusqueda();
     forzar();
-    window.scrollTo(0, 0);
     if (v === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
   }
 
@@ -312,8 +311,13 @@ export default function App() {
     return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); };
   }
 
+  // Cada vista empieza arriba. Va después de pintar la vista nueva; si no, el navegador
+  // mantiene la altura de la vista anterior y la deja a medio camino.
+  useLayoutEffect(() => { window.scrollTo(0, 0); }, [S.vista]);
+
   /* ---------- arranque ---------- */
   useEffect(() => {
+    history.scrollRestoration = "manual";
     const alCambiarHash = () => { if (location.hash === "#demo") { entrarDemo(); return; } route(); };
     window.addEventListener("hashchange", alCambiarHash);
     if (location.hash === "#demo") { location.hash = ""; route(); entrarDemo(); } else route();
