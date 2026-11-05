@@ -105,33 +105,3 @@ export function Chat({me, otroId, otro, mensajes, escribiendo, onEnviar, onBloqu
     </>
   );
 }
-
-/* Lista de conversaciones abiertas, con los mensajes sin leer. */
-export function Conversaciones({me, convs, perfiles, onAbrir}: {
-  me: Perfil; convs: {id: string; ultimo: Mensaje; sinLeer: number}[];
-  perfiles: Map<string, Perfil>; onAbrir: (id: string) => void;
-}) {
-  if (!convs.length) return null;
-  return (
-    <div className="convs">
-      <h3 className="sub-t">Mensajes</h3>
-      <ul>
-        {convs.map(c => {
-          const p = perfiles.get(c.id);
-          return (
-            <li key={c.id}>
-              <button type="button" className={c.sinLeer ? "nuevo" : ""} onClick={() => onAbrir(c.id)}>
-                {p ? <Avatar p={p}/> : <span className="av anon" aria-hidden="true"/>}
-                <span className="conv-txt">
-                  <b>{p ? nombre(p) : "Persona que ya salió"}</b>
-                  <span>{c.ultimo.de === me.id ? "Tú: " : ""}{c.ultimo.texto}</span>
-                </span>
-                {c.sinLeer > 0 && <span className="conv-n" aria-label={c.sinLeer + " sin leer"}>{c.sinLeer}</span>}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}

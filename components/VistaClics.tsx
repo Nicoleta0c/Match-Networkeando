@@ -3,7 +3,6 @@ import { useState, type ReactNode } from "react";
 import { UMBRAL, type Item, type Perfil } from "@/lib/match";
 import { Aviso, Carta, Duo, Pie, Porque } from "./ui";
 import { Buscando, type Busqueda } from "./Buscando";
-import { Conversaciones } from "./Chat";
 import type { Conv } from "./App";
 
 type Props = {
@@ -12,7 +11,7 @@ type Props = {
   loaded: boolean; me: Perfil | null; todos: Item[];
   conIA: boolean; iaFallo: boolean;
   onBuscar: () => void;
-  convs: Conv[]; perfiles: Map<string, Perfil>; onChat: (id: string) => void;
+  convs: Conv[]; onChat: (id: string) => void;
 };
 
 export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, ...resto}: Props) {
@@ -27,7 +26,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, perfiles, onChat}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
+function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, onChat}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">
@@ -47,7 +46,6 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, perfiles, o
       </div>
       {!conIA && todos.length > 0 && iaFallo && <p className="nota">La IA no respondió, así que la app eligió con su método básico. Toca Buscar de nuevo para intentarlo.</p>}
       {me.anon && buenos.length > 0 && <div className="aviso"><strong>Tu perfil es anónimo.</strong> Tus matches solo pueden escribirte por el chat de la app. Si quieres, <a href="#perfil">agrega tu nombre y contacto</a>.</div>}
-      <Conversaciones me={me} convs={convs} perfiles={perfiles} onAbrir={onChat}/>
       {!todos.length ? (
         <div className="vacio-grande"><Duo chico/><p>Cuando llegue más gente, la app buscará tu match sola. Vuelve en un rato.</p></div>
       ) : <>
