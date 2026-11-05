@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="es" className={figtree.variable}>
+    <html lang="es" className={figtree.variable} data-paleta="c">
       <body data-view="inicio">{children}</body>
     </html>
   );

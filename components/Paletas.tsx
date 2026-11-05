@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-/* Selector de las 4 paletas oscuras. La elección se guarda solo en este navegador. */
+/* Selector de las 4 paletas oscuras. La de siempre es "Grafito y menta" (c); la elección se guarda solo en este navegador. */
 const PALETAS = [
   {id: "a", nombre: "Petróleo profundo", fondo: "#061918", hilo: "#F8C000"},
   {id: "b", nombre: "Tinta y oro", fondo: "#0F0F0D", hilo: "#F8C000"},
@@ -11,7 +11,7 @@ const PALETAS = [
 const CLAVE = "paleta";
 
 export function Paletas() {
-  const [actual, setActual] = useState("b");
+  const [actual, setActual] = useState("c");
 
   useEffect(() => {
     let guardada: string | null = null;
