@@ -523,7 +523,7 @@ export default function App() {
         mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}
         escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat} onVolver={genteChat.length > 1 ? volverALista : undefined}/>}
       {me && S.chatLista && !S.chatCon && <ListaChats me={me} gente={genteChat} convs={convs} onAbrir={abrirChat} onCerrar={cerrarChat}/>}
-      {me && !S.chatCon && !S.chatLista && !enProyectar && !S.busqueda && genteChat.length > 0 &&
+      {me && S.vista === "clics" && !S.chatCon && !S.chatLista && !S.busqueda && genteChat.length > 0 &&
         <BotonChat sinLeer={convs.reduce((n, c) => n + c.sinLeer, 0)} onAbrir={abrirChats}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
