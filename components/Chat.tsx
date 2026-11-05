@@ -6,20 +6,20 @@ import { HORAS, MAX_TEXTO, RAPIDAS, type Mensaje } from "@/lib/chat";
 import { Avatar, PuntoEncuentro } from "./ui";
 
 type Props = {
-  me: Perfil; otroId: string; otro: Perfil | null; mensajes: Mensaje[];
+  me: Perfil; otroId: string; otro: Perfil | null; mensajes: Mensaje[]; escribiendo?: boolean;
   onEnviar: (texto: string) => Promise<boolean>; onBloquear: () => void; onCerrar: () => void;
 };
 
 const hora = (t: number) => new Date(t).toLocaleTimeString("es-DO", {hour: "numeric", minute: "2-digit"});
 
-export function Chat({me, otroId, otro, mensajes, onEnviar, onBloquear, onCerrar}: Props) {
+export function Chat({me, otroId, otro, mensajes, escribiendo, onEnviar, onBloquear, onCerrar}: Props) {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const lista = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
 
   // Siempre se ve el último mensaje.
-  useLayoutEffect(() => { const l = lista.current; if (l) l.scrollTop = l.scrollHeight; }, [mensajes.length]);
+  useLayoutEffect(() => { const l = lista.current; if (l) l.scrollTop = l.scrollHeight; }, [mensajes.length, escribiendo]);
 
   // El panel ocupa solo la parte visible de la pantalla: con el teclado abierto (iPhone y Android)
   // la caja para escribir sigue a la vista.
@@ -82,6 +82,7 @@ export function Chat({me, otroId, otro, mensajes, onEnviar, onBloquear, onCerrar
               <time>{hora(m.creado)}</time>
             </div>
           ))}
+          {escribiendo && otro && <p className="chat-escribe">{nombre(otro)} está escribiendo…</p>}
         </div>
 
         {otro && <>

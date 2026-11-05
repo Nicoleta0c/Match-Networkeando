@@ -351,6 +351,7 @@ body.con-chat .paletas{display:none}
 @media (hover:hover) and (pointer:fine){.chat-x:hover{border-color:var(--m)}}
 .chat-lista{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .chat-vacio{margin:auto;text-align:center;color:var(--m);max-width:260px}
+.chat-escribe{align-self:flex-start;color:var(--m);font-size:14px;font-weight:600;padding:2px 4px}
 .burb{max-width:82%;padding:10px 14px 6px;border-radius:18px;animation:llega .25s var(--ease) both}
 .burb p{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
 .burb time{display:block;text-align:right;font-size:11px;opacity:.7;margin-top:2px}

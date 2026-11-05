@@ -2,7 +2,7 @@
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
+import { UMBRAL, aplicarIA, analizar, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Mensaje } from "@/lib/chat";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
@@ -47,7 +47,7 @@ type Estado = {
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
-  chat: Charla; chatDemo: Charla; chatCon: string | null; leido: Record<string, number> | null;
+  chat: Charla; chatDemo: Charla; chatCon: string | null; leido: Record<string, number> | null; escribiendo: string | null;
 };
 type Charla = {mensajes: Mensaje[]; bloqueados: Set<string>};
 const charlaVacia = (): Charla => ({mensajes: [], bloqueados: new Set()});
@@ -63,7 +63,7 @@ const estadoInicial = (): Estado => ({
   iaDisponible: false, iaRes: null, iaFallo: false,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, ""),
-  chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, leido: null
+  chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, leido: null, escribiendo: null
 });
 
 export default function App() {
@@ -131,6 +131,29 @@ export default function App() {
     }
     return [...m.values()].sort((a, b) => b.ultimo.creado - a.ultimo.creado);
   }
+  /* En la demo, la persona de ejemplo contesta con la IA. Si la IA no está, contesta una frase fija (solo la primera vez). */
+  async function contestarDemo(para: string, yaContesto: boolean) {
+    const inicio = Date.now();
+    const historial = S.chatDemo.mensajes.filter(m => m.de === para || m.para === para).map(m => ({mio: m.de !== para, texto: m.texto}));
+    let texto: string | null = null;
+    if (S.iaDisponible) try {
+      const me = yo();
+      const r = await fetch("/api/chat/demo", {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({otro: para, yo: me && {idea: me.idea, power: me.power, anon: esAnon(me)}, historial})});
+      if (r.ok) texto = ((await r.json()) as {texto?: string}).texto || null;
+    } catch {}
+    if (!texto && !yaContesto) texto = "¡Perfecto! Nos vemos en el punto de encuentro 👋";
+    // Una pausa corta para que se sienta como alguien escribiendo.
+    await new Promise(res => setTimeout(res, Math.max(0, 1200 - (Date.now() - inicio))));
+    if (!S.demo || !S.uid) return;
+    if (S.escribiendo === para) S.escribiendo = null;
+    if (texto) {
+      const t = Date.now();
+      S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -t, de: para, para: S.uid, texto, creado: t}]};
+      if (S.chatCon === para) marcarLeido(para);
+    }
+    forzar();
+  }
   function abrirChat(id: string) { S.chatCon = id; marcarLeido(id); forzar(); }
   const cerrarChat = useCallback(() => { S.chatCon = null; forzar(); }, [S]);
   async function enviarMensaje(texto: string) {
@@ -140,15 +163,9 @@ export default function App() {
       const ahora = Date.now();
       const contesto = S.chatDemo.mensajes.some(m => m.de === para);
       S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -ahora, de: S.uid, para, texto, creado: ahora}]};
+      S.escribiendo = para;
       forzar();
-      // En la demo, la otra persona contesta sola la primera vez.
-      if (!contesto) setTimeout(() => {
-        if (!S.demo || !S.uid) return;
-        const t = Date.now();
-        S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -t, de: para, para: S.uid, texto: "¡Perfecto! Nos vemos en el punto de encuentro 👋", creado: t}]};
-        if (S.chatCon === para) marcarLeido(para);
-        forzar();
-      }, 1800);
+      contestarDemo(para, contesto);
       return true;
     }
     try {
@@ -490,7 +507,7 @@ export default function App() {
       </main>
       {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}
         mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}
-        onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat}/>}
+        escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>
