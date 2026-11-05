@@ -11,8 +11,9 @@ export type Red = {
   evento: string;
   /** Los eventos con gente, del más viejo al más nuevo. */
   eventos: {nombre: string; n: number}[];
-  /** k: clave estable sin datos personales; e: índice del evento; s: 1 si escribió un sueño (0 = hacedor). */
-  nodos: {k: string; e: number; s: 0 | 1}[];
+  /** k: clave estable sin datos personales; e: índice del evento; s: 1 si escribió un sueño (0 = hacedor).
+      t y p: su sueño y su superpoder, solo en el evento de hoy (nunca el nombre). */
+  nodos: {k: string; e: number; s: 0 | 1; t?: string; p?: string}[];
   /** [a, b, tipo] con índices de nodos. En una vía, a es quien ayuda y b quien tiene el sueño. */
   enlaces: [number, number, TipoEnlace][];
 };
@@ -26,7 +27,11 @@ export function construirRed(grupos: {evento: string; perfiles: Perfil[]}[], act
     if (!g.perfiles.length) return;
     const e = red.eventos.push({nombre: g.evento, n: g.perfiles.length}) - 1;
     const base = red.nodos.length;
-    g.perfiles.forEach(p => red.nodos.push({k: clave(p.id), e, s: p.idea ? 1 : 0}));
+    // Los textos van solo para el evento de hoy: es lo que se proyecta en el salón.
+    const conTexto = g.evento === actual;
+    g.perfiles.forEach(p => red.nodos.push(conTexto
+      ? {k: clave(p.id), e, s: p.idea ? 1 : 0, t: p.idea.slice(0, 140), p: p.power.slice(0, 100)}
+      : {k: clave(p.id), e, s: p.idea ? 1 : 0}));
     const cerca: [number, number, number][] = [];
     const ps = g.perfiles;
     for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {

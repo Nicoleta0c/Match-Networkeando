@@ -2,9 +2,10 @@
 /* Mapa de Sueños: la red en vivo para la pantalla grande.
    Primero se ve la red de todos los eventos y a los pocos segundos la cámara entra a este evento.
    La presentadora cambia de nivel con los botones o con la barra espaciadora. */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { QR } from "./QR";
-import { Motor, type Nivel } from "./mapaMotor";
+import { Via } from "./ui";
+import { Motor, type Foco, type Nivel } from "./mapaMotor";
 import type { Perfil } from "@/lib/match";
 import { construirRed, nombreEvento, type Red } from "@/lib/red";
 
@@ -19,7 +20,10 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
   const [nivel, setNivel] = useState<Nivel>("todos");
   const [pantalla, setPantalla] = useState(false);
   const [anuncio, setAnuncio] = useState("");
+  const [foco, setFoco] = useState<Foco | null>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
+  const pie = useRef<HTMLDivElement>(null);
+  const tarjeta = useRef<HTMLDivElement>(null);
   const motor = useRef<Motor | null>(null);
   const antes = useRef<number | null>(null);
 
@@ -65,9 +69,29 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
   useEffect(() => {
     if (!activo || !lienzo.current) return;
     const m = new Motor(lienzo.current);
+    m.onFoco = setFoco;
     motor.current = m;
-    return () => { m.destruir(); motor.current = null; antes.current = null; };
+    return () => { m.destruir(); motor.current = null; antes.current = null; setFoco(null); };
   }, [activo]);
+
+  /* Le dice al motor cuánto ocupan los textos de arriba y de abajo, para que la red quede en el hueco.
+     En el celular la tarjeta del foco va arriba a lo ancho; en pantallas grandes va a un lado. */
+  useLayoutEffect(() => {
+    if (!activo) return;
+    const medir = () => {
+      const p = pie.current, t = tarjeta.current;
+      const abajo = p ? p.offsetHeight - 40 : 0;
+      const arriba = t && window.innerWidth <= 700 ? t.offsetTop + t.offsetHeight + 12 : 72;
+      const r = t?.getBoundingClientRect();
+      motor.current?.reservar(arriba, abajo, r ? [r.left - 8, r.top - 8, r.right + 8, r.bottom + 8] : null);
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    if (pie.current) ro.observe(pie.current);
+    if (tarjeta.current) ro.observe(tarjeta.current);
+    window.addEventListener("resize", medir);
+    return () => { ro.disconnect(); window.removeEventListener("resize", medir); };
+  }, [activo, foco]);
   useEffect(() => { motor.current?.datos(red); }, [red, activo]);
   useEffect(() => { motor.current?.nivelar(nivel); }, [nivel, activo]);
 
@@ -137,7 +161,16 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
           <a className="boton chico" href="#inicio">Salir</a>
         </div>
 
-        <div className="mapa-pie">
+        {/* El foco: un sueño del salón y el superpoder que lo ayuda, sin nombres. */}
+        {enEvento && foco && <div className="mapa-foco" ref={tarjeta} key={foco.id}>
+          <Via tipo={foco.tipo}/>
+          {foco.filas.map((x, i) => <div className="foco-fila" key={i}>
+            <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>
+            <p className="foco-poder"><small>Lo impulsa el superpoder</small>{x.poder}</p>
+          </div>)}
+        </div>}
+
+        <div className="mapa-pie" ref={pie}>
           <div className="mapa-txt">
             <h1 id="t-mapa">Mapa de Sueños</h1>
             {linea && <p className="mapa-dato">{linea}</p>}

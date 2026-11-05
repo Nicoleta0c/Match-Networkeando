@@ -301,7 +301,21 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
 .mapa-vacio{position:absolute;inset:0 0 30vh;display:grid;place-items:center;padding:24px;text-align:center;pointer-events:none}
 .mapa-vacio p{max-width:24ch;font-size:clamp(22px,2.6vw,40px);font-weight:900;letter-spacing:-.02em;line-height:1.15;color:var(--m);text-wrap:balance}
 .mapa .salir .boton{white-space:nowrap}
+/* El foco: el sueño en grande y el superpoder que lo impulsa */
+.mapa-foco{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(16px,3vh,40px));left:clamp(20px,4vw,64px);width:min(560px,36vw);display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:20px 24px;border-radius:24px;background:color-mix(in srgb,var(--s) 92%,transparent);border:1px solid var(--b);box-shadow:0 24px 48px -24px rgba(0,0,0,.8);animation:sube .5s var(--ease) both}
+.foco-fila{display:flex;flex-direction:column;gap:10px;width:100%}
+.foco-fila+.foco-fila{padding-top:14px;border-top:1px solid var(--b)}
+.mapa-foco small{display:block;margin-bottom:2px;font-size:clamp(12px,.9vw,15px);font-weight:800;letter-spacing:.02em}
+.foco-sueno{font-size:clamp(20px,1.9vw,34px);font-weight:900;line-height:1.15;letter-spacing:-.02em;text-wrap:balance}
+.foco-sueno small{color:var(--a)}
+.foco-poder{font-size:clamp(16px,1.3vw,23px);font-weight:700;line-height:1.25}
+.foco-poder small{color:var(--h)}
 @media (max-width:700px){
+  .mapa-foco{top:calc(env(safe-area-inset-top,0px) + 70px);left:16px;right:16px;width:auto;padding:14px 16px;gap:10px;border-radius:20px}
+  .foco-sueno{font-size:18px}
+  .foco-poder{font-size:15px}
+  /* En el celular cabe un solo sueño en la tarjeta; el otro lado de la doble vía se ve en la red. */
+  .foco-fila+.foco-fila{display:none}
   .mapa-qr,.mapa-pantalla{display:none}
   .mapa-pie{padding-top:48px}
   .mapa-leyenda{gap:6px 16px;margin-top:12px}

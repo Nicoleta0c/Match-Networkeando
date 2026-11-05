@@ -3,18 +3,33 @@
    - "todos": la cámara se aleja y las líneas finas pulsan.
    - "evento": la cámara entra al racimo de hoy; los empalmes se encienden y un punto de luz
      viaja por cada línea (en doble vía, en las dos direcciones).
-   - Cada persona nueva entra con un destello y sus líneas se dibujan poco a poco. */
+   - Cada persona nueva entra con un destello y sus líneas se dibujan poco a poco.
+   - Los sueños se ven como etiquetas junto a cada punto, y un foco recorre los empalmes uno por uno:
+     resalta la pareja y avisa (onFoco) para que la vista muestre su sueño y el superpoder que lo ayuda. */
 import type { Red, TipoEnlace } from "@/lib/red";
 
 export type Nivel = "todos" | "evento";
-type Nodo = {k: string; e: number; s: 0 | 1; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number};
+/** Lo que muestra la tarjeta del foco: cada sueño con el superpoder que lo ayuda (dos filas en doble vía). */
+export type Foco = {id: number; tipo: "doble" | "una"; filas: {sueno: string; poder: string}[]};
+type Nodo = {k: string; e: number; s: 0 | 1; t: string; p: string; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number; r: number};
 type Enlace = {a: Nodo; b: Nodo; t: TipoEnlace; i: number};
 type Cam = {x: number; y: number; k: number};
 
 const RADIO_REPULSION = 46;
 const LARGO: Record<TipoEnlace, number> = {2: 46, 1: 62, 0: 96};
 const RESORTE: Record<TipoEnlace, number> = {2: .06, 1: .04, 0: .012};
-const DURA_ZOOM = 1600, DURA_DESTELLO = 1400, DURA_LINEA = 900;
+const DURA_ZOOM = 1600, DURA_DESTELLO = 1400, DURA_LINEA = 900, DURA_FOCO = 6500;
+/** Con más gente que esto, las etiquetas no caben: solo se rotula la pareja del foco. */
+const MAX_ETIQUETAS = 40;
+const recortar = (t: string, n: number) => t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
+
+/* Cada sueño con el superpoder que lo ayuda. En una vía, a ayuda y b tiene el sueño. */
+function filasDe(l: Enlace) {
+  const f: {sueno: string; poder: string}[] = [];
+  if (l.b.t && l.a.p) f.push({sueno: l.b.t, poder: l.a.p});
+  if (l.t === 2 && l.a.t && l.b.p) f.push({sueno: l.a.t, poder: l.b.p});
+  return f;
+}
 
 const limitar = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const suave = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -38,6 +53,12 @@ export class Motor {
   private raf = 0; private vivo = true; private primera = true;
   private quieto: boolean;
   private ro: ResizeObserver; private mo: MutationObserver;
+  private fuente = "system-ui, sans-serif";
+  private foco: Enlace | null = null; private focoDesde = 0; private focoI = -1; private focoN = 0; private ultimoNuevo = "";
+  /** Espacio que ocupan los textos de la vista arriba y abajo (lo mide VistaMapa). */
+  private reserva = {arriba: 72, abajo: 0, tapa: null as [number, number, number, number] | null};
+  /** Se llama cada vez que el foco cambia de pareja. */
+  onFoco: ((f: Foco | null) => void) | null = null;
 
   constructor(private lienzo: HTMLCanvasElement) {
     this.ctx = lienzo.getContext("2d")!;
@@ -62,7 +83,11 @@ export class Motor {
     const cs = getComputedStyle(document.documentElement);
     const v = (n: string, def: string) => cs.getPropertyValue(n).trim() || def;
     this.col = {bg: v("--bg", "#111"), a: v("--a", "#fc0"), h: v("--h", "#3fe"), t: v("--t", "#fff"), m: v("--m", "#999")};
+    this.fuente = getComputedStyle(document.body).fontFamily || this.fuente;
   }
+
+  /** La vista avisa cuánto ocupan sus textos, para que la red no quede detrás. */
+  reservar(arriba: number, abajo: number, tapa: [number, number, number, number] | null = null) { this.reserva = {arriba, abajo, tapa}; }
 
   private medir() {
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -85,10 +110,10 @@ export class Motor {
       let n = this.nodos.get(d.k);
       if (!n) {
         const c = this.centros[d.e] ?? {x: 0, y: 0}, ang = hash(d.k) * Math.PI * 2, rad = Math.sqrt(hash(d.k + "r")) * radioRacimo(red.eventos[d.e]?.n ?? 1);
-        n = {k: d.k, e: d.e, s: d.s, x: c.x + Math.cos(ang) * rad, y: c.y + Math.sin(ang) * rad, vx: 0, vy: 0, nace: this.primera ? -1e9 : ahora, fase: hash(d.k + "f") * 6.283, grado: 0, empalma: false, px: 0, py: 0};
+        n = {k: d.k, e: d.e, s: d.s, t: "", p: "", x: c.x + Math.cos(ang) * rad, y: c.y + Math.sin(ang) * rad, vx: 0, vy: 0, nace: this.primera ? -1e9 : ahora, fase: hash(d.k + "f") * 6.283, grado: 0, empalma: false, px: 0, py: 0, r: 0};
         llegaron = true;
       }
-      n.e = d.e; n.s = d.s; n.grado = 0; n.empalma = false;
+      n.e = d.e; n.s = d.s; n.t = d.t ?? ""; n.p = d.p ?? ""; n.grado = 0; n.empalma = false;
       nuevos.set(d.k, n);
       return n;
     });
@@ -99,6 +124,12 @@ export class Motor {
       if (t) { A.grado++; B.grado++; A.empalma = B.empalma = true; }
       return {a: A, b: B, t, i};
     });
+    // Si la pareja del foco ya no existe (alguien borró su perfil), el foco pasa a la siguiente.
+    if (this.foco) {
+      const f = this.foco;
+      this.foco = this.enlaces.find(l => l.a === f.a && l.b === f.b && l.t > 0) ?? null;
+      if (!this.foco) this.focoDesde = 0;
+    }
     if (this.primera) {
       this.primera = false;
       this.alpha = 1;
@@ -172,10 +203,35 @@ export class Motor {
     this.alpha *= .985;
   }
 
-  /* Margen que ocupan los textos de abajo, para que la red no quede detrás. */
+  /* Margen que ocupan los textos de la vista, para que la red no quede detrás. */
   private marco() {
-    const abajo = limitar(this.h * .3, 150, 300), arriba = 72, lado = this.w > 700 ? 56 : 20;
+    const abajo = this.reserva.abajo > 0 ? limitar(this.reserva.abajo, 0, this.h * .6) : limitar(this.h * .3, 150, 300);
+    const arriba = limitar(this.reserva.arriba, 56, this.h * .4), lado = this.w > 700 ? 56 : 20;
     return {abajo, arriba, lado, cx: this.w / 2, cy: arriba + (this.h - abajo - arriba) / 2};
+  }
+
+  /* El foco: cada 6,5 segundos pasa a otra pareja (primero las de doble vía).
+     Cuando alguien nuevo llega con un empalme, el foco salta a esa persona. */
+  private rotarFoco(ahora: number) {
+    const enfoque = this.nivel === "evento" && this.actual >= 0;
+    if (!enfoque) { this.ponerFoco(null, ahora); return; }
+    const hoy = this.enlaces.filter(l => l.t > 0 && l.a.e === this.actual && filasDe(l).length > 0);
+    const nuevo = this.lista.filter(n => n.e === this.actual && ahora - n.nace < 2000 && n.k !== this.ultimoNuevo).sort((x, y) => y.nace - x.nace)[0];
+    if (nuevo) {
+      const suyo = hoy.filter(l => l.a === nuevo || l.b === nuevo).sort((x, y) => y.t - x.t)[0];
+      if (suyo) { this.ultimoNuevo = nuevo.k; this.ponerFoco(suyo, ahora); return; }
+    }
+    if (this.foco && ahora - this.focoDesde < DURA_FOCO) return;
+    if (!hoy.length) { this.ponerFoco(null, ahora); return; }
+    hoy.sort((x, y) => (y.t - x.t) || (x.i - y.i));
+    this.focoI = (this.focoI + 1) % hoy.length;
+    this.ponerFoco(hoy[this.focoI], ahora);
+  }
+
+  private ponerFoco(l: Enlace | null, ahora: number) {
+    if (l === this.foco && (l || !this.focoDesde)) return;
+    this.foco = l; this.focoDesde = l ? ahora : 0;
+    this.onFoco?.(l ? {id: ++this.focoN, tipo: l.t === 2 ? "doble" : "una", filas: filasDe(l)} : null);
   }
 
   private objetivo(): Cam {
@@ -214,6 +270,7 @@ export class Motor {
     if (!document.hidden && this.w > 0) {
       this.paso();
       this.moverCamara(ahora);
+      this.rotarFoco(ahora);
       this.dibujar(ahora);
     }
     this.raf = requestAnimationFrame(this.bucle);
@@ -250,10 +307,19 @@ export class Motor {
       else if (l.t === 2) { color = col.h; ancho = 3.4 * grosor; alfa = .92; }
       else if (l.t === 1) { color = col.h; ancho = 1.6 * grosor; alfa = .5; }
       else { color = col.m; ancho = grosor; alfa = .16; }
+      // Mientras el foco resalta una pareja, las demás líneas se apagan un poco.
+      if (enfoque && this.foco) { if (l === this.foco) continue; alfa *= .4; }
       ctx.globalAlpha = alfa; ctx.strokeStyle = color; ctx.lineWidth = ancho;
       ctx.beginPath(); ctx.moveTo(l.a.px, l.a.py);
       ctx.lineTo(l.a.px + (l.b.px - l.a.px) * aparece, l.a.py + (l.b.py - l.a.py) * aparece);
       ctx.stroke();
+    }
+
+    // La línea del foco, encima de todas.
+    const f = enfoque ? this.foco : null;
+    if (f) {
+      ctx.globalAlpha = 1; ctx.strokeStyle = col.h; ctx.lineWidth = (f.t === 2 ? 5 : 3.6) * grosor;
+      ctx.beginPath(); ctx.moveTo(f.a.px, f.a.py); ctx.lineTo(f.b.px, f.b.py); ctx.stroke();
     }
 
     // Puntos de luz que viajan por los empalmes del evento: de quien ayuda hacia el sueño.
@@ -274,7 +340,12 @@ export class Motor {
     for (const n of this.lista) {
       const dentro = !enfoque || n.e === this.actual;
       const r = (n.s ? 4.4 : 3.6) * z * (1 + Math.min(n.grado, 5) * .1) * (enfoque ? 1 : .8);
+      n.r = r;
       const color = n.s ? col.a : col.h;
+      if (f && (n === f.a || n === f.b)) {
+        ctx.globalAlpha = 1; ctx.strokeStyle = col.t; ctx.lineWidth = 2.4 * grosor;
+        ctx.beginPath(); ctx.arc(n.px, n.py, r + 6 * grosor, 0, 6.283); ctx.stroke();
+      }
       ctx.globalAlpha = dentro ? 1 : .18;
       ctx.beginPath(); ctx.arc(n.px, n.py, r, 0, 6.283);
       if (n.empalma) { ctx.fillStyle = color; ctx.fill(); }
@@ -285,6 +356,44 @@ export class Motor {
         ctx.beginPath(); ctx.arc(n.px, n.py, r + 34 * grosor * salida(q), 0, 6.283); ctx.stroke();
       }
     }
+    if (enfoque) this.etiquetas(f, m);
     ctx.globalAlpha = 1;
+  }
+
+  /* Los sueños escritos junto a cada punto. Primero los de la pareja del foco, en grande;
+     después los demás, sin taparse entre ellos ni con los textos de la vista. */
+  private etiquetas(f: Enlace | null, m: {arriba: number; abajo: number; lado: number}) {
+    const {ctx, col} = this;
+    const hoy = this.lista.filter(n => n.e === this.actual);
+    const tam = limitar(Math.min(this.w, this.h) / 64, 11, 18);
+    // La tarjeta del foco cuenta como ocupada: ninguna etiqueta queda debajo.
+    const puestas: [number, number, number, number][] = this.reserva.tapa ? [this.reserva.tapa] : [];
+    const libre = (x0: number, y0: number, x1: number, y1: number) =>
+      x0 >= 8 && x1 <= this.w - 8 && y0 >= m.arriba - 8 && y1 <= this.h - m.abajo + 8 &&
+      !puestas.some(([a, b, c, d]) => x0 < c && x1 > a && y0 < d && y1 > b);
+    const poner = (n: Nodo, texto: string, fuerte: boolean) => {
+      ctx.font = `${fuerte ? 800 : 600} ${fuerte ? tam * 1.15 : tam}px ${this.fuente}`;
+      const ancho = ctx.measureText(texto).width, alto = (fuerte ? tam * 1.15 : tam) * 1.3, sep = n.r + 8;
+      // A la derecha del punto; si no cabe, a la izquierda.
+      for (const lado of [1, -1]) {
+        const x0 = lado > 0 ? n.px + sep : n.px - sep - ancho, y0 = n.py - alto / 2;
+        if (!libre(x0, y0, x0 + ancho, y0 + alto)) continue;
+        puestas.push([x0 - 4, y0, x0 + ancho + 4, y0 + alto]);
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.globalAlpha = fuerte ? 1 : (f ? .45 : .82);
+        ctx.lineJoin = "round"; ctx.lineWidth = 4; ctx.strokeStyle = col.bg;
+        ctx.strokeText(texto, x0, n.py);
+        ctx.fillStyle = fuerte ? col.t : col.m;
+        ctx.fillText(texto, x0, n.py);
+        return;
+      }
+    };
+    // La pareja del foco: el sueño (o el superpoder de quien ayuda, si no tiene sueño).
+    if (f) for (const n of [f.b, f.a]) poner(n, recortar(n.t || n.p, 34), true);
+    if (hoy.length > MAX_ETIQUETAS) return;
+    for (const n of hoy) {
+      if (!n.t || (f && (n === f.a || n === f.b))) continue;
+      poner(n, recortar(n.t, 30), false);
+    }
   }
 }
