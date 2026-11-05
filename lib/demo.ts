@@ -1,27 +1,27 @@
-/* Perfiles de ejemplo del modo #demo (copiados del original). */
+/* Perfiles de ejemplo del modo #demo: un evento de tecnología. */
 
 export type DemoPerfil = Record<string, unknown> & { id: string };
 
+/* Gente del salón. Lo que necesita cada idea lo calcula la app a partir del texto. */
 export const DEMO: DemoPerfil[] = [
-  {id:"d3", alias:"Carlos Méndez", que:"Contabilidad", color:"#FF8A00", contact:"@carlos.cuentas", idea:"Un taller gratis de finanzas personales para jóvenes", needs:[3,7], power:"Hago presupuestos y llevo las cuentas claras", quiere:false, devuelve:true},
-  {id:"d4", alias:"Ana Lucía Gómez", que:"Comunicación social", color:"#00A884", contact:"analucia@correo.com", idea:"Un podcast sobre emprendedoras del Cibao", needs:[6,4], power:"Escribo guiones y hablo en público sin miedo", quiere:true},
-  {id:"d2", anon:true, que:"Ingeniería de Sistemas", idea:"", power:"Programo apps en Flutter y conecto todo con bases de datos", quiere:true},
-  {id:"d1", alias:"Laura Peña", que:"Arquitectura", color:"#1E88E5", contact:"@laura.planos", idea:"Un mapa de lugares accesibles para sillas de ruedas", needs:[6,1], power:"Dibujo planos y maquetas", quiere:true},
-  {id:"d6", anon:true, que:"Psicología", idea:"Una línea de apoyo emocional para estudiantes en época de exámenes", needs:[1,4], power:"Escucho de verdad y doy talleres de manejo del estrés", quiere:true},
-  {id:"d7", alias:"Valeria Cruz", que:"Mercadeo", color:"#B5179E", contact:"@vale.vende", idea:"", power:"Hago crecer cuentas de Instagram y vendo por redes", quiere:true},
-  {id:"d5", alias:"Miguel Santos", que:"Ingeniería Eléctrica", color:"#2B9348", contact:"809-555-0147", idea:"Un kit de energía solar para colmados", needs:[5,4], power:"Arreglo cualquier cosa eléctrica y armo prototipos", quiere:false, devuelve:true},
-  {id:"d8", alias:"José Almonte", que:"Derecho", color:"#E85D04", contact:"@jose.legal", idea:"Asesoría legal gratis para emprendedores que empiezan", needs:[4,1], power:"Reviso contratos y te ayudo con los trámites de registro", quiere:false}
+  {id:"d1", alias:"Paola Jiménez", que:"Ingeniería de Software", color:"#1E88E5", contact:"@paola.flutter", idea:"Una app para que los colmados lleven el fiado en el celular", power:"Programo apps en Flutter"},
+  {id:"d2", alias:"Carlos Mejía", que:"Ciencia de Datos", color:"#FF8A00", contact:"@carlos.datos", idea:"Un mapa de los apagones por sector con datos de la gente", power:"Analizo datos y hago gráficos con Python"},
+  {id:"d3", anon:true, que:"Diseño UX", idea:"", power:"Diseño interfaces fáciles de usar (UX/UI)"},
+  {id:"d4", alias:"Raúl Batista", que:"Telemática", color:"#2B9348", contact:"@raul.cloud", idea:"Un bot de WhatsApp que avise cuándo pasa la guagua", power:"Programo el backend: servidores, bases de datos y APIs"},
+  {id:"d5", alias:"Nicole Rosario", que:"Mercadeo digital", color:"#B5179E", contact:"@nicole.lanza", idea:"", power:"Lanzo productos en redes y consigo los primeros usuarios"},
+  {id:"d6", alias:"Jonathan Pérez", que:"Electrónica", color:"#E85D04", contact:"@jona.arduino", idea:"Sensores baratos para medir la calidad del agua en los ríos", power:"Armo prototipos con Arduino y sensores"},
+  {id:"d7", alias:"Melissa Castillo", que:"Administración de Empresas", color:"#00A884", contact:"melissa.castillo@correo.com", idea:"Una startup de tutorías de programación entre estudiantes", power:"Hago el modelo de negocio y consigo inversión"},
+  {id:"d8", anon:true, que:"Derecho", idea:"", power:"Te ayudo con contratos, términos legales y protección de datos"}
 ];
 export const DEMO_MATCHES: DemoPerfil[] = [
-  {id:"m1", alias:"Sofía Taveras", que:"Psicología", color:"#B5179E", contact:"sofia.taveras@correo.com", idea:"Talleres de salud mental para liceos públicos", needs:[6,3], power:"Diseño dinámicas de grupo que rompen el hielo"},
-  {id:"m2", alias:"Daniel Rosario", que:"Ingeniería de Software", color:"#1E88E5", contact:"@daniel.codea", idea:"Una app para reservar las canchas del barrio", needs:[4,6], power:"Programo páginas web y apps rápidas"},
-  {id:"m3", anon:true, que:"Diseño Gráfico", idea:"", power:"Diseño logos e identidades que se recuerdan"},
-  {id:"m4", alias:"Kevin Almánzar", que:"Administración de Empresas", color:"#2B9348", contact:"809-555-0182", idea:"Una feria de emprendedores en la universidad", needs:[3,2], power:"Consigo patrocinadores y cierro acuerdos"},
-  {id:"m5", anon:true, que:"Comunicación", idea:"", power:"Edito videos cortos para TikTok y Reels"},
-  {id:"m6", alias:"María Fernanda Ureña", que:"Educación", color:"#00A884", contact:"@mafe.ensena", idea:"Tutorías de matemáticas entre estudiantes", needs:[1,6], power:"Explico fácil lo que parece difícil"},
-  {id:"m7", anon:true, que:"Mercadeo", idea:"Una marca de ropa con diseños dominicanos", needs:[2,5], power:"Vendo por redes sociales y hago crecer cuentas"},
-  {id:"m8", alias:"Camila Núñez", que:"Medicina", color:"#5B2EFF", contact:"@camila.salud", idea:"Jornadas de salud gratis en comunidades", needs:[6,9], power:"Coordino voluntarios y logística"},
-  {id:"m9", anon:true, que:"Derecho", idea:"", power:"Te ayudo a registrar tu negocio y tu marca"},
-  {id:"m10", alias:"Gabriela Santos", que:"Contabilidad", color:"#F0306F", contact:"gaby.santos@correo.com", idea:"Un club de ahorro para jóvenes emprendedores", needs:[3,1], power:"Hago presupuestos y planes de negocio"}
+  {id:"m1", alias:"Gabriel Vargas", que:"Ciberseguridad", color:"#5B2EFF", contact:"@gabo.seguro", idea:"Talleres de seguridad digital para adultos mayores", power:"Encuentro fallas de seguridad en apps y páginas web"},
+  {id:"m2", alias:"Andrea Féliz", que:"Comunicación", color:"#F0306F", contact:"@andrea.explica", idea:"Un canal de YouTube que explique tecnología en dominicano", power:"Hago videos y presento sin miedo a la cámara"},
+  {id:"m3", alias:"Esteban Gil", que:"Inteligencia Artificial", color:"#18B5A6", contact:"@esteban.ia", idea:"Un asistente con inteligencia artificial que ayude a llenar formularios del gobierno", power:"Entreno modelos de inteligencia artificial"},
+  {id:"m4", alias:"Yarisa Méndez", que:"Educación", color:"#1E88E5", contact:"@yari.ensena", idea:"Clases de programación para niños de barrio", power:"Enseño fácil y doy talleres para niños"},
+  {id:"m5", anon:true, que:"Diseño Gráfico", idea:"", power:"Diseño logos e identidades para apps y startups"},
+  {id:"m6", alias:"Luis Encarnación", que:"Ingeniería de Sistemas", color:"#2B9348", contact:"@luis.web", idea:"Una página para comparar precios de útiles escolares", power:"Programo páginas web rápidas con React"},
+  {id:"m7", anon:true, que:"Mercadeo", idea:"Una tienda en línea de accesorios tech hechos en RD", power:"Vendo por redes sociales y hago crecer cuentas"},
+  {id:"m8", alias:"Rosa Taveras", que:"Contabilidad", color:"#FF8A00", contact:"rosa.taveras@correo.com", idea:"", power:"Hago presupuestos y llevo las cuentas de startups"}
 ];
-export const DEMO_YO = {idea:"Un club de lectura en los parques de la ciudad", needs:[3], power:"Organizo eventos y la gente sí llega", anon:false, alias:"Invitado", que:"Perfil de prueba", contact:"@tu.usuario"};
+/* Tu perfil en la demo. */
+export const DEMO_YO = {idea:"Una app que conecte a estudiantes con pasantías en empresas de tecnología", power:"Consigo patrocinadores y armo equipos", anon:false, alias:"Invitado", que:"Perfil de prueba", contact:"@tu.usuario"};
