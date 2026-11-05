@@ -65,7 +65,6 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   return (
     <section className="cont vista" data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
       <h2 className="titulo" id="t-perfil">Mi perfil</h2>
-      <p className="intro">Dos preguntas: tu sueño y tu superpoder. Así se verá tu tarjeta cuando hagas match.</p>
       <Aviso>{aviso}</Aviso>
       <form className="form" id="form" noValidate onSubmit={enviar} onInput={tocar}>
         {/* Escribes directo en tu tarjeta: así se verá cuando hagas match. */}
