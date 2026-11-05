@@ -14,7 +14,7 @@ import { VistaClics } from "./VistaClics";
 import { VistaProyectar } from "./VistaProyectar";
 import { Paletas } from "./Paletas";
 import type { Busqueda } from "./Buscando";
-import { Chat } from "./Chat";
+import { BotonChat, Chat, ListaChats } from "./Chat";
 
 /* Enlace público de esta página: el QR apunta aquí + #perfil.
    Por defecto es la dirección donde está corriendo la app. Al publicarla en internet
@@ -48,7 +48,7 @@ type Estado = {
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
-  chat: Charla; chatDemo: Charla; chatCon: string | null; leido: Record<string, number> | null; escribiendo: string | null;
+  chat: Charla; chatDemo: Charla; chatCon: string | null; chatLista: boolean; leido: Record<string, number> | null; escribiendo: string | null;
 };
 type Charla = {mensajes: Mensaje[]; bloqueados: Set<string>};
 const charlaVacia = (): Charla => ({mensajes: [], bloqueados: new Set()});
@@ -64,7 +64,7 @@ const estadoInicial = (): Estado => ({
   iaDisponible: false, iaRes: null, iaFallo: false,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, ""),
-  chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, leido: null, escribiendo: null
+  chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, chatLista: false, leido: null, escribiendo: null
 });
 
 export default function App() {
@@ -160,8 +160,9 @@ export default function App() {
     }
     forzar();
   }
-  function abrirChat(id: string) { S.chatCon = id; marcarLeido(id); forzar(); }
-  const cerrarChat = useCallback(() => { S.chatCon = null; forzar(); }, [S]);
+  function abrirChat(id: string) { S.chatCon = id; S.chatLista = false; marcarLeido(id); forzar(); }
+  const cerrarChat = useCallback(() => { S.chatCon = null; S.chatLista = false; forzar(); }, [S]);
+  const volverALista = useCallback(() => { S.chatCon = null; S.chatLista = true; forzar(); }, [S]);
   async function enviarMensaje(texto: string) {
     const para = S.chatCon;
     if (!para || !S.uid) return false;
@@ -210,7 +211,7 @@ export default function App() {
     document.body.dataset.view = v;
     if (v === "perfil") { formTocado.current = false; S.relleno++; }
     if (v !== "clics") cancelarBusqueda();
-    S.chatCon = null;
+    S.chatCon = null; S.chatLista = false;
     forzar();
     if (v === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
   }
@@ -478,6 +479,10 @@ export default function App() {
   });
 
   const enProyectar = S.vista === "proyectar";
+  // A quién le puedes escribir: tus matches (los mejores primero) y quien ya te haya escrito.
+  const buenos = todos.filter(x => x.r.pct >= UMBRAL);
+  const genteChat = (buenos.length ? buenos : todos.slice(0, 3)).slice(0, 13).map(x => x.o);
+  for (const c of convs) { const p = S.perfiles.get(c.id); if (p && !genteChat.some(g => g.id === p.id)) genteChat.push(p); }
   const perfilesMap = S.perfiles;
   const pares = useMemo(() => {
     if (!enProyectar) return 0;
@@ -506,13 +511,15 @@ export default function App() {
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
-        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}
-          convs={convs} onChat={abrirChat}/>
+        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
       </main>
       {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}
         mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}
-        escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat}/>}
+        escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat} onVolver={volverALista}/>}
+      {me && S.chatLista && !S.chatCon && <ListaChats me={me} gente={genteChat} convs={convs} onAbrir={abrirChat} onCerrar={cerrarChat}/>}
+      {me && !S.chatCon && !S.chatLista && !enProyectar && !S.busqueda && genteChat.length > 0 &&
+        <BotonChat sinLeer={convs.reduce((n, c) => n + c.sinLeer, 0)} onAbrir={() => { S.chatLista = true; forzar(); }}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>

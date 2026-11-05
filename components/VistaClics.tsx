@@ -3,7 +3,6 @@ import { useState, type ReactNode } from "react";
 import { UMBRAL, type Item, type Perfil } from "@/lib/match";
 import { Aviso, Carta, Duo, Pie, Porque } from "./ui";
 import { Buscando, type Busqueda } from "./Buscando";
-import type { Conv } from "./App";
 
 type Props = {
   activo: boolean; aviso: ReactNode;
@@ -11,7 +10,6 @@ type Props = {
   loaded: boolean; me: Perfil | null; todos: Item[];
   conIA: boolean; iaFallo: boolean;
   onBuscar: () => void;
-  convs: Conv[]; onChat: (id: string) => void;
 };
 
 export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, ...resto}: Props) {
@@ -26,7 +24,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, onChat}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
+function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">
@@ -51,10 +49,10 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, onChat}: Om
       ) : <>
         <div className="mejor" aria-label={buenos.length ? "Tu mejor match" : "Lo más cercano por ahora"}>
           <Carta p={mejor.o} me={me} analisis={mejor.r} sinCabeza/>
-          <Porque me={me} x={mejor} accion={<Escribir id={mejor.o.id} convs={convs} onChat={onChat}/>}/>
+          <Porque me={me} x={mejor}/>
         </div>
         {lista.length > 1 && <Otros n={Math.min(lista.length - 1, 12)}>
-          {lista.slice(1, 13).map(x => <Carta key={x.o.id} p={x.o} me={me} analisis={x.r} pie={<Pie me={me} x={x} conRazones accion={<Escribir id={x.o.id} convs={convs} onChat={onChat} chico/>}/>}/>)}
+          {lista.slice(1, 13).map(x => <Carta key={x.o.id} p={x.o} me={me} analisis={x.r} pie={<Pie me={me} x={x} conRazones/>}/>)}
         </Otros>}
       </>}
     </>
@@ -77,16 +75,5 @@ function Otros({n, children}: {n: number; children: ReactNode}) {
       </h3>
       <div className="otros" id="otros-lista" hidden={!abierto}>{children}</div>
     </section>
-  );
-}
-
-/* Botón para abrir el chat con un match. Si ya hablaron, dice "Seguir hablando". */
-function Escribir({id, convs, onChat, chico}: {id: string; convs: Conv[]; onChat: (id: string) => void; chico?: boolean}) {
-  const c = convs.find(x => x.id === id);
-  return (
-    <button type="button" className={"boton fuerte chat-abrir" + (chico ? " chico" : "")} onClick={() => onChat(id)}>
-      {c ? "Seguir hablando" : "Escribirle por el chat"}
-      {c && c.sinLeer > 0 && <span className="conv-n">{c.sinLeer}</span>}
-    </button>
   );
 }
