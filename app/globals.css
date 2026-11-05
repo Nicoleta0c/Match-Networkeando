@@ -108,31 +108,49 @@ main{position:relative;z-index:1}
 .pasos p{color:var(--m);margin-top:8px;max-width:520px}
 .como .acciones{margin-top:40px}
 
-/* perfil */
+/* perfil: escribes directo en tu tarjeta, igual que se verá en el match */
 .form{margin-top:44px}
 .bloques{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:72px}
-.bloque{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,box-shadow .2s}
-.bloque:focus-within{border-color:var(--h);box-shadow:0 0 0 4px color-mix(in srgb,var(--h) 18%,transparent)}
-.bloque h3{font-size:26px}
-.bloque.idea h3{color:var(--a)}
-.bloque.poder h3{color:var(--h)}
-.bloque label{font-weight:700;font-size:16px}
-.bloque textarea{width:100%;min-height:110px;resize:vertical;border-radius:14px;border:1px solid var(--b2);background:var(--bg);color:var(--t);font-size:19px;padding:14px 16px}
-.bloque textarea::placeholder,.campos-nombre input::placeholder{color:var(--m);opacity:.8}
-.bloque textarea:focus,.campos-nombre input:focus{outline:none;border-color:var(--h)}
-.bloque .cuenta{font-size:13px;color:var(--m);text-align:right;font-variant-numeric:tabular-nums}
-.form [aria-invalid="true"]{border-color:#FF8A6B}
+.bloque{--tono:var(--a);display:flex;flex-direction:column;gap:16px;padding:22px 24px 16px;border-radius:24px;border:1px solid color-mix(in srgb,var(--tono) 28%,var(--b));background:linear-gradient(155deg,color-mix(in srgb,var(--tono) 14%,var(--bg)),var(--bg) 65%);transition:border-color .2s,box-shadow .2s}
+.bloque.poder{--tono:var(--h)}
+.bloque:focus-within{border-color:var(--tono);box-shadow:0 0 0 4px color-mix(in srgb,var(--tono) 18%,transparent)}
+.bloque:has([aria-invalid="true"]){border-color:#FF8A6B}
+.bloque-et{display:flex;align-items:center;gap:12px;cursor:text}
+.bloque-et .cara{width:40px;height:40px;flex:none}
+.bloque-et b{display:block;font-size:20px;line-height:1.15;color:var(--tono);letter-spacing:-.01em}
+.bloque-et small{display:block;font-size:15px;font-weight:600;color:var(--m)}
+.bloque textarea{width:100%;min-height:3.7em;resize:none;field-sizing:content;border:0;padding:0;background:transparent;color:var(--t);font-weight:800;font-size:clamp(20px,2vw,24px);line-height:1.22;letter-spacing:-.01em}
+.bloque textarea:focus{outline:none}
+.bloque textarea::placeholder{color:var(--m);font-weight:500;font-style:italic;opacity:1}
+.bloque-pie{display:flex;justify-content:space-between;gap:12px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--tono) 18%,var(--b));font-size:14px;color:var(--m)}
+.bloque-pie .cuenta{margin-left:auto;font-variant-numeric:tabular-nums}
 .union{position:absolute;left:50%;top:50%;width:72px;height:4px;margin:-2px 0 0 -36px;background:var(--h);border-radius:4px;box-shadow:0 0 12px var(--hglow);animation:ancho .9s var(--ease) .3s both}
 @keyframes ancho{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .union::after{content:"+";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;font-size:22px;box-shadow:0 0 0 6px var(--bg)}
-.fila{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:28px}
-.segmento{display:inline-flex;padding:4px;border-radius:999px;background:var(--s);border:1px solid var(--b)}
-.segmento button{border:0;background:transparent;color:var(--m);font-weight:800;font-size:16px;min-height:44px;padding:8px 20px;border-radius:999px;cursor:pointer;transition:background-color .2s,color .2s}
-.segmento button[aria-pressed="true"]{background:var(--t);color:var(--bg)}
-.campos-nombre{display:flex;flex-wrap:wrap;gap:12px;flex:1 1 100%}
-.campos-nombre input{flex:1 1 200px;min-height:50px;border-radius:14px;border:1px solid var(--b2);background:var(--bg);color:var(--t);font-size:17px;padding:12px 16px}
-.error{color:#FF8A6B;font-weight:700;margin-top:14px;min-height:1px}
-.borrar{border:0;background:none;color:var(--m);font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;margin-top:12px;padding:12px 0;min-height:44px}
+.aparecer{border:0;padding:0;margin:48px 0 0;min-width:0}
+.aparecer legend{padding:0;margin-bottom:14px;font-size:clamp(22px,2.2vw,28px);font-weight:900;letter-spacing:-.02em}
+.opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opcion{display:flex;align-items:flex-start;gap:14px;text-align:left;padding:16px 18px;border-radius:18px;border:1px solid var(--b2);background:var(--s);color:var(--t);cursor:pointer;transition:border-color .2s,background-color .2s}
+.opcion b{display:block;font-size:17px}
+.opcion small{display:block;margin-top:3px;font-size:14px;line-height:1.4;color:var(--m)}
+.opcion-marca{flex:none;width:22px;height:22px;margin-top:1px;border-radius:50%;border:2px solid var(--b2);display:grid;place-items:center;transition:border-color .2s}
+.opcion-marca::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--h);transform:scale(0);transition:transform .2s var(--ease)}
+.opcion[aria-pressed="true"]{border-color:var(--h);background:color-mix(in srgb,var(--h) 8%,var(--s))}
+.opcion[aria-pressed="true"] .opcion-marca{border-color:var(--h)}
+.opcion[aria-pressed="true"] .opcion-marca::after{transform:scale(1)}
+.opcion:focus-visible{outline:3px solid var(--h);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.opcion:hover{border-color:var(--m)}.opcion[aria-pressed="true"]:hover{border-color:var(--h)}}
+.campos-nombre{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
+.campo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.campo label{font-weight:700;font-size:15px}
+.campo label span{color:var(--m);font-weight:600}
+.campo input{min-height:52px;border-radius:14px;border:1px solid var(--b2);background:var(--s);color:var(--t);font-size:17px;padding:12px 16px;transition:border-color .2s,box-shadow .2s}
+.campo input::placeholder{color:var(--m);opacity:1}
+.campo input:focus{outline:none;border-color:var(--h);box-shadow:0 0 0 4px color-mix(in srgb,var(--h) 18%,transparent)}
+.campo input[aria-invalid="true"]{border-color:#FF8A6B}
+.error{color:#FF8A6B;font-weight:700;margin-top:16px;min-height:1px}
+.form-acciones{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;margin-top:20px}
+.borrar{border:0;background:none;color:var(--m);font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:12px 0;min-height:44px}
 
 /* búsqueda: tu carita y la de cada persona, unidas por una onda que se teje */
 .tejido{position:relative;margin-top:40px;border-radius:32px;background:var(--s);border:1px solid var(--b);padding:56px 40px 44px;display:grid;grid-template-columns:1fr 1fr;column-gap:140px;row-gap:28px;overflow:hidden}
@@ -286,6 +304,8 @@ body[data-view="proyectar"] .paletas{display:none}
   .anillo,.anillo svg{width:112px;height:112px}
   .anillo b{font-size:30px}
   .otros{grid-template-columns:1fr}
+  .opciones,.campos-nombre{grid-template-columns:1fr}
+  .bloque{padding:18px 18px 14px}
   h3.sub-t{margin-top:56px}
   .vacio-grande{padding:32px 20px;font-size:17px}
   .carta{border-radius:24px}

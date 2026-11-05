@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { LIMITES, type Perfil } from "@/lib/match";
 import { Aviso } from "./ui";
+import { Cara } from "./Buscando";
 
 export type DatosForm = {idea: string; power: string; anon: boolean; alias: string; que: string; contact: string};
 
@@ -64,40 +65,69 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   return (
     <section className="cont vista" data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
       <h2 className="titulo" id="t-perfil">Mi perfil</h2>
-      <p className="intro">Dos cosas: lo que quieres hacer y lo que mejor haces. El hilo hace el resto.</p>
+      <p className="intro">Dos cosas: lo que quieres hacer y lo que mejor haces. Así se verá tu tarjeta cuando hagas match.</p>
       <Aviso>{aviso}</Aviso>
       <form className="form" id="form" noValidate onSubmit={enviar} onInput={tocar}>
+        {/* Escribes directo en tu tarjeta: así se verá cuando hagas match. */}
         <div className="bloques">
           <div className="bloque idea">
-            <h3>Mi idea</h3>
-            <label htmlFor="f-idea">¿Qué quieres hacer realidad?</label>
-            <textarea id="f-idea" maxLength={LIMITES.idea} placeholder="Dar una charla gratis sobre finanzas para jóvenes" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
-            <span className="cuenta" aria-hidden="true">{idea.length}/{LIMITES.idea}</span>
+            <label className="bloque-et" htmlFor="f-idea">
+              <Cara color="var(--a)"/>
+              <span><b>Mi idea</b><small>¿Qué quieres hacer realidad?</small></span>
+            </label>
+            <textarea id="f-idea" rows={3} maxLength={LIMITES.idea} placeholder="Ej.: una app para que los colmados lleven el fiado en el celular" aria-describedby="ayuda-idea" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
+            <div className="bloque-pie">
+              <span id="ayuda-idea">Opcional: si no tienes una, te sumas a la de alguien.</span>
+              <span className="cuenta" aria-hidden="true">{idea.length}/{LIMITES.idea}</span>
+            </div>
           </div>
           <span className="union" aria-hidden="true"></span>
           <div className="bloque poder">
-            <h3>Mi superpoder</h3>
-            <label htmlFor="f-poder">¿Qué es lo que mejor haces?</label>
-            <textarea id="f-poder" ref={poderRef} aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : undefined} maxLength={LIMITES.power} placeholder="Coordinador de voluntariados" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
-            <span className="cuenta" aria-hidden="true">{poder.length}/{LIMITES.power}</span>
+            <label className="bloque-et" htmlFor="f-poder">
+              <Cara color="var(--h)"/>
+              <span><b>Mi superpoder</b><small>¿Qué es lo que mejor haces?</small></span>
+            </label>
+            <textarea id="f-poder" rows={3} ref={poderRef} aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : "ayuda-poder"} maxLength={LIMITES.power} placeholder="Ej.: programo apps en Flutter" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
+            <div className="bloque-pie">
+              <span id="ayuda-poder">Algo concreto que sabes hacer bien.</span>
+              <span className="cuenta" aria-hidden="true">{poder.length}/{LIMITES.power}</span>
+            </div>
           </div>
         </div>
-        <div className="fila">
-          <div className="segmento" role="group" aria-label="Cómo quieres aparecer">
-            <button type="button" aria-pressed={anon} onClick={() => { tocar(); setAnon(true); }}>Anónimo</button>
-            <button type="button" aria-pressed={!anon} onClick={() => { tocar(); setAnon(false); }}>Con mi nombre</button>
+
+        <fieldset className="aparecer">
+          <legend>¿Cómo quieres aparecer?</legend>
+          <div className="opciones">
+            <button type="button" className="opcion" aria-pressed={anon} onClick={() => { tocar(); setAnon(true); }}>
+              <span className="opcion-marca" aria-hidden="true"></span>
+              <span><b>Anónimo</b><small>Nadie ve tu nombre. Igual haces match y te escriben por el chat de la app.</small></span>
+            </button>
+            <button type="button" className="opcion" aria-pressed={!anon} onClick={() => { tocar(); setAnon(false); }}>
+              <span className="opcion-marca" aria-hidden="true"></span>
+              <span><b>Con mi nombre</b><small>Tu nombre y tu contacto salen en tu tarjeta.</small></span>
+            </button>
           </div>
           <div className="campos-nombre" id="campos-nombre" hidden={anon}>
-            <label className="sr" htmlFor="f-nombre">Tu nombre</label><input type="text" id="f-nombre" ref={nombreRef} aria-invalid={malo === "nombre" || undefined} aria-describedby={malo === "nombre" ? "error" : undefined} maxLength={LIMITES.alias} autoComplete="name" placeholder="Tu nombre" value={alias} onChange={e => setAlias(e.target.value)}/>
-            <label className="sr" htmlFor="f-que">A qué te dedicas</label><input type="text" id="f-que" maxLength={LIMITES.que} placeholder="A qué te dedicas (opcional)" value={que} onChange={e => setQue(e.target.value)}/>
-            <label className="sr" htmlFor="f-contacto">Cómo contactarte</label><input type="text" id="f-contacto" ref={contactoRef} aria-invalid={malo === "contacto" || undefined} aria-describedby={malo === "contacto" ? "error" : undefined} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
+            <div className="campo">
+              <label htmlFor="f-nombre">Tu nombre</label>
+              <input type="text" id="f-nombre" ref={nombreRef} aria-invalid={malo === "nombre" || undefined} aria-describedby={malo === "nombre" ? "error" : undefined} maxLength={LIMITES.alias} autoComplete="name" placeholder="Ej.: Paola Jiménez" value={alias} onChange={e => setAlias(e.target.value)}/>
+            </div>
+            <div className="campo">
+              <label htmlFor="f-que">A qué te dedicas <span>(opcional)</span></label>
+              <input type="text" id="f-que" maxLength={LIMITES.que} placeholder="Ej.: Ingeniería de Software" value={que} onChange={e => setQue(e.target.value)}/>
+            </div>
+            <div className="campo">
+              <label htmlFor="f-contacto">Cómo contactarte</label>
+              <input type="text" id="f-contacto" ref={contactoRef} aria-invalid={malo === "contacto" || undefined} aria-describedby={malo === "contacto" ? "error" : undefined} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
+            </div>
           </div>
-          <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
-        </div>
-        <p className="nota" id="nota-anon" hidden={!anon}>Nadie verá tu nombre. Igual puedes hacer match; cuando quieras que te contacten, cambias a Con mi nombre.</p>
-        <p className="nota" id="nota-nombre" hidden={anon}>Tu nombre y tu contacto se ven en tu tarjeta.</p>
+        </fieldset>
+
         <p className="error" id="error" role="alert">{error}</p>
-        <button className="borrar" type="button" id="b-quitar" hidden={!me} disabled={!puede} onClick={quitar}>{armado ? "Toca otra vez para borrarlo" : "Borrar mi perfil"}</button>
+        <div className="form-acciones">
+          <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
+          <button className="borrar" type="button" id="b-quitar" hidden={!me} disabled={!puede} onClick={quitar}>{armado ? "Toca otra vez para borrarlo" : "Borrar mi perfil"}</button>
+        </div>
       </form>
     </section>
   );
