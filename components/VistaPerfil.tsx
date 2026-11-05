@@ -65,7 +65,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   return (
     <section className="cont vista" data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
       <h2 className="titulo" id="t-perfil">Mi perfil</h2>
-      <p className="intro">Dos cosas: lo que quieres hacer y lo que mejor haces. Así se verá tu tarjeta cuando hagas match.</p>
+      <p className="intro">Dos preguntas: tu sueño y tu superpoder. Así se verá tu tarjeta cuando hagas match.</p>
       <Aviso>{aviso}</Aviso>
       <form className="form" id="form" noValidate onSubmit={enviar} onInput={tocar}>
         {/* Escribes directo en tu tarjeta: así se verá cuando hagas match. */}
@@ -73,11 +73,11 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
           <div className="bloque idea">
             <label className="bloque-et" htmlFor="f-idea">
               <Cara color="var(--a)"/>
-              <span><b>Mi idea</b><small>¿Qué quieres hacer realidad?</small></span>
+              <span><b>Mi sueño</b><small>¿Cuál es tu sueño o qué quieres lograr?</small></span>
             </label>
-            <textarea id="f-idea" rows={3} maxLength={LIMITES.idea} placeholder="Ej.: una app para que los colmados lleven el fiado en el celular" aria-describedby="ayuda-idea" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
+            <textarea id="f-idea" rows={3} maxLength={LIMITES.idea} placeholder="Ej.: lanzar una app para que los colmados lleven el fiado en el celular" aria-describedby="ayuda-idea" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
             <div className="bloque-pie">
-              <span id="ayuda-idea">Opcional: si no tienes una, te sumas a la de alguien.</span>
+              <span id="ayuda-idea">Opcional: si no tienes uno, te sumas al de alguien.</span>
               <span className="cuenta" aria-hidden="true">{idea.length}/{LIMITES.idea}</span>
             </div>
           </div>
@@ -95,19 +95,15 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
           </div>
         </div>
 
-        <fieldset className="aparecer">
-          <legend>¿Cómo quieres aparecer?</legend>
-          <div className="opciones">
-            <button type="button" className="opcion" aria-pressed={anon} onClick={() => { tocar(); setAnon(true); }}>
-              <span className="opcion-marca" aria-hidden="true"></span>
-              <span><b>Anónimo</b><small>Nadie ve tu nombre. Igual haces match y te escriben por el chat de la app.</small></span>
-            </button>
-            <button type="button" className="opcion" aria-pressed={!anon} onClick={() => { tocar(); setAnon(false); }}>
-              <span className="opcion-marca" aria-hidden="true"></span>
-              <span><b>Con mi nombre</b><small>Tu nombre y tu contacto salen en tu tarjeta.</small></span>
-            </button>
-          </div>
-          <div className="campos-nombre" id="campos-nombre" hidden={anon}>
+        {/* Solo dos preguntas. Quien quiera, abre esto y sale con su nombre; si no, queda anónimo. */}
+        <details className="aparecer" open={!anon} onToggle={e => { const abierto = e.currentTarget.open; if (abierto === anon) { tocar(); setAnon(!abierto); } }}>
+          <summary>
+            <span className="desplegar-signo" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path className="vertical" d="M12 5v14"/></svg>
+            </span>
+            <span><b>Aparecer con mi nombre</b><small>Opcional. Si no lo abres, sales anónimo y igual te escriben por el chat de la app.</small></span>
+          </summary>
+          <div className="campos-nombre" id="campos-nombre">
             <div className="campo">
               <label htmlFor="f-nombre">Tu nombre</label>
               <input type="text" id="f-nombre" ref={nombreRef} aria-invalid={malo === "nombre" || undefined} aria-describedby={malo === "nombre" ? "error" : undefined} maxLength={LIMITES.alias} autoComplete="name" placeholder="Ej.: Paola Jiménez" value={alias} onChange={e => setAlias(e.target.value)}/>
@@ -121,7 +117,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
               <input type="text" id="f-contacto" ref={contactoRef} aria-invalid={malo === "contacto" || undefined} aria-describedby={malo === "contacto" ? "error" : undefined} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
             </div>
           </div>
-        </fieldset>
+        </details>
 
         <p className="error" id="error" role="alert">{error}</p>
         <div className="form-acciones">
