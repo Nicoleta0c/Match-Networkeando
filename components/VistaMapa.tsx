@@ -1,23 +1,20 @@
 "use client";
 /* Mapa de Sueños: la red en vivo para la pantalla grande.
-   Primero se ve la red de todos los eventos y a los pocos segundos la cámara entra a este evento.
-   La presentadora cambia de nivel con los botones o con la barra espaciadora. */
+   Es general: muestra a todo el mundo, de todos los eventos, y crece de evento en evento. */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { QR } from "./QR";
 import { Via } from "./ui";
-import { Motor, type Foco, type Nivel } from "./mapaMotor";
+import { Motor, type Foco } from "./mapaMotor";
 import type { Perfil } from "@/lib/match";
 import { construirRed, nombreEvento, type Red } from "@/lib/red";
 
 const CADA_MS = 5000;
-const ESPERA_ZOOM = 2600;
 
 type Props = {activo: boolean; qrUrl: string; demo: Map<string, Perfil> | null};
 
 export function VistaMapa({activo, qrUrl, demo}: Props) {
   const [redReal, setRedReal] = useState<Red | null>(null);
   const [error, setError] = useState(false);
-  const [nivel, setNivel] = useState<Nivel>("todos");
   const [pantalla, setPantalla] = useState(false);
   const [anuncio, setAnuncio] = useState("");
   const [foco, setFoco] = useState<Foco | null>(null);
@@ -58,14 +55,6 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     return () => { parado = true; clearTimeout(t); };
   }, [activo, demo]);
 
-  /* Al abrir el mapa: primero todos los eventos y luego el zoom a este evento. */
-  useEffect(() => {
-    if (!activo) return;
-    setNivel("todos");
-    const t = setTimeout(() => setNivel("evento"), ESPERA_ZOOM);
-    return () => clearTimeout(t);
-  }, [activo]);
-
   useEffect(() => {
     if (!activo || !lienzo.current) return;
     const m = new Motor(lienzo.current);
@@ -93,20 +82,6 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     return () => { ro.disconnect(); window.removeEventListener("resize", medir); };
   }, [activo, foco]);
   useEffect(() => { motor.current?.datos(red); }, [red, activo]);
-  useEffect(() => { motor.current?.nivelar(nivel); }, [nivel, activo]);
-
-  /* Barra espaciadora: cambia entre todos los eventos y este evento. */
-  useEffect(() => {
-    if (!activo) return;
-    const tecla = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (e.code !== "Space" || el?.closest("button, a, input, textarea")) return;
-      e.preventDefault();
-      setNivel(n => n === "todos" ? "evento" : "todos");
-    };
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  }, [activo]);
 
   const datos = useMemo(() => {
     if (!red) return null;
@@ -138,21 +113,21 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     else document.documentElement.requestFullscreen().catch(() => setPantalla(false));
   };
 
-  const enEvento = nivel === "evento";
-  const c = datos ? (enEvento ? datos.hoy : datos.todos) : null;
+  // El mapa es general: cuenta a todo el mundo, de todos los eventos.
+  const c = datos ? datos.todos : null;
   const plural = (n: number, uno: string, varios: string) => n + " " + (n === 1 ? uno : varios);
-  const linea = !datos || !red ? "" : enEvento
-    ? (demo ? "Demo" : nombreEvento(red.evento)) + " · " + plural(datos.hoy.personas, "persona", "personas")
-    : plural(datos.eventos, "evento", "eventos") + " · " + plural(datos.todos.personas, "persona", "personas");
+  const linea = !datos || !red ? "" : (datos.eventos > 1
+    ? plural(datos.eventos, "evento", "eventos")
+    : (demo ? "Demo" : nombreEvento(red.evento))) + " · " + plural(datos.todos.personas, "persona", "personas");
   const vacio = !c || c.personas === 0;
-  const resumen = c ? `Mapa de Sueños, ${enEvento ? "este evento" : "todos los eventos"}: ${plural(c.personas, "persona", "personas")}, ${plural(c.doble, "pareja", "parejas")} que se impulsan los dos, ${c.una} donde uno impulsa al otro y ${c.solos} buscando su conexión.` : "Mapa de Sueños";
+  const resumen = c ? `Mapa de Sueños: ${plural(c.personas, "persona", "personas")}, ${plural(c.doble, "pareja", "parejas")} que se impulsan los dos, ${c.una} donde uno impulsa al otro y ${c.solos} buscando su conexión.` : "Mapa de Sueños";
 
   return (
     <section data-view-panel="mapa" aria-labelledby="t-mapa" hidden={!activo}>
       <div className="mapa">
         <canvas ref={lienzo} className="mapa-red" role="img" aria-label={resumen}/>
         {vacio && <div className="mapa-vacio">
-          <p>{error ? "No se pudo cargar el mapa. Revisa la conexión." : red ? (enEvento ? "Este evento todavía no tiene a nadie. El mapa se arma cuando la gente escanea el QR." : "El mapa se arma cuando la gente escanea el QR.") : "Cargando el mapa…"}</p>
+          <p>{error ? "No se pudo cargar el mapa. Revisa la conexión." : red ? "El mapa se arma cuando la gente escanea el QR." : "Cargando el mapa…"}</p>
         </div>}
 
         <div className="salir">
@@ -162,7 +137,7 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
         </div>
 
         {/* El foco: un sueño del salón y el superpoder que lo ayuda, sin nombres. */}
-        {enEvento && foco && <div className="mapa-foco" ref={tarjeta} key={foco.id}>
+        {foco && <div className="mapa-foco" ref={tarjeta} key={foco.id}>
           <Via tipo={foco.tipo}/>
           {foco.filas.map((x, i) => <div className="foco-fila" key={i}>
             <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>
@@ -181,10 +156,6 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="2" strokeLinecap="round" opacity=".55"/></svg><b>{c.una}</b>&nbsp;uno impulsa al otro</li>
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;buscando su conexión</li>
             </ul>}
-            <div className="niveles" role="group" aria-label="Qué parte del mapa ver">
-              <button type="button" aria-pressed={!enEvento} onClick={() => setNivel("todos")}>Todos los eventos</button>
-              <button type="button" aria-pressed={enEvento} onClick={() => setNivel("evento")}>Este evento</button>
-            </div>
           </div>
           <figure className="mapa-qr">
             <QR url={qrUrl}/>

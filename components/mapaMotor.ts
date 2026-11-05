@@ -8,7 +8,6 @@
      resalta la pareja y avisa (onFoco) para que la vista muestre su sueño y el superpoder que lo ayuda. */
 import type { Red, TipoEnlace } from "@/lib/red";
 
-export type Nivel = "todos" | "evento";
 /** Lo que muestra la tarjeta del foco: cada sueño con el superpoder que lo ayuda (dos filas en doble vía). */
 export type Foco = {id: number; tipo: "doble" | "una"; filas: {sueno: string; poder: string}[]};
 type Nodo = {k: string; e: number; s: 0 | 1; t: string; p: string; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number; r: number};
@@ -44,7 +43,6 @@ export class Motor {
   private enlaces: Enlace[] = [];
   private centros: {x: number; y: number}[] = [];
   private actual = -1;
-  private nivel: Nivel = "todos";
   private cam: Cam = {x: 0, y: 0, k: 1};
   private tween: {desde: Cam; t0: number} | null = null;
   private alpha = 0;
@@ -141,13 +139,6 @@ export class Motor {
     if (this.quieto) for (let i = 0; i < 200; i++) this.paso();
   }
 
-  nivelar(n: Nivel) {
-    if (n === this.nivel) return;
-    this.nivel = n;
-    this.tween = this.quieto ? null : {desde: {...this.cam}, t0: performance.now()};
-    if (this.quieto) this.cam = this.objetivo();
-  }
-
   /* El evento de hoy en el centro; los demás en espiral alrededor, del más nuevo al más viejo. */
   private ubicarEventos(red: Red) {
     const idx = red.eventos.map((_, i) => i).reverse();
@@ -213,10 +204,8 @@ export class Motor {
   /* El foco: cada 6,5 segundos pasa a otra pareja (primero las de doble vía).
      Cuando alguien nuevo llega con un empalme, el foco salta a esa persona. */
   private rotarFoco(ahora: number) {
-    const enfoque = this.nivel === "evento" && this.actual >= 0;
-    if (!enfoque) { this.ponerFoco(null, ahora); return; }
-    const hoy = this.enlaces.filter(l => l.t > 0 && l.a.e === this.actual && filasDe(l).length > 0);
-    const nuevo = this.lista.filter(n => n.e === this.actual && ahora - n.nace < 2000 && n.k !== this.ultimoNuevo).sort((x, y) => y.nace - x.nace)[0];
+    const hoy = this.enlaces.filter(l => l.t > 0 && filasDe(l).length > 0);
+    const nuevo = this.lista.filter(n => ahora - n.nace < 2000 && n.k !== this.ultimoNuevo).sort((x, y) => y.nace - x.nace)[0];
     if (nuevo) {
       const suyo = hoy.filter(l => l.a === nuevo || l.b === nuevo).sort((x, y) => y.t - x.t)[0];
       if (suyo) { this.ultimoNuevo = nuevo.k; this.ponerFoco(suyo, ahora); return; }
@@ -235,8 +224,8 @@ export class Motor {
   }
 
   private objetivo(): Cam {
-    const enfoque = this.nivel === "evento" && this.actual >= 0;
-    const sel = enfoque ? this.lista.filter(n => n.e === this.actual) : this.lista;
+    // El mapa es general: la cámara encuadra a todo el mundo, de todos los eventos.
+    const sel = this.lista;
     if (!sel.length) return {x: 0, y: 0, k: 1};
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const n of sel) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); }
@@ -245,8 +234,6 @@ export class Motor {
     const escala = Math.min(this.w, this.h) / 800;
     let k = Math.min((this.w - m.lado * 2) / bw, (this.h - m.arriba - m.abajo) / bh);
     k = limitar(k, .08, 3.6 * Math.max(escala, .6));
-    // En "todos" la cámara se aleja más: el racimo de hoy se ve pequeño dentro de la red completa.
-    if (!enfoque) k *= .58;
     return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k};
   }
 
@@ -283,7 +270,7 @@ export class Motor {
     ctx.globalAlpha = 1;
     ctx.fillStyle = col.bg;
     ctx.fillRect(0, 0, this.w, this.h);
-    const enfoque = this.nivel === "evento" && this.actual >= 0;
+    const enfoque = true;
     const z = limitar(cam.k, .35, 3);
     const grosor = .55 + z * .45;
     // La red respira: cada nodo se mece un poco alrededor de su lugar.
@@ -297,7 +284,7 @@ export class Motor {
     for (const l of this.enlaces) {
       const aparece = this.quieto ? 1 : limitar((ahora - Math.max(l.a.nace, l.b.nace)) / DURA_LINEA, 0, 1);
       if (aparece <= 0) continue;
-      const dentro = !enfoque || l.a.e === this.actual;
+      const dentro = true;
       let alfa: number, ancho: number, color: string;
       if (!enfoque) {
         // Todos los eventos: líneas finas que pulsan.
@@ -326,7 +313,7 @@ export class Motor {
     if (enfoque && !this.quieto) {
       ctx.fillStyle = col.t;
       for (const l of this.enlaces) {
-        if (!l.t || l.a.e !== this.actual) continue;
+        if (!l.t) continue;
         const periodo = l.t === 2 ? 2600 : 3400, p = ((ahora + l.i * 397) % periodo) / periodo;
         const r = (l.t === 2 ? 2.8 : 2.1) * grosor;
         ctx.globalAlpha = .9 * Math.sin(p * Math.PI);
@@ -338,7 +325,7 @@ export class Motor {
     // Nodos: sueño en el color del sueño, hacedores en el del superpoder.
     // Quien todavía no empalma con nadie queda como un anillo hueco.
     for (const n of this.lista) {
-      const dentro = !enfoque || n.e === this.actual;
+      const dentro = true;
       const r = (n.s ? 4.4 : 3.6) * z * (1 + Math.min(n.grado, 5) * .1) * (enfoque ? 1 : .8);
       n.r = r;
       const color = n.s ? col.a : col.h;
@@ -364,7 +351,7 @@ export class Motor {
      después los demás, sin taparse entre ellos ni con los textos de la vista. */
   private etiquetas(f: Enlace | null, m: {arriba: number; abajo: number; lado: number}) {
     const {ctx, col} = this;
-    const hoy = this.lista.filter(n => n.e === this.actual);
+    const hoy = this.lista.filter(n => n.t || n.p);
     const tam = limitar(Math.min(this.w, this.h) / 64, 11, 18);
     // La tarjeta del foco cuenta como ocupada: ninguna etiqueta queda debajo.
     const puestas: [number, number, number, number][] = this.reserva.tapa ? [this.reserva.tapa] : [];
