@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { UMBRAL, aplicarIA, analizar, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Mensaje } from "@/lib/chat";
-import { puntoDeEncuentro } from "@/lib/encuentro";
 import { respuestaDemo } from "@/lib/respuestasDemo";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
@@ -148,7 +147,7 @@ export default function App() {
       const otro = S.perfiles.get(para);
       const yaContesto = historial.filter(m => !m.mio).length;
       const ultimo = historial[historial.length - 1]?.texto || "";
-      if (otro) texto = respuestaDemo(otro, puntoDeEncuentro(S.uid!, para), ultimo, yaContesto);
+      if (otro) texto = respuestaDemo(otro, ultimo, yaContesto);
     }
     // Una pausa corta para que se sienta como alguien escribiendo.
     await new Promise(res => setTimeout(res, Math.max(0, 1200 - (Date.now() - inicio))));

@@ -4,11 +4,11 @@
 export const MAX_TEXTO = 200;
 /** Los mensajes se borran solos después de estas horas. */
 export const HORAS = 12;
-/** Mensajes de un toque. El lugar lo pone la app (punto de encuentro), aquí solo se avisa. */
+/** Mensajes de un toque. */
 export const RAPIDAS = [
-  "¡Hola! Me salió que encajamos. ¿Nos vemos en el punto?",
-  "Voy para el punto de encuentro.",
-  "Ya estoy en el punto 👋",
+  "¡Hola! Me salió que encajamos. ¿Dónde estás?",
+  "Voy para allá.",
+  "Ya llegué 👋",
   "Dame 5 minutos y llego.",
   "Ahora no puedo, ¿te escribo en un rato?"
 ];

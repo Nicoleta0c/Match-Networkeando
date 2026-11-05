@@ -2,7 +2,6 @@
 /* Piezas pequeñas de la interfaz. Cada una reemplaza una función *HTML() del original. */
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Cara } from "./Buscando";
-import { puntoDeEncuentro } from "@/lib/encuentro";
 import { alReves, colorDe, esAnon, iniciales, nombre, sinComillas, type Analisis, type Item, type Perfil } from "@/lib/match";
 
 const varCSS = (vars: Record<string, string>) => vars as CSSProperties;
@@ -91,7 +90,6 @@ export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazone
         {x.r.rompe && <p className="rompe-mini">Rompehielos: “{sinComillas(x.r.rompe)}”</p>}
       </>}
       {!esAnon(o) && o.contact && <>Escríbele: <Contacto t={o.contact}/></>}
-      <PuntoEncuentro a={me.id} b={o.id} chico/>
       {accion && <div className="pie-accion">{accion}</div>}
     </div>
   );
@@ -111,26 +109,11 @@ export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode
       </div>
       <h3>Por qué encajan {x.r.ia && <span className="ia-chip">Según la IA</span>}</h3>
       <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>
-      <PuntoEncuentro a={me.id} b={x.o.id}/>
       {accion && <div className="porque-accion">{accion}</div>}
     </div>
   );
 }
 
-/* El lugar que la app les asignó para verse. Los dos ven el mismo. */
-export function PuntoEncuentro({a, b, chico}: {a: string; b: string; chico?: boolean}) {
-  const p = puntoDeEncuentro(a, b);
-  return (
-    <div className={"encuentro" + (chico ? " chico" : "")}>
-      <span className="encuentro-n" aria-hidden="true">{p.n}</span>
-      <span className="encuentro-txt">
-        <small>Su punto de encuentro</small>
-        <b>{p.lugar}</b>
-        {!chico && <span>Busca el letrero con el número {p.n}. Tu match ve el mismo punto.</span>}
-      </span>
-    </div>
-  );
-}
 
 export function Aviso({children}: {children: ReactNode}) {
   if (!children) return null;
