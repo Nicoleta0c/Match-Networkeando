@@ -207,6 +207,15 @@ main{position:relative;z-index:1}
 .rompe small{display:block;color:var(--h);font-weight:800;font-size:13px}
 .otros{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:24px}
 .otros .par .lado p{font-size:17px}
+/* Botón para desplegar "También encajan contigo" */
+.desplegar{display:flex;align-items:center;gap:16px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.desplegar-n{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 10px;margin-left:8px;border-radius:999px;background:var(--s);border:1px solid var(--b2);font-size:16px;font-weight:800;vertical-align:middle;font-variant-numeric:tabular-nums}
+.desplegar-signo{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--h);color:var(--on-h);transition:transform .25s var(--ease)}
+.desplegar-signo svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+.desplegar-signo .vertical{transform-origin:center;transition:transform .25s var(--ease)}
+.desplegar[aria-expanded="true"] .vertical{transform:scaleY(0)}
+.desplegar:focus-visible .desplegar-signo{outline:3px solid var(--t);outline-offset:3px}
+@media (hover:hover) and (pointer:fine){.desplegar:hover .desplegar-signo{transform:scale(1.06)}}
 h3.sub-t{font-size:clamp(26px,2.6vw,34px);margin-top:72px}
 .vacio-grande{margin-top:36px;padding:44px;border:1px dashed var(--b2);border-radius:30px;text-align:center;color:var(--m);font-size:19px}
 .vacio-grande p{max-width:48ch;margin:0 auto 20px}

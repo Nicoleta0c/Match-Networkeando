@@ -1,5 +1,5 @@
 "use client";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { UMBRAL, type Item, type Perfil } from "@/lib/match";
 import { Aviso, Carta, Duo, Pie, Porque } from "./ui";
 import { Buscando, type Busqueda } from "./Buscando";
@@ -55,14 +55,30 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar, convs, perfiles, o
           <Carta p={mejor.o} me={me} analisis={mejor.r} sinCabeza/>
           <Porque me={me} x={mejor} accion={<Escribir id={mejor.o.id} convs={convs} onChat={onChat}/>}/>
         </div>
-        {lista.length > 1 && <>
-          <h3 className="sub-t">También encajan contigo</h3>
-          <div className="otros">
-            {lista.slice(1, 13).map(x => <Carta key={x.o.id} p={x.o} me={me} analisis={x.r} pie={<Pie me={me} x={x} conRazones accion={<Escribir id={x.o.id} convs={convs} onChat={onChat} chico/>}/>}/>)}
-          </div>
-        </>}
+        {lista.length > 1 && <Otros n={Math.min(lista.length - 1, 12)}>
+          {lista.slice(1, 13).map(x => <Carta key={x.o.id} p={x.o} me={me} analisis={x.r} pie={<Pie me={me} x={x} conRazones accion={<Escribir id={x.o.id} convs={convs} onChat={onChat} chico/>}/>}/>)}
+        </Otros>}
       </>}
     </>
+  );
+}
+
+/* "También encajan contigo" empieza cerrado: el botón + lo abre y el − lo cierra. */
+function Otros({n, children}: {n: number; children: ReactNode}) {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <section className="otros-caja">
+      <h3 className="sub-t">
+        <button type="button" className="desplegar" aria-expanded={abierto} aria-controls="otros-lista" onClick={() => setAbierto(a => !a)}>
+          <span>También encajan contigo <span className="desplegar-n">{n}</span></span>
+          <span className="desplegar-signo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14" /><path className="vertical" d="M12 5v14" /></svg>
+          </span>
+          <span className="sr">{abierto ? "Ocultar" : "Mostrar"}</span>
+        </button>
+      </h3>
+      <div className="otros" id="otros-lista" hidden={!abierto}>{children}</div>
+    </section>
   );
 }
 
