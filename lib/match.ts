@@ -172,21 +172,21 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   const dijo = esAnon(o) ? "Esta persona dijo" : quien + " dijo";
   if (aT.length && me.idea) {
     const falta = aT.slice(0, 2).map(v => FALTA[v]);
-    razones.push(`Tu idea es ${enFrase(me.idea)}. Para lograrla te hace falta ${falta.join(" y ")}.`);
+    razones.push(`Tu sueño es ${enFrase(me.idea)}. Para lograrlo te hace falta ${falta.join(" y ")}.`);
     razones.push(`${dijo} que su superpoder es «${o.power}». Eso es justo lo que te falta.`);
   } else if (kwA.length && me.idea) {
-    razones.push(`${dijo} que su superpoder es «${o.power}», y habla de lo mismo que tu idea: ${kwA.slice(0, 2).join(" y ")}.`);
+    razones.push(`${dijo} que su superpoder es «${o.power}», y habla de lo mismo que tu sueño: ${kwA.slice(0, 2).join(" y ")}.`);
   }
   if (b.length) razones.push(o.idea
-    ? `Y tú también le sirves: su idea es ${enFrase(o.idea)}, y tu superpoder («${me.power}») le ayuda con eso.`
+    ? `Y tú también le sirves: su sueño es ${enFrase(o.idea)}, y tu superpoder («${me.power}») le ayuda con eso.`
     : `Y tú también le sirves: tu superpoder («${me.power}») le puede ayudar.`);
   if (!razones.length && me.idea && distinto.length) razones.push(`${dijo} que su superpoder es «${o.power}», algo que tú no cubres.`);
   if (mismoPoder && razones.length) razones.push("Ojo: los dos saben hacer lo mismo, así que entre ustedes no se completan tanto.");
   if (!razones.length) razones.push("Podrían complementarse si conversan.");
   // Una primera pregunta para empezar a hablar.
   const rompe = aT.length && me.idea
-    ? `¿Me ayudarías a ${accion(o, aT[0]).pedir}? Mi idea es ${enFrase(me.idea)}.`
-    : (b.length && o.idea ? `Vi tu idea de ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${accion(me, b[0]).pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
+    ? `¿Me ayudarías a ${accion(o, aT[0]).pedir}? Mi sueño es ${enFrase(me.idea)}.`
+    : (b.length && o.idea ? `Vi que tu sueño es ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${accion(me, b[0]).pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
   return {pct, a, b, razones, rompe};
 }
 
@@ -196,7 +196,7 @@ export const alReves = (me: Perfil, r: Analisis) => !!me.idea && r.a.length === 
 /* ---------- IA ---------- */
 export type ResIA = { clave: string; enviados: Set<string>; mapa: Map<string, {pct: number; razon: string; rompe: string}> };
 export function claveIA(me: Perfil) { return me.id + "|" + me.idea + "|" + me.power; }
-export function perfilIA(p: Perfil) { return {id: p.id, idea: p.idea || "(sin idea propia, quiere sumarse a la de alguien)", superpoder: p.power, carrera: p.que || ""}; }
+export function perfilIA(p: Perfil) { return {id: p.id, idea: p.idea || "(sin sueño propio, quiere sumarse al de alguien)", superpoder: p.power, carrera: p.que || ""}; }
 export function aplicarIA(me: Perfil, lista: Item[], res: ResIA | null): Item[] {
   if (!res || res.clave !== claveIA(me)) return lista;
   const minIA = Math.min(...[...res.mapa.values()].map(v => v.pct));

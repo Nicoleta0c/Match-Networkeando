@@ -60,7 +60,7 @@ export function Buscando({b, me, pasoFinal, ganador, pct}: {b: Busqueda; me: Per
         <svg className="hilos" aria-hidden="true"><path className="hilo" ref={hilo}/></svg>
         <div className="extremo tu">
           <Cara color="var(--a)"/>
-          <div className="ficha"><small>Tu idea</small><p>{recortar(me.idea || me.power, 70)}</p></div>
+          <div className="ficha"><small>Tu sueño</small><p>{recortar(me.idea || me.power, 70)}</p></div>
         </div>
         {otro && (
           <div className="extremo otro" key={otro.id}>

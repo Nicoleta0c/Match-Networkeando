@@ -26,9 +26,9 @@ export function respuestaDemo(otro: Otro, punto: Punto, texto: string, n: number
   } else if (tiene(t, "como te reconozco", "como te encuentro", "como eres", "que llevas", "ropa", "color")) {
     r = "Busca el letrero con el número " + punto.n + ": ahí voy a estar. Yo te escribo cuando llegue 😊";
   } else if (tiene(t, "superpoder", "que sabes", "a que te dedicas", "que haces", "en que me ayudas", "como me ayudas")) {
-    r = "Mi superpoder: " + primeraMin(otro.power || "ayudar a que las ideas salgan") + ". ¿Te cuento más en " + lugar + "?";
-  } else if (tiene(t, "tu idea", "tu proyecto", "que quieres hacer", "en que estas")) {
-    r = otro.idea ? "Mi idea es " + primeraMin(otro.idea) + ". Me encantaría oír la tuya en persona." : "No tengo idea propia: quiero sumarme a una. ¡La tuya me llamó la atención!";
+    r = "Mi superpoder: " + primeraMin(otro.power || "ayudar a que los sueños salgan") + ". ¿Te cuento más en " + lugar + "?";
+  } else if (tiene(t, "tu sueno", "tu idea", "tu proyecto", "que quieres hacer", "en que estas")) {
+    r = otro.idea ? "Mi sueño es " + primeraMin(otro.idea) + ". Me encantaría oír el tuyo en persona." : "No tengo un sueño propio todavía: quiero sumarme a uno. ¡El tuyo me llamó la atención!";
   } else if (tiene(t, "gracias", "perfecto", "listo", "de acuerdo", "ok", "dale")) {
     r = "¡A ti! Nos vemos ahorita en " + lugar + ".";
   } else if (tiene(t, "hola", "buenas", "saludos", "que tal", "klk")) {

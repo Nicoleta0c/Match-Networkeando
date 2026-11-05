@@ -26,7 +26,7 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares}: {activo: boolea
         <div>
           <p className="logo" style={{marginBottom: 20}}><Logo/>Networkeando RD</p>
           <h1 id="t-proy">Escanea y la app te busca tu <span className="marca">match</span>.</h1>
-          <p className="intro">Tu idea, tu superpoder y la gente del evento que encaja contigo.</p>
+          <p className="intro">Tu sueño, tu superpoder y la gente del evento que encaja contigo.</p>
           <div className="cifras" aria-live="polite">
             <div className="cifra"><b id="n-perfiles">{perfiles}</b>perfiles</div>
             <div className="cifra"><b id="n-clics">{pares}</b>matches encontrados</div>

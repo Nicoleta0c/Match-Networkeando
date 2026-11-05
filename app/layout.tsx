@@ -5,7 +5,7 @@ import "./globals.css";
 const figtree = Figtree({subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-figtree", display: "swap"});
 
 export const metadata: Metadata = {
-  title: "Match Networkeando: conecta tu idea con el superpoder de alguien"
+  title: "Match Networkeando: conecta tu sueño con el superpoder de alguien"
 };
 
 export const viewport: Viewport = {

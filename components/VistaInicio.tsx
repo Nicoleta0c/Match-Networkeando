@@ -44,10 +44,10 @@ export function VistaInicio({activo, qrUrl}: {activo: boolean; qrUrl: string}) {
   return (
     <section className="cont vista" data-view-panel="inicio" aria-labelledby="t-inicio" hidden={!activo}>
       <div className="heroe">
-        <h1 id="t-inicio">Haz match con quien puede hacer realidad <span className="marca">tu idea</span>.</h1>
+        <h1 id="t-inicio">Haz match con quien puede hacer realidad <span className="marca">tu sueño</span>.</h1>
         <div className="escena" ref={escena} onClick={e => { if ((e.target as Element).closest(".duo")) dibujar(true); }}>
           <svg className="hilos" aria-hidden="true"><path className="hilo" ref={hilo}/></svg>
-          <div className="chip izq"><small>Tu idea</small>{EJEMPLO.idea}<span className="punto"></span></div>
+          <div className="chip izq"><small>Tu sueño</small>{EJEMPLO.idea}<span className="punto"></span></div>
           <Duo/>
           <div className="chip der"><small>Su superpoder</small>{EJEMPLO.poder}<span className="punto"></span></div>
           <div className="nudo" ref={nudo} aria-hidden="true">98%</div>
@@ -63,8 +63,8 @@ export function VistaInicio({activo, qrUrl}: {activo: boolean; qrUrl: string}) {
           <h2 className="titulo">Tres pasos y la app hace el resto</h2>
           <ol className="pasos">
             <li data-n="1"><h3><span className="sr">Paso 1: </span>Escanea el código y entra desde el navegador.</h3><p>Sin descargar nada. Te lleva directo a crear tu perfil.</p></li>
-            <li data-n="2"><h3><span className="sr">Paso 2: </span>Cuenta tu idea y tu superpoder, con tus palabras.</h3><p>Con tu nombre o de forma anónima. Si todavía no tienes idea, ofrece tu superpoder.</p></li>
-            <li data-n="3"><h3><span className="sr">Paso 3: </span>La app encuentra tu match.</h3><p>Compara tu idea y tu superpoder con los de todos y te muestra quién encaja mejor contigo. Tú no tienes que elegir.</p></li>
+            <li data-n="2"><h3><span className="sr">Paso 2: </span>Cuenta tu sueño y tu superpoder, con tus palabras.</h3><p>Con tu nombre o de forma anónima. Si todavía no tienes un sueño claro, ofrece tu superpoder.</p></li>
+            <li data-n="3"><h3><span className="sr">Paso 3: </span>La app encuentra tu match.</h3><p>Compara tu sueño y tu superpoder con los de todos y te muestra quién encaja mejor contigo. Tú no tienes que elegir.</p></li>
           </ol>
           <div className="acciones">
             <a className="boton fuerte" href="#perfil">Crear mi perfil</a>

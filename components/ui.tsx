@@ -48,11 +48,11 @@ export function Contacto({t}: {t: string}) {
 /* Tarjeta de un match: tu idea y su superpoder.
    Se invierte (su idea y tu superpoder) si no tienes idea propia o si eres tú quien le sirve a su idea. */
 export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode; sinCabeza?: boolean}) {
-  // Cada parte dice de quién es: "Idea de Luis", "Superpoder de Camila".
+  // Cada parte dice de quién es: "Sueño de Luis", "Superpoder de Camila".
   const de = (x: Perfil, campo: string, tuyo: string) => esAnon(x) ? (x === me ? tuyo : campo + " de esta persona") : campo + " de " + x.alias.split(/\s+/)[0];
   const t = me.idea && !alReves(me, analisis)
-    ? {ideaDe: me, ideaLbl: de(me, "Idea", "Tu idea"), ideaTxt: me.idea, poderDe: p, poderLbl: de(p, "Superpoder", ""), poderTxt: p.power}
-    : {ideaDe: p, ideaLbl: de(p, "Idea", ""), ideaTxt: p.idea, poderDe: me, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
+    ? {ideaDe: me, ideaLbl: de(me, "Sueño", "Tu sueño"), ideaTxt: me.idea, poderDe: p, poderLbl: de(p, "Superpoder", ""), poderTxt: p.power}
+    : {ideaDe: p, ideaLbl: de(p, "Sueño", ""), ideaTxt: p.idea, poderDe: me, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
   // La carita de quien escribió cada parte: la tuya en el color de la app, la del otro en su color.
   const cara = (x: Perfil) => <Cara color={x === me ? "var(--a)" : esAnon(x) ? "#3A3A34" : colorDe(x)}/>;
   return (
@@ -68,7 +68,7 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
       <div className="par">
         <div className="lado idea">
           <div className="quien">{cara(t.ideaDe)}<small>{t.ideaLbl}</small></div>
-          {t.ideaTxt ? <p>{t.ideaTxt}</p> : <p className="vacio">Todavía sin idea propia. Quiere sumarse a la de alguien.</p>}
+          {t.ideaTxt ? <p>{t.ideaTxt}</p> : <p className="vacio">Todavía sin sueño propio. Quiere sumarse al de alguien.</p>}
         </div>
         <div className="lado poder">
           <div className="quien">{cara(t.poderDe)}<small>{t.poderLbl}</small></div>
@@ -85,7 +85,7 @@ export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazone
   const o = x.o;
   return (
     <div className="pie">
-      {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su idea" : "Idea de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
+      {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su sueño" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
       {conRazones && <>
         <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>
         {x.r.rompe && <p className="rompe-mini">Rompehielos: “{sinComillas(x.r.rompe)}”</p>}
