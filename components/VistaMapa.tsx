@@ -145,7 +145,7 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     ? (demo ? "Demo" : nombreEvento(red.evento)) + " · " + plural(datos.hoy.personas, "persona", "personas")
     : plural(datos.eventos, "evento", "eventos") + " · " + plural(datos.todos.personas, "persona", "personas");
   const vacio = !c || c.personas === 0;
-  const resumen = c ? `Mapa de Sueños, ${enEvento ? "este evento" : "todos los eventos"}: ${plural(c.personas, "persona", "personas")}, ${plural(c.doble, "empalme", "empalmes")} de doble vía, ${c.una} de una vía y ${c.solos} sin empalme todavía.` : "Mapa de Sueños";
+  const resumen = c ? `Mapa de Sueños, ${enEvento ? "este evento" : "todos los eventos"}: ${plural(c.personas, "persona", "personas")}, ${plural(c.doble, "pareja", "parejas")} que se impulsan los dos, ${c.una} donde uno impulsa al otro y ${c.solos} buscando su conexión.` : "Mapa de Sueños";
 
   return (
     <section data-view-panel="mapa" aria-labelledby="t-mapa" hidden={!activo}>
@@ -175,11 +175,11 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
             <h1 id="t-mapa">Mapa de Sueños</h1>
             {linea && <p className="mapa-dato">{linea}</p>}
             {c && !vacio && <ul className="mapa-leyenda">
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--a)"/></svg>Con un sueño</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--h)"/></svg>Hacedores</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="4" strokeLinecap="round"/></svg><b>{c.doble}</b>&nbsp;doble vía</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="2" strokeLinecap="round" opacity=".55"/></svg><b>{c.una}</b>&nbsp;una vía</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;sin empalme todavía</li>
+              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--a)"/></svg>Trae un sueño</li>
+              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--h)"/></svg>Pone su superpoder</li>
+              <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="4" strokeLinecap="round"/></svg><b>{c.doble}</b>&nbsp;se impulsan los dos</li>
+              <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="2" strokeLinecap="round" opacity=".55"/></svg><b>{c.una}</b>&nbsp;uno impulsa al otro</li>
+              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;buscando su conexión</li>
             </ul>}
             <div className="niveles" role="group" aria-label="Qué parte del mapa ver">
               <button type="button" aria-pressed={!enEvento} onClick={() => setNivel("todos")}>Todos los eventos</button>

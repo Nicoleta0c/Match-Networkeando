@@ -79,7 +79,7 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
   );
 }
 
-/* "Doble vía" (se ayudan los dos) o "Una vía" (la ayuda va en una sola dirección). */
+/* Doble vía ("Se impulsan los dos") o una vía ("Uno impulsa al otro"). */
 export function Via({tipo}: {tipo: Conexion["tipo"]}) {
   return (
     <span className="via" data-tipo={tipo}>
@@ -88,7 +88,7 @@ export function Via({tipo}: {tipo: Conexion["tipo"]}) {
           ? <path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/>
           : <path d="M4 12h15m-4-4 4 4-4 4"/>}
       </svg>
-      {tipo === "doble" ? "Doble vía" : "Una vía"}
+      {tipo === "doble" ? "Se impulsan los dos" : "Uno impulsa al otro"}
     </span>
   );
 }

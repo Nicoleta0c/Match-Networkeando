@@ -371,7 +371,8 @@ export class Motor {
     const libre = (x0: number, y0: number, x1: number, y1: number) =>
       x0 >= 8 && x1 <= this.w - 8 && y0 >= m.arriba - 8 && y1 <= this.h - m.abajo + 8 &&
       !puestas.some(([a, b, c, d]) => x0 < c && x1 > a && y0 < d && y1 > b);
-    const poner = (n: Nodo, texto: string, fuerte: boolean) => {
+    // Los sueños en gris claro; los superpoderes (de quien se suma a un sueño) en el color del superpoder.
+    const poner = (n: Nodo, texto: string, fuerte: boolean, color = fuerte ? col.t : col.m) => {
       ctx.font = `${fuerte ? 800 : 600} ${fuerte ? tam * 1.15 : tam}px ${this.fuente}`;
       const ancho = ctx.measureText(texto).width, alto = (fuerte ? tam * 1.15 : tam) * 1.3, sep = n.r + 8;
       // A la derecha del punto; si no cabe, a la izquierda.
@@ -383,17 +384,22 @@ export class Motor {
         ctx.globalAlpha = fuerte ? 1 : (f ? .45 : .82);
         ctx.lineJoin = "round"; ctx.lineWidth = 4; ctx.strokeStyle = col.bg;
         ctx.strokeText(texto, x0, n.py);
-        ctx.fillStyle = fuerte ? col.t : col.m;
+        ctx.fillStyle = color;
         ctx.fillText(texto, x0, n.py);
         return;
       }
     };
     // La pareja del foco: el sueño (o el superpoder de quien ayuda, si no tiene sueño).
-    if (f) for (const n of [f.b, f.a]) poner(n, recortar(n.t || n.p, 34), true);
+    if (f) for (const n of [f.b, f.a]) poner(n, recortar(n.t || n.p, 34), true, n.t ? col.t : col.h);
     if (hoy.length > MAX_ETIQUETAS) return;
+    // Primero los sueños; después los superpoderes de quienes se suman, en el espacio que quede.
     for (const n of hoy) {
       if (!n.t || (f && (n === f.a || n === f.b))) continue;
       poner(n, recortar(n.t, 30), false);
+    }
+    for (const n of hoy) {
+      if (n.t || !n.p || (f && (n === f.a || n === f.b))) continue;
+      poner(n, recortar(n.p, 26), false, col.h);
     }
   }
 }
