@@ -95,33 +95,32 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
           </div>
         </div>
 
-        {/* Solo dos preguntas. Quien quiera, abre esto y sale con su nombre; si no, queda anónimo. */}
-        <details className="aparecer" open={!anon} onToggle={e => { const abierto = e.currentTarget.open; if (abierto === anon) { tocar(); setAnon(!abierto); } }}>
-          <summary>
-            <span className="desplegar-signo" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path className="vertical" d="M12 5v14"/></svg>
-            </span>
-            <span><b>Aparecer con mi nombre</b><small>Opcional. Si no lo abres, sales anónimo y igual te escriben por el chat de la app.</small></span>
-          </summary>
-          <div className="campos-nombre" id="campos-nombre">
-            <div className="campo">
-              <label htmlFor="f-nombre">Tu nombre</label>
-              <input type="text" id="f-nombre" ref={nombreRef} aria-invalid={malo === "nombre" || undefined} aria-describedby={malo === "nombre" ? "error" : undefined} maxLength={LIMITES.alias} autoComplete="name" placeholder="Ej.: Paola Jiménez" value={alias} onChange={e => setAlias(e.target.value)}/>
-            </div>
-            <div className="campo">
-              <label htmlFor="f-que">A qué te dedicas <span>(opcional)</span></label>
-              <input type="text" id="f-que" maxLength={LIMITES.que} placeholder="Ej.: Ingeniería de Software" value={que} onChange={e => setQue(e.target.value)}/>
-            </div>
-            <div className="campo">
-              <label htmlFor="f-contacto">Cómo contactarte</label>
-              <input type="text" id="f-contacto" ref={contactoRef} aria-invalid={malo === "contacto" || undefined} aria-describedby={malo === "contacto" ? "error" : undefined} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
-            </div>
-          </div>
-        </details>
-
         <p className="error" id="error" role="alert">{error}</p>
         <div className="form-acciones">
           <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
+          {/* Solo dos preguntas. Quien quiera, abre esto y sale con su nombre; si no, queda anónimo. */}
+          <details className="aparecer" open={!anon} onToggle={e => { const abierto = e.currentTarget.open; if (abierto === anon) { tocar(); setAnon(!abierto); } }}>
+            <summary>
+              <span className="desplegar-signo" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path className="vertical" d="M12 5v14"/></svg>
+              </span>
+              <span>Mi nombre <small>(opcional)</small></span>
+            </summary>
+            <div className="campos-nombre" id="campos-nombre">
+              <div className="campo">
+                <label htmlFor="f-nombre">Tu nombre</label>
+                <input type="text" id="f-nombre" ref={nombreRef} aria-invalid={malo === "nombre" || undefined} aria-describedby={malo === "nombre" ? "error" : undefined} maxLength={LIMITES.alias} autoComplete="name" placeholder="Ej.: Paola Jiménez" value={alias} onChange={e => setAlias(e.target.value)}/>
+              </div>
+              <div className="campo">
+                <label htmlFor="f-que">A qué te dedicas <span>(opcional)</span></label>
+                <input type="text" id="f-que" maxLength={LIMITES.que} placeholder="Ej.: Ingeniería de Software" value={que} onChange={e => setQue(e.target.value)}/>
+              </div>
+              <div className="campo">
+                <label htmlFor="f-contacto">Cómo contactarte</label>
+                <input type="text" id="f-contacto" ref={contactoRef} aria-invalid={malo === "contacto" || undefined} aria-describedby={malo === "contacto" ? "error" : undefined} maxLength={LIMITES.contact} placeholder="@usuario, WhatsApp o correo" value={contacto} onChange={e => setContacto(e.target.value)}/>
+              </div>
+            </div>
+          </details>
           <button className="borrar" type="button" id="b-quitar" hidden={!me} disabled={!puede} onClick={quitar}>{armado ? "Toca otra vez para borrarlo" : "Borrar mi perfil"}</button>
         </div>
       </form>
