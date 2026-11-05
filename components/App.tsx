@@ -4,6 +4,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { UMBRAL, aplicarIA, analizar, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Mensaje } from "@/lib/chat";
+import { puntoDeEncuentro } from "@/lib/encuentro";
+import { respuestaDemo } from "@/lib/respuestasDemo";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
 import { Barra } from "./Barra";
@@ -131,8 +133,8 @@ export default function App() {
     }
     return [...m.values()].sort((a, b) => b.ultimo.creado - a.ultimo.creado);
   }
-  /* En la demo, la persona de ejemplo contesta con la IA. Si la IA no está, contesta una frase fija (solo la primera vez). */
-  async function contestarDemo(para: string, yaContesto: boolean) {
+  /* En la demo, la persona de ejemplo contesta cada mensaje: con la IA si hay clave; si no, con respuestas de la app. */
+  async function contestarDemo(para: string) {
     const inicio = Date.now();
     const historial = S.chatDemo.mensajes.filter(m => m.de === para || m.para === para).map(m => ({mio: m.de !== para, texto: m.texto}));
     let texto: string | null = null;
@@ -142,7 +144,12 @@ export default function App() {
         body: JSON.stringify({otro: para, yo: me && {idea: me.idea, power: me.power, anon: esAnon(me)}, historial})});
       if (r.ok) texto = ((await r.json()) as {texto?: string}).texto || null;
     } catch {}
-    if (!texto && !yaContesto) texto = "¡Perfecto! Nos vemos en el punto de encuentro 👋";
+    if (!texto) {
+      const otro = S.perfiles.get(para);
+      const yaContesto = historial.filter(m => !m.mio).length;
+      const ultimo = historial[historial.length - 1]?.texto || "";
+      if (otro) texto = respuestaDemo(otro, puntoDeEncuentro(S.uid!, para), ultimo, yaContesto);
+    }
     // Una pausa corta para que se sienta como alguien escribiendo.
     await new Promise(res => setTimeout(res, Math.max(0, 1200 - (Date.now() - inicio))));
     if (!S.demo || !S.uid) return;
@@ -161,11 +168,10 @@ export default function App() {
     if (!para || !S.uid) return false;
     if (S.demo) {
       const ahora = Date.now();
-      const contesto = S.chatDemo.mensajes.some(m => m.de === para);
       S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -ahora, de: S.uid, para, texto, creado: ahora}]};
       S.escribiendo = para;
       forzar();
-      contestarDemo(para, contesto);
+      contestarDemo(para);
       return true;
     }
     try {
