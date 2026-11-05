@@ -81,6 +81,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
               <span className="cuenta" aria-hidden="true">{idea.length}/{LIMITES.idea}</span>
             </div>
           </div>
+          <span className="union" aria-hidden="true"></span>
           <div className="bloque poder">
             <label className="bloque-et" htmlFor="f-poder">
               <Cara color="var(--h)"/>
