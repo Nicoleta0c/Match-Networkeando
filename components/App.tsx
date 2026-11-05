@@ -12,6 +12,7 @@ import { VistaInicio } from "./VistaInicio";
 import { VistaPerfil, type DatosForm } from "./VistaPerfil";
 import { VistaClics } from "./VistaClics";
 import { VistaProyectar } from "./VistaProyectar";
+import { VistaMapa } from "./VistaMapa";
 import { Paletas } from "./Paletas";
 import type { Busqueda } from "./Buscando";
 import { BotonChat, Chat, ListaChats } from "./Chat";
@@ -29,7 +30,7 @@ class ErrorAPI extends Error {
   constructor(public status: number) { super("HTTP " + status); }
 }
 
-const VISTAS = ["inicio", "perfil", "clics", "proyectar"] as const;
+const VISTAS = ["inicio", "perfil", "clics", "proyectar", "mapa"] as const;
 export type Vista = typeof VISTAS[number];
 function vistaActual(): Vista {
   const h = location.hash.slice(1);
@@ -525,6 +526,7 @@ export default function App() {
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
+        <VistaMapa activo={S.vista === "mapa"} qrUrl={qrUrl} demo={S.demo ? S.perfiles : null}/>
       </main>
       {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}
         mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}

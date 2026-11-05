@@ -1,0 +1,290 @@
+/* Motor del Mapa de Sueños: acomoda la red con fuerzas suaves y la dibuja en un <canvas>.
+   - Cada evento es un racimo; el evento de hoy va en el centro y los anteriores alrededor.
+   - "todos": la cámara se aleja y las líneas finas pulsan.
+   - "evento": la cámara entra al racimo de hoy; los empalmes se encienden y un punto de luz
+     viaja por cada línea (en doble vía, en las dos direcciones).
+   - Cada persona nueva entra con un destello y sus líneas se dibujan poco a poco. */
+import type { Red, TipoEnlace } from "@/lib/red";
+
+export type Nivel = "todos" | "evento";
+type Nodo = {k: string; e: number; s: 0 | 1; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number};
+type Enlace = {a: Nodo; b: Nodo; t: TipoEnlace; i: number};
+type Cam = {x: number; y: number; k: number};
+
+const RADIO_REPULSION = 46;
+const LARGO: Record<TipoEnlace, number> = {2: 46, 1: 62, 0: 96};
+const RESORTE: Record<TipoEnlace, number> = {2: .06, 1: .04, 0: .012};
+const DURA_ZOOM = 1600, DURA_DESTELLO = 1400, DURA_LINEA = 900;
+
+const limitar = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const suave = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const salida = (t: number) => 1 - Math.pow(1 - t, 3);
+function hash(s: string) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
+const radioRacimo = (n: number) => 18 * Math.sqrt(n) + 24;
+
+export class Motor {
+  private ctx: CanvasRenderingContext2D;
+  private nodos = new Map<string, Nodo>();
+  private lista: Nodo[] = [];
+  private enlaces: Enlace[] = [];
+  private centros: {x: number; y: number}[] = [];
+  private actual = -1;
+  private nivel: Nivel = "todos";
+  private cam: Cam = {x: 0, y: 0, k: 1};
+  private tween: {desde: Cam; t0: number} | null = null;
+  private alpha = 0;
+  private col = {bg: "#111", a: "#fc0", h: "#3fe", t: "#fff", m: "#999"};
+  private w = 0; private h = 0; private dpr = 1;
+  private raf = 0; private vivo = true; private primera = true;
+  private quieto: boolean;
+  private ro: ResizeObserver; private mo: MutationObserver;
+
+  constructor(private lienzo: HTMLCanvasElement) {
+    this.ctx = lienzo.getContext("2d")!;
+    this.quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.leerColores();
+    // Si cambian la paleta, el mapa cambia de colores al instante.
+    this.mo = new MutationObserver(() => this.leerColores());
+    this.mo.observe(document.documentElement, {attributes: true, attributeFilter: ["data-paleta", "style", "class"]});
+    this.ro = new ResizeObserver(() => this.medir());
+    this.ro.observe(lienzo);
+    this.medir();
+    this.raf = requestAnimationFrame(this.bucle);
+  }
+
+  destruir() {
+    this.vivo = false;
+    cancelAnimationFrame(this.raf);
+    this.ro.disconnect(); this.mo.disconnect();
+  }
+
+  private leerColores() {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (n: string, def: string) => cs.getPropertyValue(n).trim() || def;
+    this.col = {bg: v("--bg", "#111"), a: v("--a", "#fc0"), h: v("--h", "#3fe"), t: v("--t", "#fff"), m: v("--m", "#999")};
+  }
+
+  private medir() {
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.w = this.lienzo.clientWidth; this.h = this.lienzo.clientHeight;
+    const r = {width: this.w, height: this.h};
+    this.lienzo.width = Math.round(r.width * this.dpr);
+    this.lienzo.height = Math.round(r.height * this.dpr);
+  }
+
+  /** Recibe la red nueva: conserva la posición de quien ya estaba y hace entrar a los nuevos. */
+  datos(red: Red | null) {
+    if (!red) return;
+    const ahora = performance.now();
+    this.actual = red.eventos.findIndex(e => e.nombre === red.evento);
+    this.ubicarEventos(red);
+    const nuevos = new Map<string, Nodo>();
+    const habia = this.nodos.size;
+    let llegaron = false;
+    const orden = red.nodos.map(d => {
+      let n = this.nodos.get(d.k);
+      if (!n) {
+        const c = this.centros[d.e] ?? {x: 0, y: 0}, ang = hash(d.k) * Math.PI * 2, rad = Math.sqrt(hash(d.k + "r")) * radioRacimo(red.eventos[d.e]?.n ?? 1);
+        n = {k: d.k, e: d.e, s: d.s, x: c.x + Math.cos(ang) * rad, y: c.y + Math.sin(ang) * rad, vx: 0, vy: 0, nace: this.primera ? -1e9 : ahora, fase: hash(d.k + "f") * 6.283, grado: 0, empalma: false, px: 0, py: 0};
+        llegaron = true;
+      }
+      n.e = d.e; n.s = d.s; n.grado = 0; n.empalma = false;
+      nuevos.set(d.k, n);
+      return n;
+    });
+    this.nodos = nuevos;
+    this.lista = orden;
+    this.enlaces = red.enlaces.map(([a, b, t], i) => {
+      const A = orden[a], B = orden[b];
+      if (t) { A.grado++; B.grado++; A.empalma = B.empalma = true; }
+      return {a: A, b: B, t, i};
+    });
+    if (this.primera) {
+      this.primera = false;
+      this.alpha = 1;
+      // Se acomoda casi todo antes de mostrarse; con movimiento reducido, del todo.
+      for (let i = 0; i < (this.quieto ? 400 : 160); i++) this.paso();
+      this.cam = this.objetivo();
+    } else if (llegaron || orden.length < habia) this.alpha = Math.max(this.alpha, .4);
+    else this.alpha = Math.max(this.alpha, .15);
+    if (this.quieto) for (let i = 0; i < 200; i++) this.paso();
+  }
+
+  nivelar(n: Nivel) {
+    if (n === this.nivel) return;
+    this.nivel = n;
+    this.tween = this.quieto ? null : {desde: {...this.cam}, t0: performance.now()};
+    if (this.quieto) this.cam = this.objetivo();
+  }
+
+  /* El evento de hoy en el centro; los demás en espiral alrededor, del más nuevo al más viejo. */
+  private ubicarEventos(red: Red) {
+    const idx = red.eventos.map((_, i) => i).reverse();
+    if (this.actual >= 0) { idx.splice(idx.indexOf(this.actual), 1); idx.unshift(this.actual); }
+    const mayor = Math.max(60, ...red.eventos.map(e => radioRacimo(e.n)));
+    const paso = mayor * 2.4 + 60;
+    this.centros = [];
+    idx.forEach((e, r) => {
+      const ang = r * 2.39996, rad = r ? paso * Math.sqrt(r) : 0;
+      this.centros[e] = {x: Math.cos(ang) * rad, y: Math.sin(ang) * rad};
+    });
+  }
+
+  /* Un paso de la simulación: atracción al centro del evento, repulsión entre vecinos y resortes. */
+  private paso() {
+    const a = this.alpha;
+    if (a < .004) return;
+    const L = this.lista;
+    // El racimo toma la forma de la pantalla: ancho en un proyector, alto en un celular.
+    const m = this.marco(), forma = limitar((this.w - m.lado * 2) / Math.max(1, this.h - m.arriba - m.abajo), .6, 2.4);
+    const jx = .012 / Math.sqrt(forma), jy = .012 * Math.sqrt(forma);
+    for (const n of L) {
+      const c = this.centros[n.e] ?? {x: 0, y: 0};
+      n.vx += (c.x - n.x) * jx * a; n.vy += (c.y - n.y) * jy * a;
+    }
+    // Repulsión solo entre vecinos cercanos (con una grilla): rápido aunque haya miles.
+    const R = RADIO_REPULSION, celdas = new Map<string, Nodo[]>();
+    for (const n of L) {
+      const key = n.e + ":" + Math.floor(n.x / R) + ":" + Math.floor(n.y / R);
+      const c = celdas.get(key); if (c) c.push(n); else celdas.set(key, [n]);
+    }
+    for (const n of L) {
+      const cx = Math.floor(n.x / R), cy = Math.floor(n.y / R);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const c = celdas.get(n.e + ":" + (cx + dx) + ":" + (cy + dy));
+        if (!c) continue;
+        for (const m of c) {
+          if (m === n) continue;
+          let ddx = n.x - m.x, ddy = n.y - m.y, d = Math.hypot(ddx, ddy);
+          if (d >= R) continue;
+          if (d < .01) { ddx = hash(n.k) - .5; ddy = hash(m.k) - .5; d = Math.hypot(ddx, ddy) || 1; }
+          const f = (1 - d / R) * 1.1 * a;
+          n.vx += ddx / d * f; n.vy += ddy / d * f;
+        }
+      }
+    }
+    for (const l of this.enlaces) {
+      const dx = l.b.x - l.a.x, dy = l.b.y - l.a.y, d = Math.hypot(dx, dy) || 1;
+      const f = (d - LARGO[l.t]) / d * RESORTE[l.t] * a;
+      l.a.vx += dx * f; l.a.vy += dy * f; l.b.vx -= dx * f; l.b.vy -= dy * f;
+    }
+    for (const n of L) { n.vx *= .8; n.vy *= .8; n.x += n.vx; n.y += n.vy; }
+    this.alpha *= .985;
+  }
+
+  /* Margen que ocupan los textos de abajo, para que la red no quede detrás. */
+  private marco() {
+    const abajo = limitar(this.h * .3, 150, 300), arriba = 72, lado = this.w > 700 ? 56 : 20;
+    return {abajo, arriba, lado, cx: this.w / 2, cy: arriba + (this.h - abajo - arriba) / 2};
+  }
+
+  private objetivo(): Cam {
+    const enfoque = this.nivel === "evento" && this.actual >= 0;
+    const sel = enfoque ? this.lista.filter(n => n.e === this.actual) : this.lista;
+    if (!sel.length) return {x: 0, y: 0, k: 1};
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of sel) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); }
+    const m = this.marco(), pad = 18;
+    const bw = Math.max(x1 - x0 + pad * 2, 160), bh = Math.max(y1 - y0 + pad * 2, 160);
+    const escala = Math.min(this.w, this.h) / 800;
+    let k = Math.min((this.w - m.lado * 2) / bw, (this.h - m.arriba - m.abajo) / bh);
+    k = limitar(k, .08, 3.6 * Math.max(escala, .6));
+    // En "todos" la cámara se aleja más: el racimo de hoy se ve pequeño dentro de la red completa.
+    if (!enfoque) k *= .58;
+    return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k};
+  }
+
+  private moverCamara(ahora: number) {
+    const o = this.objetivo();
+    if (this.tween) {
+      const t = Math.min(1, (ahora - this.tween.t0) / DURA_ZOOM), e = suave(t), d = this.tween.desde;
+      this.cam = {x: d.x + (o.x - d.x) * e, y: d.y + (o.y - d.y) * e, k: Math.exp(Math.log(d.k) + (Math.log(o.k) - Math.log(d.k)) * e)};
+      if (t >= 1) this.tween = null;
+    } else if (this.quieto) this.cam = o;
+    else {
+      const f = .06;
+      this.cam = {x: this.cam.x + (o.x - this.cam.x) * f, y: this.cam.y + (o.y - this.cam.y) * f, k: Math.exp(Math.log(this.cam.k) + (Math.log(o.k) - Math.log(this.cam.k)) * f)};
+    }
+  }
+
+  private bucle = (ahora: number) => {
+    if (!this.vivo) return;
+    // Si la pantalla cambió de tamaño (girar el celular, pantalla completa), se vuelve a medir.
+    if (this.lienzo.clientWidth !== this.w || this.lienzo.clientHeight !== this.h) this.medir();
+    if (!document.hidden && this.w > 0) {
+      this.paso();
+      this.moverCamara(ahora);
+      this.dibujar(ahora);
+    }
+    this.raf = requestAnimationFrame(this.bucle);
+  };
+
+  private dibujar(ahora: number) {
+    const {ctx, col, cam} = this;
+    const m = this.marco();
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = col.bg;
+    ctx.fillRect(0, 0, this.w, this.h);
+    const enfoque = this.nivel === "evento" && this.actual >= 0;
+    const z = limitar(cam.k, .35, 3);
+    const grosor = .55 + z * .45;
+    // La red respira: cada nodo se mece un poco alrededor de su lugar.
+    for (const n of this.lista) {
+      const b = this.quieto ? 0 : 2.2;
+      n.px = (n.x + Math.sin(ahora / 1700 + n.fase) * b - cam.x) * cam.k + m.cx;
+      n.py = (n.y + Math.cos(ahora / 1900 + n.fase) * b - cam.y) * cam.k + m.cy;
+    }
+
+    ctx.lineCap = "round";
+    for (const l of this.enlaces) {
+      const aparece = this.quieto ? 1 : limitar((ahora - Math.max(l.a.nace, l.b.nace)) / DURA_LINEA, 0, 1);
+      if (aparece <= 0) continue;
+      const dentro = !enfoque || l.a.e === this.actual;
+      let alfa: number, ancho: number, color: string;
+      if (!enfoque) {
+        // Todos los eventos: líneas finas que pulsan.
+        const pulso = this.quieto ? 1 : .6 + .4 * Math.sin(ahora / 1100 + l.i * .7);
+        color = l.t ? col.h : col.m; ancho = (l.t === 2 ? 1.5 : 1) * grosor; alfa = (l.t ? .42 : .12) * pulso;
+      } else if (!dentro) { color = col.m; ancho = grosor; alfa = .06; }
+      else if (l.t === 2) { color = col.h; ancho = 3.4 * grosor; alfa = .92; }
+      else if (l.t === 1) { color = col.h; ancho = 1.6 * grosor; alfa = .5; }
+      else { color = col.m; ancho = grosor; alfa = .16; }
+      ctx.globalAlpha = alfa; ctx.strokeStyle = color; ctx.lineWidth = ancho;
+      ctx.beginPath(); ctx.moveTo(l.a.px, l.a.py);
+      ctx.lineTo(l.a.px + (l.b.px - l.a.px) * aparece, l.a.py + (l.b.py - l.a.py) * aparece);
+      ctx.stroke();
+    }
+
+    // Puntos de luz que viajan por los empalmes del evento: de quien ayuda hacia el sueño.
+    if (enfoque && !this.quieto) {
+      ctx.fillStyle = col.t;
+      for (const l of this.enlaces) {
+        if (!l.t || l.a.e !== this.actual) continue;
+        const periodo = l.t === 2 ? 2600 : 3400, p = ((ahora + l.i * 397) % periodo) / periodo;
+        const r = (l.t === 2 ? 2.8 : 2.1) * grosor;
+        ctx.globalAlpha = .9 * Math.sin(p * Math.PI);
+        ctx.beginPath(); ctx.arc(l.a.px + (l.b.px - l.a.px) * p, l.a.py + (l.b.py - l.a.py) * p, r, 0, 6.283); ctx.fill();
+        if (l.t === 2) { ctx.beginPath(); ctx.arc(l.b.px + (l.a.px - l.b.px) * p, l.b.py + (l.a.py - l.b.py) * p, r, 0, 6.283); ctx.fill(); }
+      }
+    }
+
+    // Nodos: sueño en el color del sueño, hacedores en el del superpoder.
+    // Quien todavía no empalma con nadie queda como un anillo hueco.
+    for (const n of this.lista) {
+      const dentro = !enfoque || n.e === this.actual;
+      const r = (n.s ? 4.4 : 3.6) * z * (1 + Math.min(n.grado, 5) * .1) * (enfoque ? 1 : .8);
+      const color = n.s ? col.a : col.h;
+      ctx.globalAlpha = dentro ? 1 : .18;
+      ctx.beginPath(); ctx.arc(n.px, n.py, r, 0, 6.283);
+      if (n.empalma) { ctx.fillStyle = color; ctx.fill(); }
+      else { ctx.fillStyle = col.bg; ctx.fill(); ctx.globalAlpha = dentro ? .75 : .15; ctx.strokeStyle = color; ctx.lineWidth = 1.6 * grosor; ctx.stroke(); }
+      const q = (ahora - n.nace) / DURA_DESTELLO;
+      if (!this.quieto && q >= 0 && q < 1) {
+        ctx.globalAlpha = 1 - q; ctx.strokeStyle = col.t; ctx.lineWidth = 2 * grosor;
+        ctx.beginPath(); ctx.arc(n.px, n.py, r + 34 * grosor * salida(q), 0, 6.283); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+}

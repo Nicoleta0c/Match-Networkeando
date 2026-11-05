@@ -44,6 +44,9 @@ const tech = args.includes("tech");
 const modo = args.find(a => a !== "tech") || "vivo";
 const LISTA = tech ? TECH : EJEMPLOS;
 const espera = ms => new Promise(r => setTimeout(r, ms));
+// El mismo evento que usa la app (lib/evento.ts): EVENTO si lo fijaste, o la fecha de hoy en RD.
+const EVENTO = (process.env.EVENTO || "").trim().slice(0, 60) ||
+  new Intl.DateTimeFormat("en-CA", {timeZone: "America/Santo_Domingo", year: "numeric", month: "2-digit", day: "2-digit"}).format(new Date());
 
 try {
   if (modo === "borrar") {
@@ -55,7 +58,7 @@ try {
       const datos = {
         idea: e.idea, needs: "[]", power: e.power, anon: !!e.anon,
         alias: e.anon ? "" : e.alias, que: e.anon ? "" : e.que, contact: e.anon ? "" : e.contact,
-        likes: "[]", color: "", createdAt: Date.now()
+        likes: "[]", color: "", createdAt: Date.now(), evento: EVENTO
       };
       await db.perfil.upsert({where: {id}, create: {id, ...datos}, update: datos});
       console.log(`Llegó ${e.anon ? "alguien anónimo" : e.alias} (${i + 1}/${LISTA.length})`);

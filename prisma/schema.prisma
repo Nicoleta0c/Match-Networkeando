@@ -25,8 +25,12 @@ model Perfil {
   color     String   @default("")
   createdAt Float
   updatedAt DateTime @updatedAt
+  // En qué evento se registró. Sirve para los dos niveles del Mapa de Sueños:
+  // todos los eventos juntos y cada evento por separado. Vacío = pruebas de antes.
+  evento    String   @default("")
 
   @@index([createdAt])
+  @@index([evento])
 }
 
 // Chat temporal entre matches: para ponerse de acuerdo y encontrarse en el evento.

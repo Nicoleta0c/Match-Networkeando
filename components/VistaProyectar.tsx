@@ -16,6 +16,7 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares}: {activo: boolea
     <section data-view-panel="proyectar" aria-labelledby="t-proy" hidden={!activo}>
       <div className="salir">
         <button className="boton chico" type="button" id="b-pantalla" hidden={!pantalla} onClick={alternar}>Pantalla completa</button>
+        <a className="boton chico" href="#mapa">Ver el mapa</a>
         <a className="boton chico" href="#inicio">Salir</a>
       </div>
       <div className="proy">

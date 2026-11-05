@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { db, aDocumento } from "@/lib/db";
 import { idDeCookie } from "@/lib/identidad";
 import { validarPerfil } from "@/lib/validar";
+import { eventoActual } from "@/lib/evento";
 
 const MAX_BYTES = 8 * 1024;
 
@@ -27,10 +28,12 @@ export async function PUT(req: NextRequest, ctx: RouteContext<"/api/perfiles/[id
   const {needs, ...resto} = v.datos;
 
   // La fecha de creación la pone el servidor y no cambia al editar.
+  // El evento también lo pone el servidor: al guardar, quedas en el evento de hoy.
+  const evento = eventoActual();
   const fila = await db.perfil.upsert({
     where: {id},
-    create: {id, ...resto, needs: JSON.stringify(needs), createdAt: Date.now()},
-    update: {...resto, needs: JSON.stringify(needs)}
+    create: {id, ...resto, needs: JSON.stringify(needs), createdAt: Date.now(), evento},
+    update: {...resto, needs: JSON.stringify(needs), evento}
   });
   return Response.json(aDocumento(fila));
 }
