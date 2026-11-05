@@ -479,10 +479,15 @@ export default function App() {
   });
 
   const enProyectar = S.vista === "proyectar";
-  // A quién le puedes escribir: tus matches (los mejores primero) y quien ya te haya escrito.
-  const buenos = todos.filter(x => x.r.pct >= UMBRAL);
-  const genteChat = (buenos.length ? buenos : todos.slice(0, 3)).slice(0, 13).map(x => x.o);
-  for (const c of convs) { const p = S.perfiles.get(c.id); if (p && !genteChat.some(g => g.id === p.id)) genteChat.push(p); }
+  // El chat es solo entre tú y tu mejor match. Si alguien te tiene a ti como su mejor match y te escribe,
+  // también puedes contestarle.
+  const mejorMatch = todos.find(x => x.r.pct >= UMBRAL)?.o;
+  const genteChat = mejorMatch ? [mejorMatch] : [];
+  for (const c of convs) {
+    const p = S.perfiles.get(c.id);
+    if (p && c.ultimo && charla().mensajes.some(m => m.de === p.id) && !genteChat.some(g => g.id === p.id)) genteChat.push(p);
+  }
+  const abrirChats = () => { if (genteChat.length === 1) abrirChat(genteChat[0].id); else { S.chatLista = true; forzar(); } };
   const perfilesMap = S.perfiles;
   const pares = useMemo(() => {
     if (!enProyectar) return 0;
@@ -516,10 +521,10 @@ export default function App() {
       </main>
       {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}
         mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}
-        escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat} onVolver={volverALista}/>}
+        escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat} onVolver={genteChat.length > 1 ? volverALista : undefined}/>}
       {me && S.chatLista && !S.chatCon && <ListaChats me={me} gente={genteChat} convs={convs} onAbrir={abrirChat} onCerrar={cerrarChat}/>}
       {me && !S.chatCon && !S.chatLista && !enProyectar && !S.busqueda && genteChat.length > 0 &&
-        <BotonChat sinLeer={convs.reduce((n, c) => n + c.sinLeer, 0)} onAbrir={() => { S.chatLista = true; forzar(); }}/>}
+        <BotonChat sinLeer={convs.reduce((n, c) => n + c.sinLeer, 0)} onAbrir={abrirChats}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>

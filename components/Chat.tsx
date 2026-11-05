@@ -7,7 +7,7 @@ import { Avatar } from "./ui";
 
 type Props = {
   me: Perfil; otroId: string; otro: Perfil | null; mensajes: Mensaje[]; escribiendo?: boolean;
-  onEnviar: (texto: string) => Promise<boolean>; onBloquear: () => void; onCerrar: () => void; onVolver: () => void;
+  onEnviar: (texto: string) => Promise<boolean>; onBloquear: () => void; onCerrar: () => void; onVolver?: () => void;
 };
 
 const hora = (t: number) => new Date(t).toLocaleTimeString("es-DO", {hour: "numeric", minute: "2-digit"});
@@ -57,9 +57,9 @@ export function Chat({me, otroId, otro, mensajes, escribiendo, onEnviar, onBloqu
       <div className="chat-fondo" onClick={onCerrar} aria-hidden="true"/>
       <section className="chat" role="dialog" aria-modal="true" aria-labelledby="chat-t">
         <header className="chat-cabeza">
-          <button type="button" className="chat-x chat-volver" onClick={onVolver} aria-label="Volver a la lista de chats">
+          {onVolver && <button type="button" className="chat-x chat-volver" onClick={onVolver} aria-label="Volver a la lista de chats">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
-          </button>
+          </button>}
           {otro && <Avatar p={otro}/>}
           <div className="chat-quien">
             <b id="chat-t">{titulo}</b>
@@ -137,7 +137,7 @@ export function ListaChats({me, gente, convs, onAbrir, onCerrar}: {
         <header className="chat-cabeza">
           <div className="chat-quien">
             <b id="chats-t">Chat</b>
-            <span>Escríbele a tus matches para conocerse.</span>
+            <span>Tu mejor match y quien te escribió.</span>
           </div>
           <button type="button" className="chat-x" onClick={onCerrar} aria-label="Cerrar chat">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" fill="none"/></svg>

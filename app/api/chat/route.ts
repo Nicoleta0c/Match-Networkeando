@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { aDocumento, db } from "@/lib/db";
+import { UMBRAL, analizar, limpiar } from "@/lib/match";
 import { idDeCookie } from "@/lib/identidad";
 import { HORAS, MAX_TEXTO, limpiarTexto } from "@/lib/chat";
 
@@ -47,8 +48,14 @@ export async function POST(req: NextRequest) {
   const texto = limpiarTexto(cuerpo.texto);
   if (!texto) return Response.json({error: "Escribe un mensaje."}, {status: 400});
   if (texto.length > MAX_TEXTO) return Response.json({error: `El mensaje puede tener como máximo ${MAX_TEXTO} caracteres.`}, {status: 400});
-  if (!para || para === yo || !(await db.perfil.findUnique({where: {id: para}, select: {id: true}}))) {
-    return Response.json({error: "Esa persona ya no está en el evento."}, {status: 404});
+  const filaOtro = para && para !== yo ? await db.perfil.findUnique({where: {id: para}}) : null;
+  if (!filaOtro) return Response.json({error: "Esa persona ya no está en el evento."}, {status: 404});
+
+  // El chat es solo entre matches: si no encajan (en ninguna dirección), no se puede escribir.
+  const filaYo = await db.perfil.findUnique({where: {id: yo}});
+  const a = limpiar(yo, aDocumento(filaYo!)), b = limpiar(para, aDocumento(filaOtro));
+  if (Math.max(analizar(a, b).pct, analizar(b, a).pct) < UMBRAL) {
+    return Response.json({error: "Solo puedes escribirle a tu match."}, {status: 403});
   }
 
   const bloqueo = await db.bloqueo.findFirst({where: {OR: [{de: yo, para}, {de: para, para: yo}]}});
