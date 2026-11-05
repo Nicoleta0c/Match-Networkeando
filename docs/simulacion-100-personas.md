@@ -8,6 +8,21 @@ Script: `scripts/simulacion.mjs` (se corre con `node --no-warnings scripts/simul
 - **Real:** los matches, la doble vía y la una vía salen del **algoritmo de la app** (el método básico, sin IA) aplicado a 100 perfiles ficticios.
 - **Supuesto:** cuánta gente escanea, termina el formulario o se acerca a alguien. Son estimaciones razonables, no datos. Después del evento se pueden cambiar en `SUPUESTOS` con los números reales.
 
+> **Actualización (mejora 1 aplicada):** ya se arregló el match de los hacedores. Las secciones 2 a 4 muestran los números de **antes** del arreglo; esta tabla compara antes y después, con el mismo script.
+>
+> | | Antes | Después |
+> |---|---|---|
+> | Ven un match (de 100, todos completan) | 61 | **90** |
+> | Hacedores sin match | 33 de 33 | **4 de 33** |
+> | Con sueño sin match | 6 | 6 (sin cambio) |
+> | Parejas mutuas | 3 | 5 |
+> | Embudo: ven un match (de ~71 que completan) | 43 | **62** |
+> | Embudo: se quedan sin match | 28 | **8** |
+> | Embudo: se acercan a alguien (estimado) | ≈ 30 | **≈ 37** |
+> | La persona más popular es el mejor match de… | 7 | 8 |
+>
+> Los 4 hacedores que siguen sin match tienen un superpoder que no le sirve a ningún sueño de esa sala. Las personas populares ahora reciben un poco más de gente, así que la mejora 5 importa más.
+
 ## 1. Los 100 perfiles
 
 - 67 con sueño y 33 "hacedores" sin sueño propio (la proporción 2 a 1 del ejemplo de Piero).

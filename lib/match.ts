@@ -154,19 +154,29 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   const kw = [...new Set(kwA.concat(kwB))];
   const distinto = o.powers.filter(x => !me.powers.includes(x));
   const mismoPoder = o.powers.length > 0 && !distinto.length;
-  // Lo más importante es que su superpoder le sirva a TU idea; que tú le sirvas a la suya suma menos.
-  let pts = 0;
-  // Las necesidades de tu idea van en orden de importancia: cubrir la primera vale más.
-  a.forEach(x => { pts += PESO_NECESIDAD[me.needs.indexOf(x)] ?? 10; });
-  if (b.length) pts += 10 + 3 * (b.length - 1);
-  if (a.length && b.length) pts += 6;
-  pts += Math.min(kwA.length, 3) * 8 + Math.min(kwB.length, 2) * 3;
-  if (me.idea && distinto.length) pts += 8;
-  if (mismoPoder) pts -= 15;
-  if (!me.idea && !o.idea) pts -= 10;
-  pts += hash([me.id, o.id].sort().join("|")) % 6;
-  // Si su superpoder no le aporta nada a tu idea, no puede ser un gran match.
-  if (me.idea && !a.length && !kwA.length) pts = Math.min(pts, UMBRAL - 2);
+  // Un poquito al azar (fijo para cada pareja) para que no haya tantos empates.
+  let pts = hash([me.id, o.id].sort().join("|")) % 6;
+  if (me.idea) {
+    // Lo más importante es que su superpoder le sirva a TU idea; que tú le sirvas a la suya suma menos.
+    // Las necesidades de tu idea van en orden de importancia: cubrir la primera vale más.
+    a.forEach(x => { pts += PESO_NECESIDAD[me.needs.indexOf(x)] ?? 10; });
+    if (b.length) pts += 10 + 3 * (b.length - 1);
+    if (a.length && b.length) pts += 6;
+    pts += Math.min(kwA.length, 3) * 8 + Math.min(kwB.length, 2) * 3;
+    if (distinto.length) pts += 8;
+    if (mismoPoder) pts -= 15;
+    // Si su superpoder no le aporta nada a tu idea, no puede ser un gran match.
+    if (!a.length && !kwA.length) pts = Math.min(pts, UMBRAL - 2);
+  } else {
+    // Sin sueño propio ("te sumas al de alguien"): tu match es la persona a cuyo sueño le sirve tu
+    // superpoder. Se mide igual que desde su lado: cuánto cubres de lo que a su sueño le falta.
+    b.forEach(x => { pts += PESO_NECESIDAD[o.needs.indexOf(x)] ?? 10; });
+    pts += Math.min(kwB.length, 3) * 8;
+    if (me.powers.some(x => !o.powers.includes(x))) pts += 8;
+    if (me.powers.length > 0 && me.powers.every(x => o.powers.includes(x))) pts -= 15;
+    // Si no tiene sueño, o tu superpoder no le sirve, no hay a qué sumarse.
+    if (!o.idea || (!b.length && !kwB.length)) pts = Math.min(pts, UMBRAL - 2);
+  }
   const pct = Math.max(8, Math.min(98, Math.round(pts)));
   // Razones concretas: qué puede hacer esa persona por tu idea y qué puedes hacer tú por la suya.
   const quien = esAnon(o) ? "Esta persona" : o.alias.split(/\s+/)[0];

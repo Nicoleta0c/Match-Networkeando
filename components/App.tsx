@@ -329,7 +329,7 @@ export default function App() {
     cancelarBusqueda();
     if (!me || !S.loaded) { forzar(); return; }
     const otros = [...S.perfiles.values()].filter(o => o.id !== me.id);
-    const pasos = ["Revisando " + otros.length + (otros.length === 1 ? " perfil…" : " perfiles…"), "Comparando tu sueño con sus superpoderes…", "Viendo a quién le sirve lo que sabes hacer…", S.iaDisponible ? "La IA está eligiendo quién encaja mejor contigo…" : "Eligiendo quién encaja mejor contigo…"];
+    const pasos = ["Revisando " + otros.length + (otros.length === 1 ? " perfil…" : " perfiles…"), me.idea ? "Comparando tu sueño con sus superpoderes…" : "Buscando sueños a los que les sirve tu superpoder…","Viendo a quién le sirve lo que sabes hacer…", S.iaDisponible ? "La IA está eligiendo quién encaja mejor contigo…" : "Eligiendo quién encaja mejor contigo…"];
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // La primera búsqueda es un pequeño espectáculo; al repetirla no hacemos esperar tanto.
     const total = reduce ? 500 : (S.nBusquedas === 0 ? 2800 : 1400);
