@@ -148,7 +148,7 @@ main{position:relative;z-index:1}
 .campo input:focus{outline:none;border-color:var(--h);box-shadow:0 0 0 4px color-mix(in srgb,var(--h) 18%,transparent)}
 .campo input[aria-invalid="true"]{border-color:#FF8A6B}
 .error{color:#FF8A6B;font-weight:700;margin-top:16px;min-height:1px}
-.form-acciones{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:28px}
+.form-acciones{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:48px}
 .borrar{border:0;background:none;color:var(--m);font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:12px 0;min-height:44px}
 
 /* búsqueda: tu carita y la de cada persona, unidas por una onda que se teje */
