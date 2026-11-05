@@ -222,6 +222,23 @@ main{position:relative;z-index:1}
 .porque li::marker,.pie .razones li::marker{color:var(--h)}
 .rompe{background:var(--bg);border:1px dashed var(--b2);border-radius:16px;padding:14px 16px;font-weight:600}
 .rompe small{display:block;color:var(--h);font-weight:800;font-size:13px}
+/* Cómo se ayudan: etiqueta pequeña arriba y el texto debajo, en filas separadas por una línea fina. */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.via{display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 10px;border-radius:999px;font-weight:800;font-size:13px;background:color-mix(in srgb,var(--h) 14%,var(--bg));border:1px solid color-mix(in srgb,var(--h) 45%,var(--b));color:var(--t)}
+.via[data-tipo="una"]{background:var(--bg);border-color:var(--b2);color:var(--m)}
+.via svg{width:16px;height:16px;fill:none;stroke:var(--h);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.via[data-tipo="una"] svg{stroke:var(--m)}
+.ayuda{margin:0;display:flex;flex-direction:column}
+.ayuda>div{padding:12px 0;border-top:1px solid var(--b)}
+.ayuda>div:first-child{border-top:0;padding-top:0}
+.ayuda dt{font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--h)}
+.ayuda dd{margin:2px 0 0;font-size:17px;font-weight:600;line-height:1.4;text-wrap:pretty}
+.ayuda .ayuda-rompe dd{font-style:italic;color:var(--m);font-weight:500}
+.pie .via{margin-bottom:10px}
+.ayuda.corto{margin-bottom:10px}
+.ayuda.corto>div{padding:8px 0}
+.ayuda.corto dt{font-size:12px}
+.ayuda.corto dd{font-size:14px}
 .otros{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:24px}
 .otros .par .lado p{font-size:17px}
 /* Botón para desplegar "También encajan contigo" */

@@ -2,7 +2,7 @@
 /* Piezas pequeñas de la interfaz. Cada una reemplaza una función *HTML() del original. */
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Cara } from "./Buscando";
-import { alReves, colorDe, esAnon, iniciales, nombre, sinComillas, type Analisis, type Item, type Perfil } from "@/lib/match";
+import { alReves, colorDe, esAnon, iniciales, nombre, sinComillas, type Analisis, type Conexion, type Item, type Perfil } from "@/lib/match";
 
 const varCSS = (vars: Record<string, string>) => vars as CSSProperties;
 
@@ -79,25 +79,55 @@ export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil;
   );
 }
 
-/* Pie de la tarjeta: su idea, razones y cómo contactarle. */
+/* "Doble vía" (se ayudan los dos) o "Una vía" (la ayuda va en una sola dirección). */
+export function Via({tipo}: {tipo: Conexion["tipo"]}) {
+  return (
+    <span className="via" data-tipo={tipo}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        {tipo === "doble"
+          ? <path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/>
+          : <path d="M4 12h15m-4-4 4 4-4 4"/>}
+      </svg>
+      {tipo === "doble" ? "Doble vía" : "Una vía"}
+    </span>
+  );
+}
+
+/* Cómo se ayudan: qué hace por tu sueño, qué haces tú por el suyo, el primer paso y el rompehielo.
+   En las tarjetas pequeñas (corto) no va el primer paso. */
+function Ayuda({c, rompe, corto}: {c: Conexion; rompe?: string; corto?: boolean}) {
+  return (
+    <dl className={"ayuda" + (corto ? " corto" : "")}>
+      {c.teAyuda && <div><dt>Te ayuda con</dt><dd>{c.teAyuda}</dd></div>}
+      {c.leAyudas && <div><dt>Tú le ayudas con</dt><dd>{c.leAyudas}</dd></div>}
+      {!corto && c.paso && <div><dt>Primer paso</dt><dd>{c.paso}</dd></div>}
+      {rompe && <div className="ayuda-rompe"><dt>Rompehielo</dt><dd>“{sinComillas(rompe)}”</dd></div>}
+    </dl>
+  );
+}
+
+/* Pie de la tarjeta: su sueño, cómo se ayudan y cómo contactarle. */
 export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazones?: boolean; accion?: ReactNode}) {
-  const o = x.o;
+  const o = x.o, c = x.r.conexion;
   return (
     <div className="pie">
       {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su sueño" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
-      {conRazones && <>
-        <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>
-        {x.r.rompe && <p className="rompe-mini">Rompehielos: “{sinComillas(x.r.rompe)}”</p>}
-      </>}
+      {conRazones && (c
+        ? <><Via tipo={c.tipo}/><Ayuda c={c} rompe={x.r.rompe} corto/></>
+        : <>
+          <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>
+          {x.r.rompe && <p className="rompe-mini">Rompehielo: “{sinComillas(x.r.rompe)}”</p>}
+        </>)}
       {!esAnon(o) && o.contact && <>Escríbele: <Contacto t={o.contact}/></>}
       {accion && <div className="pie-accion">{accion}</div>}
     </div>
   );
 }
 
-/* Panel "Por qué encajan" con el anillo que se llena hasta el porcentaje. */
-export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode}) {
+/* Panel "Cómo se ayudan" con el anillo que se llena hasta el porcentaje. */
+export function Porque({x, accion}: {me: Perfil; x: Item; accion?: ReactNode}) {
   const fin = (364.4 * (1 - x.r.pct / 100)).toFixed(1);
+  const c = x.r.conexion;
   return (
     <div className="porque">
       <div className="anillo">
@@ -107,8 +137,9 @@ export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode
         </svg>
         <b><span>{x.r.pct}%</span></b>
       </div>
-      <h3>Por qué encajan {x.r.ia && <span className="ia-chip">Según la IA</span>}</h3>
-      <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      <h3>{c ? "Cómo se ayudan" : "Por qué encajan"}</h3>
+      {(c || x.r.ia) && <div className="chips">{c && <Via tipo={c.tipo}/>}{x.r.ia && <span className="ia-chip">Según la IA</span>}</div>}
+      {c ? <Ayuda c={c} rompe={x.r.rompe}/> : <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>}
       {accion && <div className="porque-accion">{accion}</div>}
     </div>
   );

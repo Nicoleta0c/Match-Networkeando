@@ -103,7 +103,7 @@ function comunes(a: Set<string>, b: Set<string>) { const out: string[] = []; a.f
 /* Qué puede hacer de verdad alguien de cada área por una idea, dicho como lo diría un joven.
    puede: "Ana puede ___ para tu idea". pedir: "¿Me ayudarías a ___?" */
 const ACCIONES: Record<number, {puede: string; pedir: string}> = {
-  1: {puede: "armarte una página o un formulario para que la gente se inscriba", pedir: "armar una página o un formulario para que la gente se inscriba"},
+  1: {puede: "armarte la parte digital: la app, la página o el formulario que haga falta", pedir: "armar la parte digital (la app, la página o el formulario)"},
   2: {puede: "diseñarte el logo, los flyers y las publicaciones para que se vea profesional", pedir: "diseñar el logo y los flyers"},
   3: {puede: "escribir los textos, presentar o grabar un video corto que invite a más gente", pedir: "escribir los textos o grabar un video corto que invite a más gente"},
   4: {puede: "moverlo en Instagram y TikTok para que llegue a más jóvenes", pedir: "moverlo en Instagram y TikTok"},
@@ -138,7 +138,11 @@ const enFrase = (t: string) => (t.charAt(0).toLowerCase() + t.slice(1)).replace(
 
 export const UMBRAL = 40;
 const PESO_NECESIDAD = [50, 24, 14, 8];
-export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; ia?: boolean };
+/* Cómo se pueden ayudar dos personas (el formato que se acordó en la reunión del 5 de nov):
+   qué hace la otra persona por tu sueño, qué haces tú por el suyo y un primer paso para hoy.
+   Si en una dirección no hay ayuda, ese texto queda vacío y el tipo es "una" (una vía). */
+export type Conexion = { teAyuda: string; leAyudas: string; paso: string; tipo: "doble" | "una" };
+export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; conexion?: Conexion; ia?: boolean };
 export type Item = { o: Perfil; r: Analisis };
 
 export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
@@ -187,25 +191,41 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   const rompe = aT.length && me.idea
     ? `¿Me ayudarías a ${accion(o, aT[0]).pedir}? Mi sueño es ${enFrase(me.idea)}.`
     : (b.length && o.idea ? `Vi que tu sueño es ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${accion(me, b[0]).pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
-  return {pct, a, b, razones, rompe};
+  return {pct, a, b, razones, rompe, conexion: conexionBasica(me, o, aT, b, kwA, kwB)};
+}
+
+/* El método básico (sin IA) también dice cómo se ayudan, no solo qué escribió cada uno. */
+function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: string[], kwB: string[]): Conexion | undefined {
+  const quien = esAnon(o) ? "Esta persona" : o.alias.split(/\s+/)[0];
+  // "diseñarte el logo" -> "diseñarle el logo": la misma acción, pero para la otra persona.
+  const paraEl = (t: string) => t.replace(/^(\S+?)te\b/, "$1le");
+  let teAyuda = "", leAyudas = "";
+  if (me.idea && aT.length) teAyuda = `${quien} puede ${accion(o, aT[0]).puede}.`;
+  else if (me.idea && kwA.length) teAyuda = `${quien} sabe de lo mismo que necesita tu sueño: te puede orientar y decirte por dónde empezar.`;
+  if (o.idea && b.length) leAyudas = `Tú puedes ${paraEl(accion(me, b[0]).puede)}.`;
+  else if (o.idea && kwB.length) leAyudas = "Lo que tú sabes hacer tiene que ver con su sueño: le puedes dar tu opinión y tus consejos.";
+  if (!teAyuda && !leAyudas) return undefined;
+  const doble = !!(teAyuda && leAyudas);
+  const paso = doble
+    ? "Escríbele por el chat, búsquense y en 5 minutos cuéntense qué le falta a cada sueño."
+    : teAyuda
+      ? "Escríbele por el chat y pídele 5 minutos para contarle tu sueño y lo que te falta."
+      : "Escríbele por el chat y ofrécele tu ayuda con su sueño: son 5 minutos.";
+  return {teAyuda, leAyudas, paso, tipo: doble ? "doble" : "una"};
 }
 
 /* El match es "al revés" cuando tú le sirves a su idea pero su superpoder no le aporta a la tuya. */
 export const alReves = (me: Perfil, r: Analisis) => !!me.idea && r.a.length === 0 && r.b.length > 0;
 
 /* ---------- IA ---------- */
-export type ResIA = { clave: string; enviados: Set<string>; mapa: Map<string, {pct: number; razon: string; rompe: string}> };
+export type ResIA = { clave: string; enviados: Set<string>; mapa: Map<string, {pct: number; conexion: Conexion; rompe: string}>; consejo: string };
 export function claveIA(me: Perfil) { return me.id + "|" + me.idea + "|" + me.power; }
-export function perfilIA(p: Perfil) { return {id: p.id, idea: p.idea || "(sin sueño propio, quiere sumarse al de alguien)", superpoder: p.power, carrera: p.que || ""}; }
 export function aplicarIA(me: Perfil, lista: Item[], res: ResIA | null): Item[] {
   if (!res || res.clave !== claveIA(me)) return lista;
   const minIA = Math.min(...[...res.mapa.values()].map(v => v.pct));
   return lista.map(x => {
     const v = res.mapa.get(x.o.id);
-    if (v) {
-      const razones = (v.razon ? [v.razon] : []).concat(x.r.razones.filter(t => !t.startsWith("Podrían"))).slice(0, 3);
-      return {o: x.o, r: {...x.r, pct: v.pct, razones, rompe: v.rompe, ia: true}};
-    }
+    if (v) return {o: x.o, r: {...x.r, pct: v.pct, conexion: v.conexion, rompe: v.rompe || x.r.rompe, ia: true}};
     if (res.enviados.has(x.o.id)) return {o: x.o, r: {...x.r, pct: Math.min(x.r.pct, Math.max(5, Math.min(minIA - 1, UMBRAL - 1)))}};
     return x;
   }).sort((a, b) => (b.r.pct - a.r.pct) || (b.o.createdAt - a.o.createdAt));

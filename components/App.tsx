@@ -2,7 +2,7 @@
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
+import { UMBRAL, aplicarIA, analizar, claveIA, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Mensaje } from "@/lib/chat";
 import { respuestaDemo } from "@/lib/respuestasDemo";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
@@ -305,13 +305,20 @@ export default function App() {
       const data = await resp.json();
       const ids = new Set(cand.map(p => p.id));
       const mapa: ResIA["mapa"] = new Map();
-      (data && Array.isArray(data.matches) ? data.matches : []).forEach((m: {id?: unknown; pct?: unknown; razon?: unknown; rompehielos?: unknown}) => {
+      const txt = (v: unknown) => String(v || "").slice(0, 300).trim();
+      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown; te_ayuda?: unknown; le_ayudas?: unknown; primer_paso?: unknown; rompehielo?: unknown};
+      (data && Array.isArray(data.conexiones) ? data.conexiones : []).forEach((m: ConexionIA) => {
         if (!m || typeof m.id !== "string" || !ids.has(m.id) || mapa.has(m.id)) return;
+        const teAyuda = txt(m.te_ayuda), leAyudas = txt(m.le_ayudas);
+        if (!teAyuda && !leAyudas) return;
         const pct = Math.max(1, Math.min(99, Math.round(Number(m.pct) || 0)));
-        mapa.set(m.id, {pct, razon: String(m.razon || "").slice(0, 200).trim(), rompe: String(m.rompehielos || "").slice(0, 200).trim()});
+        const tipo = m.tipo === "doble_via" && teAyuda && leAyudas ? "doble" : "una";
+        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: txt(m.primer_paso), tipo}, rompe: txt(m.rompehielo)});
       });
-      if (!mapa.size) return null;
-      return {clave: me.id + "|" + me.idea + "|" + me.power, enviados: ids, mapa};
+      const consejo = data && typeof data.consejo === "string" ? txt(data.consejo) : "";
+      // Si la IA no encontró a nadie, igual guardamos su consejo (y nadie de la lista cuenta como match).
+      if (!mapa.size && !consejo) return null;
+      return {clave: claveIA(me), enviados: ids, mapa, consejo};
     } catch {
       return null;
     }
@@ -462,7 +469,7 @@ export default function App() {
   /* ---------- lo que se dibuja ---------- */
   const me = yo();
   const todos = me ? misMatches(me) : [];
-  const conIA = !!(me && S.iaRes && S.iaRes.clave === me.id + "|" + me.idea + "|" + me.power);
+  const conIA = !!(me && S.iaRes && S.iaRes.clave === claveIA(me));
   function puede() { return S.demo || (S.avail === "ok" && !!S.uid); }
 
   if (S.chatCon) marcarLeido(S.chatCon);
@@ -516,7 +523,7 @@ export default function App() {
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
-        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
+        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
       </main>
       {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}

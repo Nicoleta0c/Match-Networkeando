@@ -9,6 +9,8 @@ type Props = {
   busqueda: Busqueda | null; pasoFinal: string | null; ganador: string | null; ganadorPct: number | null;
   loaded: boolean; me: Perfil | null; todos: Item[];
   conIA: boolean; iaFallo: boolean;
+  /** Si la IA no encontró ninguna conexión: qué tipo de persona te conviene buscar. */
+  consejo: string;
   onBuscar: () => void;
 };
 
@@ -24,7 +26,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
+function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">
@@ -43,6 +45,7 @@ function Cuerpo({loaded, me, todos, conIA, iaFallo, onBuscar}: Omit<Props, "acti
         {todos.length > 0 && <button className="boton chico" type="button" id="b-buscar" onClick={onBuscar}>Buscar de nuevo</button>}
       </div>
       {!conIA && todos.length > 0 && iaFallo && <p className="nota">La IA no respondió, así que la app eligió con su método básico. Toca Buscar de nuevo para intentarlo.</p>}
+      {conIA && consejo && !buenos.length && <div className="aviso"><strong>Todavía no hay una conexión clara para ti.</strong> {consejo}</div>}
       {me.anon && buenos.length > 0 && <div className="aviso"><strong>Tu perfil es anónimo.</strong> Tus matches solo pueden escribirte por el chat de la app. Si quieres, <a href="#perfil">agrega tu nombre y contacto</a>.</div>}
       {!todos.length ? (
         <div className="vacio-grande"><Duo chico/><p>Cuando llegue más gente, la app buscará tu match sola. Vuelve en un rato.</p></div>

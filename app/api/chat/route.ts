@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { aDocumento, db } from "@/lib/db";
 import { UMBRAL, analizar, limpiar } from "@/lib/match";
 import { idDeCookie } from "@/lib/identidad";
+import { matchIA } from "@/lib/matchesIA";
 import { HORAS, MAX_TEXTO, limpiarTexto } from "@/lib/chat";
 
 const desde = () => Date.now() - HORAS * 60 * 60 * 1000;
@@ -51,10 +52,10 @@ export async function POST(req: NextRequest) {
   const filaOtro = para && para !== yo ? await db.perfil.findUnique({where: {id: para}}) : null;
   if (!filaOtro) return Response.json({error: "Esa persona ya no está en el evento."}, {status: 404});
 
-  // El chat es solo entre matches: si no encajan (en ninguna dirección), no se puede escribir.
+  // El chat es solo entre matches: si no encajan (en ninguna dirección) ni la IA los juntó, no se puede escribir.
   const filaYo = await db.perfil.findUnique({where: {id: yo}});
   const a = limpiar(yo, aDocumento(filaYo!)), b = limpiar(para, aDocumento(filaOtro));
-  if (Math.max(analizar(a, b).pct, analizar(b, a).pct) < UMBRAL) {
+  if (!matchIA(yo, para) && Math.max(analizar(a, b).pct, analizar(b, a).pct) < UMBRAL) {
     return Response.json({error: "Solo puedes escribirle a tu match."}, {status: 403});
   }
 
