@@ -109,11 +109,7 @@ main{position:relative;z-index:1}
 .como .acciones{margin-top:40px}
 
 /* perfil: escribes directo en tu tarjeta, igual que se verá en el match */
-.form{margin-top:32px}
-/* Mi perfil como pantalla de app: una columna centrada, con el título y los botones alineados. */
-[data-view-panel="perfil"]>*{max-width:920px;margin-inline:auto}
-[data-view-panel="perfil"] .titulo{text-align:center}
-[data-view-panel="perfil"] .form-acciones{justify-content:center}
+.form{margin-top:28px}
 .bloques{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:72px}
 /* La línea que une tu sueño con tu superpoder */
 .union{position:absolute;left:50%;top:50%;width:72px;height:4px;margin:-2px 0 0 -36px;background:var(--h);border-radius:4px;box-shadow:0 0 12px var(--hglow);animation:ancho .9s var(--ease) .3s both}
@@ -272,9 +268,6 @@ body[data-view="proyectar"] .paletas{display:none}
   .como,.mejor,.proy{grid-template-columns:1fr;gap:40px}
   .qr-carta{width:min(380px,100%);margin:0 auto}
   .bloques{grid-template-columns:1fr;gap:56px}
-  [data-view-panel="perfil"] .form-acciones{flex-direction:column;align-items:stretch}
-  [data-view-panel="perfil"] .form-acciones .boton{width:100%}
-  [data-view-panel="perfil"] .aparecer summary{justify-content:center}
   .union{width:4px;height:56px;margin:-28px 0 0 -2px;animation-name:linea}
   .proy{text-align:center;justify-items:center;padding-top:76px}
   .proy .qr-carta{width:min(380px,100%,58vh)}
