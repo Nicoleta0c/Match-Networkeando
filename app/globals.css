@@ -114,6 +114,7 @@ main{position:relative;z-index:1}
 /* La línea que une tu sueño con tu superpoder */
 .union{position:absolute;left:50%;top:50%;width:72px;height:4px;margin:-2px 0 0 -36px;background:var(--h);border-radius:4px;box-shadow:0 0 12px var(--hglow);animation:ancho .9s var(--ease) .3s both}
 @keyframes ancho{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.union::after{content:"+";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;font-size:22px;box-shadow:0 0 0 6px var(--bg)}
 .bloque{--tono:var(--a);display:flex;flex-direction:column;gap:16px;padding:22px 24px 16px;border-radius:24px;border:1px solid color-mix(in srgb,var(--tono) 28%,var(--b));background:linear-gradient(155deg,color-mix(in srgb,var(--tono) 14%,var(--bg)),var(--bg) 65%);transition:border-color .2s,box-shadow .2s}
 .bloque.poder{--tono:var(--h)}
 .bloque:focus-within{border-color:var(--tono);box-shadow:0 0 0 4px color-mix(in srgb,var(--tono) 18%,transparent)}
