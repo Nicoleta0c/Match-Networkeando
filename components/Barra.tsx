@@ -18,7 +18,7 @@ export function Barra({vista, burbuja}: Props) {
   return (
     <header className="barra">
       <div className="cont barra-in">
-        <a className="logo" href="#inicio" aria-label="Networkeando RD, inicio"><Logo/>Networkeando RD</a>
+        <a className="logo" href="#inicio" aria-label="Networkeando RD, inicio">Networkeando RD</a>
         <nav className="nav" aria-label="Secciones">
           <a href="#inicio" aria-current={actual("inicio")}>Inicio</a>
           <a href="#perfil" aria-current={actual("perfil")}>Mi perfil</a>
