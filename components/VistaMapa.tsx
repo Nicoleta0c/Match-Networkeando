@@ -158,7 +158,7 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
             {linea && <p className="mapa-dato">{linea}<span className="mapa-pista"> · Toca un punto para ver su sueño, o un tipo de match para filtrar</span></p>}
             {c && !vacio && <ul className="mapa-leyenda">
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--a)"/></svg>Trae un sueño</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--h)"/></svg>Pone su superpoder</li>
+              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--h)"/></svg>Superpoder</li>
               <li><Filtrar f="doble" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="4" strokeLinecap="round"/></svg><b>{c.doble}</b>&nbsp;se impulsan los dos</Filtrar></li>
               <li><Filtrar f="una" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="2" strokeLinecap="round" opacity=".55"/></svg><b>{c.una}</b>&nbsp;uno impulsa al otro</Filtrar></li>
               <li><Filtrar f="sola" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;buscando su conexión</Filtrar></li>
