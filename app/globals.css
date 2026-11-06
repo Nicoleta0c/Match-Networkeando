@@ -179,7 +179,7 @@ main{position:relative;z-index:1}
 .mejor .par .lado{justify-content:center}
 @media (min-width:901px){
   /* Por qué encajan más compacto: el anillo al lado del título. */
-  .mejor .porque{display:grid;grid-template-columns:auto 1fr;align-content:start;column-gap:20px;row-gap:16px}
+  .mejor .porque{display:grid;grid-template-columns:auto 1fr;align-content:center;column-gap:24px;row-gap:20px;padding:36px}
   .mejor .porque>*{grid-column:1/-1}
   .mejor .porque .anillo{grid-column:1;width:96px;height:96px}
   .mejor .porque .anillo svg{width:96px;height:96px}
@@ -217,7 +217,7 @@ main{position:relative;z-index:1}
 @keyframes llenar{from{stroke-dashoffset:364.4}to{stroke-dashoffset:var(--fin)}}
 .anillo b{position:absolute;inset:0;display:grid;place-items:center;font-size:36px;font-weight:900;font-variant-numeric:tabular-nums}
 .porque h3{font-size:30px}
-.porque-texto{font-size:18px;font-weight:600;line-height:1.45;color:var(--t);text-wrap:pretty}
+.porque-texto{font-size:clamp(19px,1.6vw,23px);font-weight:600;line-height:1.5;color:var(--t);text-wrap:pretty;max-width:46ch}
 .porque-texto.chico{font-size:15px;margin-bottom:10px}
 .porque ul{margin:0;padding-left:20px;font-size:18px;font-weight:600}
 .porque li{margin:4px 0}

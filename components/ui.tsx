@@ -48,10 +48,11 @@ export function Contacto({t}: {t: string}) {
    Se invierte (su idea y tu superpoder) si no tienes idea propia o si eres tú quien le sirve a su idea. */
 export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode; sinCabeza?: boolean}) {
   // Cada parte dice de quién es: "Sueño de Luis", "Superpoder de Camila".
-  const de = (x: Perfil, campo: string, tuyo: string) => esAnon(x) ? (x === me ? tuyo : campo + " de esta persona") : campo + " de " + x.alias.split(/\s+/)[0];
+  // Lo tuyo dice "Tu sueño"; lo de otra persona, con su nombre o "anónimo" si no lo puso.
+  const de = (x: Perfil, campo: string, tuyo: string) => x === me ? tuyo : esAnon(x) ? campo + " anónimo" : campo + " de " + x.alias.split(/\s+/)[0];
   const t = me.idea && !alReves(me, analisis)
-    ? {ideaDe: me, ideaLbl: de(me, "Sueño", "Tu sueño"), ideaTxt: me.idea, poderDe: p, poderLbl: de(p, "Superpoder", ""), poderTxt: p.power}
-    : {ideaDe: p, ideaLbl: de(p, "Sueño", ""), ideaTxt: p.idea, poderDe: me, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
+    ? {ideaDe: me, ideaLbl: de(me, "Sueño", "Tu sueño"), ideaTxt: me.idea, poderDe: p, poderLbl: de(p, "Superpoder", "Tu superpoder"), poderTxt: p.power}
+    : {ideaDe: p, ideaLbl: de(p, "Sueño", "Tu sueño"), ideaTxt: p.idea, poderDe: me, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
   // La carita de quien escribió cada parte: la tuya en el color de la app, la del otro en su color.
   const cara = (x: Perfil) => <Cara color={x === me ? "var(--a)" : esAnon(x) ? "#3A3A34" : colorDe(x)}/>;
   return (
@@ -98,7 +99,7 @@ export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazone
   const o = x.o, c = x.r.conexion;
   return (
     <div className="pie">
-      {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su sueño" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
+      {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Sueño anónimo" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
       {conRazones && c?.texto && <p className="porque-texto chico">{c.texto}</p>}
       {!esAnon(o) && o.contact && <>Escríbele: <Contacto t={o.contact}/></>}
       {accion && <div className="pie-accion">{accion}</div>}
@@ -120,7 +121,7 @@ export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode
         <b><span>{x.r.pct}%</span></b>
       </div>
       {/* Solo el sueño y quién lo puede ayudar (la tarjeta de al lado los muestra). Los detalles, en persona. */}
-      <h3>{(c ? !!c.teAyuda : me.idea && !alReves(me, x.r)) ? "Su superpoder puede ayudar con tu sueño" : "Tu superpoder puede ayudar con su sueño"}</h3>
+      <h3>{(c ? !!c.teAyuda : me.idea && !alReves(me, x.r)) ? "En esto te puede ayudar" : "En esto puedes ayudar tú"}</h3>
       {c?.texto && <p className="porque-texto">{c.texto}</p>}
       {x.r.ia && <div className="chips"><span className="ia-chip">Según la IA</span></div>}
       {accion && <div className="porque-accion">{accion}</div>}
