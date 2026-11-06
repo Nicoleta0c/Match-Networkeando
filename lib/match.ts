@@ -213,7 +213,7 @@ const AYUDA_GENERAL: Record<number, string> = {
 
 /* Qué tipo de ayuda da cada área, dicho en general (va después de "te puede ayudar a"). */
 const AYUDA_DETALLE: Record<number, string> = {
-  1: "convertir tu idea en algo que la gente pueda usar, como una app, una página o un sistema",
+  1: "convertirlo en algo que la gente pueda usar, como una app, una página o un sistema",
   2: "que tu sueño se vea bien y se entienda a primera vista",
   3: "contar tu sueño de una forma que la gente entienda y se entusiasme",
   4: "darlo a conocer y conseguir a las primeras personas que lo usen",
@@ -232,9 +232,9 @@ const paraSu = (t: string) => t.replace(/(^|[^a-záéíóúñ])tu(?=[^a-záéí�
 /* Matices: dentro de un área, la ayuda cambia según lo que la persona sabe hacer de verdad.
    Así cada match dice algo distinto (sin repetir su superpoder). Se busca en su superpoder sin tildes. */
 const MATICES: [number, RegExp, string][] = [
-  [1, /flutter|movil|android|iphone|swift|kotlin|apps? movil/, "crear la app para que la gente pueda usar tu idea desde el celular"],
+  [1, /flutter|movil|android|iphone|swift|kotlin|apps? movil/, "crear una app para que la gente lo use desde el celular"],
   [1, /videojuego|unity|juego/, "hacerlo interactivo y divertido, como un juego que engancha"],
-  [1, /arduino|sensor|iot|hardware/, "armar aparatos o sensores que hagan funcionar tu idea en la vida real"],
+  [1, /arduino|sensor|iot|hardware/, "armar aparatos o sensores que lo hagan funcionar en la vida real"],
   [1, /soporte|computadora|tecnico/, "tener los equipos y la tecnología funcionando sin dolores de cabeza"],
   [1, /blockchain|cripto/, "explorar pagos y registros digitales seguros"],
   [1, /segur|fallas|vulnerab/, "que lo que construyas sea seguro y la gente confíe en usarlo"],
