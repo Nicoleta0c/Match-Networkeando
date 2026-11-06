@@ -4,38 +4,39 @@
 //   node scripts/ejemplos.mjs            agrega uno cada 3 segundos (en vivo)
 //   node scripts/ejemplos.mjs rapido     agrega todos de una vez
 //   node scripts/ejemplos.mjs borrar     borra todos los ejemplos
-//   Agrega "tech" para usar la gente de un evento de tecnología: node scripts/ejemplos.mjs tech
+//   Sin "tech": emprendimiento y marketing. Con "tech": roles de tecnología (node scripts/ejemplos.mjs tech)
 import { PrismaClient } from "@prisma/client";
 
+// Emprendimiento, marketing y negocios: fundadores, growth, ventas, finanzas, legal y contenido.
 const EJEMPLOS = [
-  {alias: "Camila Núñez", que: "Medicina", contact: "@camila.salud", idea: "Jornadas de salud gratis en comunidades", power: "Coordinador de voluntariados y logística de eventos"},
-  {alias: "Gabriela Santos", que: "Contabilidad", contact: "gaby.santos@correo.com", idea: "Un club de ahorro para jóvenes", power: "Hago presupuestos y explico finanzas fácil"},
-  {alias: "Ana Lucía Gómez", que: "Comunicación social", contact: "analucia@correo.com", idea: "Un podcast sobre emprendedoras del Cibao", power: "Escribo guiones y hablo en público sin miedo"},
-  {alias: "Daniel Rosario", que: "Ingeniería de Software", contact: "@daniel.codea", idea: "Una app para reservar las canchas del barrio", power: "Programo páginas web y apps rápidas"},
-  {anon: true, que: "Diseño Gráfico", idea: "", power: "Diseño flyers, logos y redes sociales para eventos"},
-  {alias: "Kevin Almánzar", que: "Administración de Empresas", contact: "809-555-0182", idea: "Una feria de emprendedores en la universidad", power: "Consigo patrocinadores y cierro acuerdos"},
-  {alias: "Sofía Taveras", que: "Psicología", contact: "sofia.taveras@correo.com", idea: "Talleres de salud mental para liceos públicos", power: "Diseño dinámicas de grupo que rompen el hielo"},
-  {alias: "Miguel Santos", que: "Ingeniería Eléctrica", contact: "@miguel.solar", idea: "Un kit de energía solar para colmados", power: "Arreglo cualquier cosa eléctrica y armo prototipos"},
-  {anon: true, que: "Derecho", idea: "", power: "Te ayudo a registrar tu negocio y tu marca"},
-  {alias: "Laura Peña", que: "Arquitectura", contact: "@laura.planos", idea: "Un mapa de lugares accesibles para sillas de ruedas", power: "Dibujo planos y maquetas"},
-  {alias: "Valeria Cruz", que: "Mercadeo", contact: "@vale.vende", idea: "", power: "Hago crecer cuentas de Instagram y vendo por redes"},
-  {alias: "José Almonte", que: "Educación", contact: "@jose.ensena", idea: "Tutorías de matemáticas entre estudiantes", power: "Explico fácil lo que parece difícil y doy talleres"}
+  {alias: "Melissa Castillo", que: "Fundadora · Fintech", contact: "@melissa.funda", idea: "Una billetera digital para pagar en los colmados con QR", power: "Hago el modelo de negocio y hablo con inversionistas"},
+  {alias: "Kevin Almánzar", que: "Ventas B2B", contact: "809-555-0182", idea: "Un software de facturación electrónica para pymes", power: "Vendo a empresas y cierro acuerdos B2B"},
+  {alias: "Nicole Rosario", que: "Growth Marketing", contact: "@nicole.growth", idea: "", power: "Consigo los primeros mil usuarios con anuncios y marketing digital"},
+  {alias: "Valeria Cruz", que: "Community Manager", contact: "@vale.comunidad", idea: "Una comunidad de mujeres en tecnología con mentorías", power: "Manejo redes sociales y hago crecer comunidades en línea"},
+  {alias: "Andrés Polanco", que: "Finanzas · CFO", contact: "andres.polanco@correo.com", idea: "", power: "Hago proyecciones financieras, precios y presupuestos"},
+  {anon: true, que: "Abogada de startups", idea: "", power: "Te ayudo con contratos, términos legales y registro de marca"},
+  {alias: "Ana Lucía Gómez", que: "Creadora de contenido", contact: "@analu.cuenta", idea: "Un podcast de startups dominicanas", power: "Escribo guiones y grabo videos cortos para TikTok e Instagram"},
+  {alias: "Rafael Mena", que: "Fundador · Agritech", contact: "@rafa.campo", idea: "Una app que conecte a agricultores de Constanza con restaurantes", power: "Conozco el campo y organizo la logística de entregas"},
+  {alias: "Laura Peña", que: "Branding", contact: "@laura.marca", idea: "Una agencia de marketing digital para restaurantes", power: "Diseño la marca, el logo y la identidad visual"},
+  {alias: "Daniela Ureña", que: "Operaciones", contact: "daniela.urena@correo.com", idea: "Un sistema de delivery para negocios pequeños de Santiago", power: "Organizo procesos y coordino equipos de operaciones"},
+  {alias: "José Almonte", que: "Fundador · Edtech", contact: "@jose.aprende", idea: "Una plataforma de cursos cortos de tecnología con certificado", power: "Diseño cursos y explico fácil lo que parece difícil"},
+  {anon: true, que: "Ventas en redes", idea: "", power: "Vendo por WhatsApp Business e Instagram"}
 ];
 
-// Un evento de tecnología: ideas y superpoderes de jóvenes del mundo tech.
+// Un evento de tecnología: los roles de un equipo de producto digital.
 const TECH = [
-  {alias: "Paola Jiménez", que: "Ingeniería de Software", contact: "@paola.flutter", idea: "Una app para que los colmados lleven el fiado en el celular", power: "Programo apps en Flutter"},
-  {alias: "Carlos Mejía", que: "Ciencia de Datos", contact: "@carlos.datos", idea: "Un mapa de los apagones por sector con datos de la gente", power: "Analizo datos y hago gráficos con Python"},
-  {anon: true, que: "Diseño UX", idea: "", power: "Diseño interfaces fáciles de usar (UX/UI)"},
-  {alias: "Raúl Batista", que: "Telemática", contact: "@raul.cloud", idea: "Un bot de WhatsApp que avise cuándo pasa la guagua", power: "Programo el backend: servidores, bases de datos y APIs"},
-  {alias: "Nicole Rosario", que: "Mercadeo digital", contact: "@nicole.lanza", idea: "", power: "Lanzo productos en redes y consigo los primeros usuarios"},
-  {alias: "Jonathan Pérez", que: "Electrónica", contact: "@jona.arduino", idea: "Sensores baratos para medir la calidad del agua en los ríos", power: "Armo prototipos con Arduino y sensores"},
-  {alias: "Melissa Castillo", que: "Administración de Empresas", contact: "melissa.castillo@correo.com", idea: "Una startup de tutorías de programación entre estudiantes", power: "Hago el modelo de negocio y consigo inversión"},
-  {anon: true, que: "Derecho", idea: "", power: "Te ayudo con contratos, términos legales y protección de datos"},
-  {alias: "Gabriel Vargas", que: "Ciberseguridad", contact: "@gabo.seguro", idea: "Talleres de seguridad digital para adultos mayores", power: "Encuentro fallas de seguridad en apps y páginas web"},
-  {alias: "Andrea Féliz", que: "Comunicación", contact: "@andrea.explica", idea: "Un canal de YouTube que explique tecnología en dominicano", power: "Hago videos y presento sin miedo a la cámara"},
-  {alias: "Esteban Gil", que: "Inteligencia Artificial", contact: "@esteban.ia", idea: "Un asistente con inteligencia artificial que ayude a llenar formularios del gobierno", power: "Entreno modelos de inteligencia artificial"},
-  {alias: "Yarisa Méndez", que: "Educación", contact: "@yari.ensena", idea: "Clases de programación para niños de barrio", power: "Enseño fácil y doy talleres para niños"}
+  {alias: "Paola Jiménez", que: "Desarrolladora móvil", contact: "@paola.flutter", idea: "Una app de citas médicas con recordatorio por WhatsApp", power: "Hago apps móviles en Flutter"},
+  {alias: "Daniel Rosario", que: "Frontend", contact: "@daniel.front", idea: "", power: "Programo el frontend de páginas web en React"},
+  {alias: "Raúl Batista", que: "Backend", contact: "@raul.api", idea: "Un marketplace de freelancers dominicanos para empresas de afuera", power: "Programo el backend: APIs y bases de datos"},
+  {anon: true, que: "Diseño UX/UI", idea: "", power: "Diseño interfaces fáciles de usar y hago pruebas con usuarios (UX/UI)"},
+  {alias: "Carlos Mejía", que: "Analista de datos", contact: "@carlos.datos", idea: "Un tablero con datos de los apagones por sector", power: "Analizo datos con SQL y Power BI"},
+  {alias: "Mariela Tavárez", que: "Product Manager", contact: "@mariela.pm", idea: "Una plataforma para alquilar apartamentos sin intermediarios", power: "Gestiono el producto, prioridades y el equipo del proyecto"},
+  {alias: "Héctor Marte", que: "DevOps", contact: "@hector.nube", idea: "", power: "Monto servidores en la nube y automatizo despliegues"},
+  {alias: "Gabriel Vargas", que: "Ciberseguridad", contact: "@gabo.seguro", idea: "Talleres de seguridad digital para pymes", power: "Encuentro fallas de seguridad en apps y páginas web"},
+  {alias: "Esteban Gil", que: "Ingeniero de IA", contact: "@esteban.ia", idea: "Un asistente con inteligencia artificial que ayude a llenar trámites del gobierno", power: "Entreno modelos de inteligencia artificial y hago chatbots"},
+  {alias: "Yarisa Méndez", que: "QA Tester", contact: "@yari.qa", idea: "", power: "Pruebo apps y encuentro errores antes de que salgan"},
+  {alias: "Scarlet Féliz", que: "Scrum Master", contact: "@scarlet.agil", idea: "Un hackatón de fintech en Santo Domingo", power: "Organizo equipos con Scrum y cuido que se cumplan los tiempos"},
+  {alias: "Jonathan Pérez", que: "Hardware · IoT", contact: "@jona.iot", idea: "Sensores baratos para medir la calidad del agua en los ríos", power: "Armo prototipos con Arduino y sensores"}
 ];
 
 const db = new PrismaClient();
