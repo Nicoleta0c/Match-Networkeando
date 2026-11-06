@@ -170,8 +170,8 @@ export class Motor {
     if (a < .004) return;
     const L = this.lista;
     // El racimo toma la forma de la pantalla: ancho en un proyector, alto en un celular.
-    const m = this.marco(), forma = limitar((this.w - m.lado * 2) / Math.max(1, this.h - m.arriba - m.abajo), .6, 2.4);
-    const jx = .012 / Math.sqrt(forma), jy = .012 * Math.sqrt(forma);
+    const m = this.marco(), forma = limitar(m.ancho / Math.max(1, this.h - m.arriba - m.abajo), .45, 3);
+    const jx = .012 / Math.pow(forma, .85), jy = .012 * Math.pow(forma, .85);
     for (const n of L) {
       const c = this.centros[n.e] ?? {x: 0, y: 0};
       n.vx += (c.x - n.x) * jx * a; n.vy += (c.y - n.y) * jy * a;
@@ -209,8 +209,10 @@ export class Motor {
   /* Margen que ocupan los textos de la vista, para que la red no quede detrás. */
   private marco() {
     const abajo = this.reserva.abajo > 0 ? limitar(this.reserva.abajo, 0, this.h * .6) : limitar(this.h * .3, 150, 300);
-    const arriba = limitar(this.reserva.arriba, 56, this.h * .4), lado = this.w > 700 ? 56 : 20;
-    return {abajo, arriba, lado, cx: this.w / 2, cy: arriba + (this.h - abajo - arriba) / 2};
+    const arriba = limitar(this.reserva.arriba, 56, this.h * .45), lado = this.w > 700 ? 40 : 12;
+    // En pantallas anchas la tarjeta del foco va a la izquierda: la red usa el espacio a su derecha.
+    const t = this.reserva.tapa, izq = t && this.w > 700 && t[2] < this.w * .45 ? t[2] + 16 : lado;
+    return {abajo, arriba, lado, izq, ancho: this.w - izq - lado, cx: (izq + this.w - lado) / 2, cy: arriba + (this.h - abajo - arriba) / 2};
   }
 
   /* El foco: cada 6,5 segundos pasa a otra pareja (primero las de doble vía).
@@ -300,11 +302,11 @@ export class Motor {
     if (!sel.length) return {x: 0, y: 0, k: 1};
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const n of sel) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); }
-    const m = this.marco(), pad = 18;
+    const m = this.marco(), pad = 10;
     const bw = Math.max(x1 - x0 + pad * 2, 160), bh = Math.max(y1 - y0 + pad * 2, 160);
     const escala = Math.min(this.w, this.h) / 800;
-    let k = Math.min((this.w - m.lado * 2) / bw, (this.h - m.arriba - m.abajo) / bh);
-    k = limitar(k, .08, 3.6 * Math.max(escala, .6));
+    let k = Math.min(m.ancho / bw, (this.h - m.arriba - m.abajo) / bh);
+    k = limitar(k, .08, 4.6 * Math.max(escala, .6));
     return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k};
   }
 

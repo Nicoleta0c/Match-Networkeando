@@ -310,14 +310,40 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
 .foco-sueno small{color:var(--a)}
 .foco-poder{font-size:clamp(16px,1.3vw,23px);font-weight:700;line-height:1.25}
 .foco-poder small{color:var(--h)}
+/* Pantallas bajitas (celular acostado): todo más compacto para que la red tenga espacio. */
+@media (max-height:520px){
+  .mapa-foco{top:10px;left:12px;width:min(300px,38vw);padding:10px 12px;gap:6px;border-radius:16px}
+  .mapa-foco .via{padding:2px 8px;font-size:11px}
+  .mapa-foco small{font-size:10px;margin:0}
+  .foco-fila{gap:2px}
+  .foco-fila+.foco-fila{display:none}
+  .foco-sueno{font-size:14px}
+  .foco-poder{font-size:12px}
+  .mapa-qr,.mapa-pantalla,.mapa-pista{display:none}
+  .mapa-pie{padding-top:24px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+  .mapa-txt h1{font-size:18px}
+  .mapa-dato{font-size:12px;margin-top:0}
+  .mapa-leyenda{margin-top:4px;gap:2px 12px;font-size:11px}
+  .mapa .salir{top:8px}
+  .mapa .salir .boton{min-height:36px;padding:6px 14px;font-size:13px}
+}
+/* Tablets en vertical: la tarjeta va arriba a lo ancho, para que la red tenga todo el ancho. */
+@media (min-width:701px) and (max-width:1100px) and (orientation:portrait){
+  .mapa-foco{top:calc(env(safe-area-inset-top,0px) + 76px);left:24px;right:24px;width:auto}
+}
 @media (max-width:700px){
-  .mapa-foco{top:calc(env(safe-area-inset-top,0px) + 70px);left:16px;right:16px;width:auto;padding:14px 16px;gap:10px;border-radius:20px}
-  .foco-sueno{font-size:18px}
-  .foco-poder{font-size:15px}
+  .mapa-foco{top:calc(env(safe-area-inset-top,0px) + 62px);left:12px;right:12px;width:auto;padding:10px 14px;gap:6px;border-radius:18px}
+  .mapa-foco .via{padding:3px 10px;font-size:12px}
+  .foco-fila{gap:4px}
+  .mapa-foco small{font-size:11px;margin:0}
+  .foco-sueno{font-size:16px}
+  .foco-poder{font-size:14px}
   /* En el celular cabe un solo sueño en la tarjeta; el otro lado de la doble vía se ve en la red. */
   .foco-fila+.foco-fila{display:none}
   .mapa-qr,.mapa-pantalla{display:none}
-  .mapa-pie{padding-top:48px}
+  .mapa-pie{padding-top:36px}
+  .mapa-txt h1{font-size:22px}
+  .mapa-pista{display:none}
   .mapa-leyenda{gap:6px 16px;margin-top:12px}
 }
 

@@ -71,7 +71,8 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     const medir = () => {
       const p = pie.current, t = tarjeta.current;
       const abajo = p ? p.offsetHeight - 40 : 0;
-      const arriba = t && window.innerWidth <= 700 ? t.offsetTop + t.offsetHeight + 12 : 72;
+      // Si la tarjeta va arriba a lo ancho (celular, tablet en vertical), la red empieza debajo de ella.
+      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 72;
       const r = t?.getBoundingClientRect();
       motor.current?.reservar(arriba, abajo, r ? [r.left - 8, r.top - 8, r.right + 8, r.bottom + 8] : null);
     };
