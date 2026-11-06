@@ -24,7 +24,6 @@ export function Barra({vista, burbuja}: Props) {
           <a href="#perfil" aria-current={actual("perfil")}>Mi perfil</a>
           <a href="#clics" aria-current={actual("clics")}>Mis matches<span className="burbuja" id="burbuja" hidden={!burbuja}>{burbuja || ""}</span></a>
           <a className="opc" href="#proyectar">Proyectar</a>
-          <a className="opc" href="#mapa">Mapa</a>
         </nav>
       </div>
     </header>
