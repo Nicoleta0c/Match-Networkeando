@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { db, aDocumento } from "@/lib/db";
 import { idDeCookie } from "@/lib/identidad";
-import { validarPerfil } from "@/lib/validar";
+import { revisarTextos, validarPerfil } from "@/lib/validar";
+import { moderarPerfil } from "@/lib/moderar";
 import { eventoActual } from "@/lib/evento";
 
 const MAX_BYTES = 8 * 1024;
@@ -26,6 +27,15 @@ export async function PUT(req: NextRequest, ctx: RouteContext<"/api/perfiles/[id
   const v = validarPerfil(cuerpo);
   if (!v.ok) return Response.json({error: v.error}, {status: 400});
   const {needs, ...resto} = v.datos;
+
+  // Que escriban algo real: primero reglas rápidas; después, si el texto cambió, la IA lo revisa.
+  const rapido = revisarTextos(resto.idea, resto.power);
+  if (rapido) return Response.json({error: rapido.error, campo: rapido.campo}, {status: 422});
+  const antes = await db.perfil.findUnique({where: {id}, select: {idea: true, power: true}});
+  if (!antes || antes.idea !== resto.idea || antes.power !== resto.power) {
+    const ia = await moderarPerfil(resto.idea, resto.power);
+    if (ia) return Response.json({error: ia.error, campo: ia.campo}, {status: 422});
+  }
 
   // La fecha de creación la pone el servidor y no cambia al editar.
   // El evento también lo pone el servidor: al guardar, quedas en el evento de hoy.

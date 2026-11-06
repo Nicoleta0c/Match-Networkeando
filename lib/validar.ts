@@ -44,3 +44,37 @@ export function validarPerfil(d: unknown): {ok: true; datos: PerfilEntrada} | {o
     alias: anon ? "" : campos.alias, que: anon ? "" : campos.que, contact: anon ? "" : campos.contact
   }};
 }
+
+/* ---------- Que escriban algo real ----------
+   Reglas rápidas (sirven en el celular y en el servidor) contra textos de relleno o de broma:
+   letras al azar, risas, "nada", "asdf", groserías, o textos demasiado cortos para decir algo. */
+const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const RELLENO = /(^|[^a-z])(asdf\w*|qwer\w*|zxcv\w*|hjkl\w*|(ja){2,}j?|(je){2,}j?|(ha){2,}h?|(ji){2,}j?|xd+|lol|nada|no se|nose|ninguno|ninguna|test|prueba|hola|ok|equis|bla+(bla)*)([^a-z]|$)/;
+const GROSERIAS = /(^|[^a-z])(mierda|puta|puto|pendej\w*|mamague\w*|singa\w*|cabron\w*|maldit\w*|culo|verga|idiota|estupid\w*)([^a-z]|$)/;
+
+/** Revisa que el sueño y el superpoder digan algo real. Devuelve el problema (o null si está bien). */
+export function revisarTextos(idea: string, power: string): {campo: "idea" | "poder"; error: string} | null {
+  const malo = (t: string, minLetras: number) => {
+    const n = sinTildes(t).trim();
+    const letras = (n.match(/[a-zñ]/g) || []).length;
+    const palabras = n.split(/\s+/).filter(w => /[a-zñ]{2,}/.test(w));
+    if (letras < minLetras) return "corto";
+    if (letras < n.replace(/\s/g, "").length * 0.6) return "raro";              // casi puros números o símbolos
+    if (/(.)\1{3,}/.test(n)) return "raro";                                      // "aaaa", "!!!!"
+    if (palabras.some(w => w.length >= 5 && !/[aeiouy]/.test(w))) return "raro"; // "sdfgh"
+    if (GROSERIAS.test(n)) return "grosero";
+    if (RELLENO.test(n) && palabras.length <= 4) return "relleno";
+    return null;
+  };
+  const MENSAJE = {
+    corto: "es muy corto. Cuéntalo en una frase, con tus palabras.",
+    raro: "no se entiende. Escríbelo con palabras reales.",
+    grosero: "tiene palabras ofensivas. Escríbelo de forma respetuosa.",
+    relleno: "parece de relleno o de broma. Escribe algo real para que la app te encuentre un buen match."
+  } as const;
+  const a = malo(idea, 12);
+  if (a) return {campo: "idea", error: "Tu sueño " + MENSAJE[a]};
+  const b = malo(power, 6);
+  if (b) return {campo: "poder", error: "Tu superpoder " + MENSAJE[b]};
+  return null;
+}

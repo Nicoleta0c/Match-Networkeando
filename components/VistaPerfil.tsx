@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { LIMITES, type Perfil } from "@/lib/match";
+import { revisarTextos } from "@/lib/validar";
 import { Aviso } from "./ui";
 import { Cara } from "./Buscando";
 
@@ -14,7 +15,8 @@ type Props = {
   /* Cada vez que cambia, el formulario se vuelve a llenar con el perfil guardado (llenarForm del original). */
   relleno: number;
   tocadoRef: RefObject<boolean>;
-  onGuardar: (d: DatosForm) => Promise<boolean>;
+  /** true si se guardó; si el texto no parece real, el aviso y el campo a corregir. */
+  onGuardar: (d: DatosForm) => Promise<boolean | {error: string; campo: "idea" | "poder"}>;
   onBorrar: () => Promise<boolean>;
 };
 
@@ -58,10 +60,18 @@ export function VistaPerfil({activo, buscar, aviso, me, puede, guardando, rellen
     const d: DatosForm = {idea: idea.trim(), power: poder.trim(), anon, alias: nombre, que: que.trim(), contact};
     if (!d.idea) { setError("Escribe tu sueño para continuar."); setMalo("idea"); ideaRef.current?.focus(); return; }
     if (!d.power) { setError("Escribe tu superpoder para continuar."); setMalo("poder"); poderRef.current?.focus(); return; }
+    // Que escriban algo real (las mismas reglas rápidas que revisa el servidor).
+    const rapido = revisarTextos(d.idea, d.power);
+    if (rapido) { avisar(rapido); return; }
     if (!anon && !d.alias) { setAbierto(true); setError("Escribe tu nombre, o borra el contacto para quedar anónimo."); setMalo("nombre"); setTimeout(() => nombreRef.current?.focus()); return; }
     if (!anon && !d.contact) { setAbierto(true); setError("Agrega cómo contactarte para que tus matches puedan escribirte."); setMalo("contacto"); setTimeout(() => contactoRef.current?.focus()); return; }
-    await onGuardar(d);
+    const r = await onGuardar(d);
+    if (r && typeof r === "object") avisar(r);
   };
+  function avisar(p: {error: string; campo: "idea" | "poder"}) {
+    setError(p.error); setMalo(p.campo);
+    (p.campo === "idea" ? ideaRef : poderRef).current?.focus();
+  }
 
   const quitar = async () => {
     if (!armado) { setArmado(true); return; }

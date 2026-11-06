@@ -25,7 +25,7 @@ const ES_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/;
 const CADA_MS = 5000;
 
 class ErrorAPI extends Error {
-  constructor(public status: number) { super("HTTP " + status); }
+  constructor(public status: number, public detalle?: {error?: string; campo?: string}) { super("HTTP " + status); }
 }
 
 const VISTAS = ["inicio", "perfil", "clics", "proyectar", "mapa", "panel"] as const;
@@ -129,7 +129,7 @@ export default function App() {
     const r = await fetch("/api/perfiles/" + encodeURIComponent(S.uid), {
       method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
     });
-    if (!r.ok) throw new ErrorAPI(r.status);
+    if (!r.ok) throw new ErrorAPI(r.status, await r.json().catch(() => undefined));
     const p = limpiar(S.uid, await r.json());
     S.real = new Map(S.real ?? []).set(p.id, p);
     S.perfiles = S.real;
@@ -164,6 +164,8 @@ export default function App() {
       irA("clics");
       return true;
     } catch (err) {
+      // El texto no parece real: el formulario muestra el aviso junto al campo.
+      if (err instanceof ErrorAPI && err.status === 422 && err.detalle?.error) return {error: err.detalle.error, campo: err.detalle.campo === "poder" ? "poder" as const : "idea" as const};
       manejarError(err);
       return false;
     } finally { S.guardando = false; forzar(); }
