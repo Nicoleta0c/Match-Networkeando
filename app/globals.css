@@ -276,6 +276,31 @@ body[data-view="proyectar"] .barra{display:none}
 .cifra{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:20px 26px;color:var(--m);font-weight:700}
 .cifra b{display:block;font-size:clamp(44px,3.6vw,80px);line-height:1;color:var(--t);font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .cifra:last-child b{color:var(--h)}
+/* Panel de la presentadora */
+.panel-clave{margin-top:28px;display:flex;flex-direction:column;gap:10px;max-width:460px}
+.panel-clave label{font-weight:700;color:var(--m)}
+.panel-clave div{display:flex;gap:10px}
+.panel-clave input{flex:1;min-width:0;min-height:52px;border-radius:14px;border:1px solid var(--b2);background:var(--s);color:var(--t);font-size:17px;padding:12px 16px}
+.panel-clave input:focus{outline:none;border-color:var(--h)}
+.panel-cabeza{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px 32px;margin-top:24px}
+.panel-cabeza .cifras{margin-top:0}
+.panel-cabeza .fase{margin-top:0}
+.panel-nota{margin-top:24px;color:var(--m);max-width:70ch}
+.panel-nota b{color:var(--t)}
+.panel-lista{list-style:none;margin:20px 0 40px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:14px}
+.panel-lista li{display:flex;align-items:flex-start;gap:16px;padding:16px 18px;border-radius:18px;border:1px solid var(--b);background:var(--s)}
+.panel-lista li.quitado{opacity:.5}
+.panel-texto{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.panel-texto small{display:block;font-size:12px;font-weight:800;letter-spacing:.02em}
+.panel-sueno{font-weight:800;font-size:17px;line-height:1.3;overflow-wrap:anywhere}
+.panel-sueno small{color:var(--a)}
+.panel-poder{font-weight:600;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.panel-poder small{color:var(--h)}
+.panel-quien{font-size:13px;color:var(--m)}
+.panel-quitar{border-color:#FF8A6B;color:#FF8A6B}
+/* Botón «Ver mi match» cuando empiezan los matches */
+.revelar p b{color:var(--t)}
+.revelar-boton{min-height:64px;padding:16px 40px;font-size:20px}
 /* Control de la presentadora: empezar los matches */
 .fase{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:32px}
 .fase small{flex-basis:100%;color:var(--m);font-weight:600;font-size:15px}

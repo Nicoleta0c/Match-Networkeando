@@ -26,6 +26,7 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
       <img className="logo-proy" src="/logo-networkeando.webp" alt="Networkeando RD" width={2000} height={587}/>
       <div className="salir">
         <button className="boton chico" type="button" id="b-pantalla" hidden={!pantalla} onClick={alternar}>Pantalla completa</button>
+        <a className="boton chico" href="#panel">Panel</a>
         <a className="boton chico" href="#inicio">Salir</a>
       </div>
       <div className="proy">

@@ -16,16 +16,24 @@ type Props = {
   esperando: boolean;
   /** Cuánta gente hay en el evento. */
   personas: number;
+  /** Ya empezaron los matches y todavía no vio el suyo: se muestra el botón «Ver mi match». */
+  revelar: boolean; onRevelar: () => void;
 };
 
 export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, ...resto}: Props) {
   return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
-      <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : resto.esperando && resto.me ? "¡Ya estás en el Mapa de Sueños!" : "Mis matches"}</h2>
+      <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : resto.revelar ? "Llegó el momento" : resto.esperando && resto.me ? "¡Ya estás en el Mapa de Sueños!" : "Mis matches"}</h2>
       <Aviso>{aviso}</Aviso>
       {busqueda && resto.me
         ? <Buscando key={busqueda.id} b={busqueda} me={resto.me} pasoFinal={pasoFinal} ganador={ganador} pct={ganadorPct}/>
-        : <Cuerpo {...resto}/>}
+        : resto.revelar && resto.loaded
+          ? <div className="vacio-grande revelar">
+              <Duo chico/>
+              <p><b>¡Empezaron los matches!</b> Cuando quieras, toca el botón para ver con quién encajas.</p>
+              <button className="boton fuerte revelar-boton" type="button" onClick={resto.onRevelar}>Ver mi match</button>
+            </div>
+          : <Cuerpo {...resto}/>}
     </section>
   );
 }

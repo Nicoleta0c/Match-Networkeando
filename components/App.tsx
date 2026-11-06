@@ -11,6 +11,7 @@ import { VistaInicio } from "./VistaInicio";
 import { VistaPerfil, type DatosForm } from "./VistaPerfil";
 import { VistaClics } from "./VistaClics";
 import { VistaProyectar } from "./VistaProyectar";
+import { VistaPanel } from "./VistaPanel";
 import { VistaMapa } from "./VistaMapa";
 import type { Busqueda } from "./Buscando";
 
@@ -27,7 +28,7 @@ class ErrorAPI extends Error {
   constructor(public status: number) { super("HTTP " + status); }
 }
 
-const VISTAS = ["inicio", "perfil", "clics", "proyectar", "mapa"] as const;
+const VISTAS = ["inicio", "perfil", "clics", "proyectar", "mapa", "panel"] as const;
 export type Vista = typeof VISTAS[number];
 function vistaActual(): Vista {
   const h = location.hash.slice(1);
@@ -46,6 +47,10 @@ type Estado = {
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
   /** Fase del evento: en "registro" la gente espera; en "matches" ve su match (la presentadora la cambia). */
   fase: Fase; cambiandoFase: boolean;
+  /** Cuánta gente hay en el evento (en registro, cada celular solo recibe su propio perfil). */
+  total: number;
+  /** Ya tocó «Ver mi match» después de que empezaron los matches. */
+  yaVio: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
 };
@@ -58,7 +63,7 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
-  fase: "registro", cambiandoFase: false,
+  fase: "registro", cambiandoFase: false, total: 0, yaVio: false,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -148,7 +153,8 @@ export default function App() {
       await escribirPerfil(body);
       toast(prev ? "Cambios guardados" : "Perfil listo");
       formTocado.current = false;
-      S.buscarAlLlegar = true;
+      // En registro todavía no se busca: el match aparece cuando la presentadora lo empieza.
+      S.buscarAlLlegar = hayMatches();
       irA("clics");
       return true;
     } catch (err) {
@@ -255,6 +261,7 @@ export default function App() {
     // La primera búsqueda es un pequeño espectáculo; al repetirla no hacemos esperar tanto.
     const total = reduce ? 500 : (S.nBusquedas === 0 ? 2800 : 1400);
     const id = ++S.nBusquedas;
+    S.yaVio = true;
     // Hasta 6 personas del salón para tirarles un hilo: las más cercanas a tu perfil, en orden mezclado.
     const muestra = ordenarMatches(me, otros).slice(0, 6).map(x => x.o).sort(() => Math.random() - .5);
     S.busqueda = {id, muestra, pasos, total, reduce}; S.pasoFinal = null; S.ganador = null;
@@ -307,7 +314,7 @@ export default function App() {
         // "no-cache" deja que el navegador pregunte "¿cambió algo?" (ETag) y reciba un 304 vacío si no.
         const r = await fetch("/api/perfiles", {cache: "no-cache"});
         if (!r.ok) throw new ErrorAPI(r.status);
-        const data: {yo: string; fase?: Fase; perfiles: Record<string, unknown>[]} = await r.json();
+        const data: {yo: string; fase?: Fase; total?: number; perfiles: Record<string, unknown>[]} = await r.json();
         if (parado) return;
         clearTimeout(lento);
         S.slow = false; S.avail = "ok"; fallos = 0;
@@ -321,15 +328,16 @@ export default function App() {
           S.real = m; S.realLoaded = true;
           if (!S.demo) { S.perfiles = m; S.loaded = true; }
         }
-        // La presentadora empezó los matches: en todos los celulares arranca la búsqueda a la vez.
+        // La presentadora empezó los matches: en todos los celulares aparece el botón «Ver mi match».
         const fase: Fase = data.fase === "matches" ? "matches" : "registro";
         const empezo = !primera && S.fase === "registro" && fase === "matches";
+        if (fase === "registro") S.yaVio = false;
         S.fase = fase;
+        S.total = Number(data.total) || 0;
         if (primera) { primera = false; cargarNotificados(); }
         forzar();
-        if (empezo && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "mapa") {
+        if (empezo && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "panel" && S.vista !== "mapa") {
           toast("¡Empezaron los matches!");
-          S.buscarAlLlegar = true;
           irA("clics");
         }
         if (!S.demo && S.vista === "clics" && S.buscarAlLlegar && yo() && hayMatches()) { S.buscarAlLlegar = false; buscarMatch(); }
@@ -419,9 +427,11 @@ export default function App() {
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
-          esperando={!hayMatches()} personas={S.perfiles.size}/>
-        <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}
+          esperando={!hayMatches()} personas={S.demo ? S.perfiles.size : S.total}
+          revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch}/>
+        <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.demo ? S.perfiles.size : S.total} pares={pares}
           fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
+        <VistaPanel activo={S.vista === "panel"} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaMapa activo={S.vista === "mapa"} demo={S.demo ? S.perfiles : null}/>
       </main>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
