@@ -138,17 +138,19 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
 
         {/* El foco: un sueño del salón y el superpoder que lo ayuda, sin nombres. */}
         {foco && <div className="mapa-foco" ref={tarjeta} key={foco.id}>
-          <Via tipo={foco.tipo}/>
+          {foco.tipo === "sola"
+            ? <span className="via" data-tipo="una">Buscando su conexión</span>
+            : <Via tipo={foco.tipo}/>}
           {foco.filas.map((x, i) => <div className="foco-fila" key={i}>
-            <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>
-            <p className="foco-poder"><small>Lo impulsa el superpoder</small>{x.poder}</p>
+            {x.sueno && <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>}
+            {x.poder && <p className="foco-poder"><small>{foco.tipo === "sola" ? (x.sueno ? "Su superpoder" : "Pone su superpoder") : "Lo impulsa el superpoder"}</small>{x.poder}</p>}
           </div>)}
         </div>}
 
         <div className="mapa-pie" ref={pie}>
           <div className="mapa-txt">
             <h1 id="t-mapa">Mapa de Sueños</h1>
-            {linea && <p className="mapa-dato">{linea}</p>}
+            {linea && <p className="mapa-dato">{linea}<span className="mapa-pista"> · Toca un punto para ver su sueño</span></p>}
             {c && !vacio && <ul className="mapa-leyenda">
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--a)"/></svg>Trae un sueño</li>
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--h)"/></svg>Pone su superpoder</li>

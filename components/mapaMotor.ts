@@ -9,7 +9,8 @@
 import type { Red, TipoEnlace } from "@/lib/red";
 
 /** Lo que muestra la tarjeta del foco: cada sueño con el superpoder que lo ayuda (dos filas en doble vía). */
-export type Foco = {id: number; tipo: "doble" | "una"; filas: {sueno: string; poder: string}[]};
+/** tipo "sola": alguien que elegiste con un clic y todavía no tiene con quién impulsarse. */
+export type Foco = {id: number; tipo: "doble" | "una" | "sola"; filas: {sueno: string; poder: string}[]};
 type Nodo = {k: string; e: number; s: 0 | 1; t: string; p: string; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number; r: number};
 type Enlace = {a: Nodo; b: Nodo; t: TipoEnlace; i: number};
 type Cam = {x: number; y: number; k: number};
@@ -52,7 +53,9 @@ export class Motor {
   private quieto: boolean;
   private ro: ResizeObserver; private mo: MutationObserver;
   private fuente = "system-ui, sans-serif";
-  private foco: Enlace | null = null; private focoDesde = 0; private focoI = -1; private focoN = 0; private ultimoNuevo = "";
+  private foco: Enlace | null = null;
+  /** Lo que elegiste con un clic: el foco se queda ahí un rato antes de volver a rotar. */
+  private elegido: Nodo | null = null; private fijoHasta = 0; private focoDesde = 0; private focoI = -1; private focoN = 0; private ultimoNuevo = "";
   /** Espacio que ocupan los textos de la vista arriba y abajo (lo mide VistaMapa). */
   private reserva = {arriba: 72, abajo: 0, tapa: null as [number, number, number, number] | null};
   /** Se llama cada vez que el foco cambia de pareja. */
@@ -65,6 +68,8 @@ export class Motor {
     // Si cambian la paleta, el mapa cambia de colores al instante.
     this.mo = new MutationObserver(() => this.leerColores());
     this.mo.observe(document.documentElement, {attributes: true, attributeFilter: ["data-paleta", "style", "class"]});
+    lienzo.addEventListener("click", this.clic);
+    lienzo.addEventListener("pointermove", this.señalar);
     this.ro = new ResizeObserver(() => this.medir());
     this.ro.observe(lienzo);
     this.medir();
@@ -75,6 +80,8 @@ export class Motor {
     this.vivo = false;
     cancelAnimationFrame(this.raf);
     this.ro.disconnect(); this.mo.disconnect();
+    this.lienzo.removeEventListener("click", this.clic);
+    this.lienzo.removeEventListener("pointermove", this.señalar);
   }
 
   private leerColores() {
@@ -203,7 +210,44 @@ export class Motor {
 
   /* El foco: cada 6,5 segundos pasa a otra pareja (primero las de doble vía).
      Cuando alguien nuevo llega con un empalme, el foco salta a esa persona. */
+  /** El punto que está debajo del cursor o del dedo (con un margen para que sea fácil atinarle). */
+  private nodoEn(x: number, y: number) {
+    let mejor: Nodo | null = null, dist = Infinity;
+    for (const n of this.lista) {
+      const d = Math.hypot(n.px - x, n.py - y);
+      if (d < Math.max(n.r + 10, 20) && d < dist) { mejor = n; dist = d; }
+    }
+    return mejor;
+  }
+
+  /* Clic en un punto: el foco muestra su sueño y con quién se impulsa (otro clic: su siguiente conexión).
+     Clic en el vacío: el foco vuelve a rotar solo. */
+  private clic = (e: MouseEvent) => {
+    const caja = this.lienzo.getBoundingClientRect(), ahora = performance.now();
+    const n = this.nodoEn(e.clientX - caja.left, e.clientY - caja.top);
+    if (!n) { this.fijoHasta = 0; this.elegido = null; this.focoDesde = 0; this.foco = null; return; }
+    this.fijoHasta = ahora + 20000;
+    const suyos = this.enlaces.filter(l => l.t > 0 && (l.a === n || l.b === n) && filasDe(l).length > 0).sort((x, y) => (y.t - x.t) || (x.i - y.i));
+    if (suyos.length) {
+      const i = this.elegido === n && this.foco ? suyos.indexOf(this.foco) : -1;
+      this.elegido = n;
+      this.foco = null;
+      this.ponerFoco(suyos[(i + 1) % suyos.length], ahora);
+      return;
+    }
+    // Todavía sin conexión: igual se ve su sueño (o su superpoder).
+    this.elegido = n; this.foco = null; this.focoDesde = ahora;
+    this.onFoco?.({id: ++this.focoN, tipo: "sola", filas: [{sueno: n.t, poder: n.p}]});
+  };
+
+  private señalar = (e: PointerEvent) => {
+    const caja = this.lienzo.getBoundingClientRect();
+    this.lienzo.style.cursor = this.nodoEn(e.clientX - caja.left, e.clientY - caja.top) ? "pointer" : "";
+  };
+
   private rotarFoco(ahora: number) {
+    if (ahora < this.fijoHasta) return;
+    if (this.elegido) { this.elegido = null; this.focoDesde = 0; }
     const hoy = this.enlaces.filter(l => l.t > 0 && filasDe(l).length > 0);
     const nuevo = this.lista.filter(n => ahora - n.nace < 2000 && n.k !== this.ultimoNuevo).sort((x, y) => y.nace - x.nace)[0];
     if (nuevo) {
@@ -329,7 +373,7 @@ export class Motor {
       const r = (n.s ? 4.4 : 3.6) * z * (1 + Math.min(n.grado, 5) * .1) * (enfoque ? 1 : .8);
       n.r = r;
       const color = n.s ? col.a : col.h;
-      if (f && (n === f.a || n === f.b)) {
+      if ((f && (n === f.a || n === f.b)) || n === this.elegido) {
         ctx.globalAlpha = 1; ctx.strokeStyle = col.t; ctx.lineWidth = 2.4 * grosor;
         ctx.beginPath(); ctx.arc(n.px, n.py, r + 6 * grosor, 0, 6.283); ctx.stroke();
       }
@@ -378,14 +422,16 @@ export class Motor {
     };
     // La pareja del foco: el sueño (o el superpoder de quien ayuda, si no tiene sueño).
     if (f) for (const n of [f.b, f.a]) poner(n, recortar(n.t || n.p, 34), true, n.t ? col.t : col.h);
+    const el = this.elegido;
+    if (el && !(f && (el === f.a || el === f.b))) poner(el, recortar(el.t || el.p, 34), true, el.t ? col.t : col.h);
     if (hoy.length > MAX_ETIQUETAS) return;
     // Primero los sueños; después los superpoderes de quienes se suman, en el espacio que quede.
     for (const n of hoy) {
-      if (!n.t || (f && (n === f.a || n === f.b))) continue;
+      if (!n.t || n === el || (f && (n === f.a || n === f.b))) continue;
       poner(n, recortar(n.t, 30), false);
     }
     for (const n of hoy) {
-      if (n.t || !n.p || (f && (n === f.a || n === f.b))) continue;
+      if (n.t || !n.p || n === el || (f && (n === f.a || n === f.b))) continue;
       poner(n, recortar(n.p, 26), false, col.h);
     }
   }
