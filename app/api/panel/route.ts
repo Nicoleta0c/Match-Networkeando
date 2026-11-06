@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { db, aDocumento } from "@/lib/db";
 import { eventoActual } from "@/lib/evento";
-import { leerFase, leerQuitados, nuevaRonda, quitar, reiniciarEvento } from "@/lib/almacen";
+import { leerFase, leerQuitados, limpiarEvento, nuevaRonda, quitar, reiniciarEvento } from "@/lib/almacen";
 import { entrar, esPresentadora, pideClave, sinClaveMensaje } from "@/lib/presentadora";
 
 /* Panel de la presentadora.
@@ -9,7 +9,8 @@ import { entrar, esPresentadora, pideClave, sinClaveMensaje } from "@/lib/presen
    POST /api/panel {clave}: entrar con la clave (deja la cookie).
    POST /api/panel {id, quitar: true|false}: quita o devuelve un perfil.
    POST /api/panel {accion: "repetir"}: a todos les vuelve a salir «Ver mi match».
-   POST /api/panel {accion: "reiniciar"}: vuelve a registro (los perfiles registrados se quedan). */
+   POST /api/panel {accion: "reiniciar"}: vuelve a registro (los perfiles registrados se quedan).
+   POST /api/panel {accion: "borrarTodo"}: borra TODOS los perfiles de este evento y empieza de cero. */
 
 const sinPermiso = () => Response.json({error: sinClaveMensaje(), pideClave: pideClave()}, {status: 403});
 
@@ -32,6 +33,11 @@ export async function POST(req: NextRequest) {
   const evento = eventoActual();
   if (cuerpo.accion === "repetir") { await nuevaRonda(evento); return Response.json({ok: true}); }
   if (cuerpo.accion === "reiniciar") { await reiniciarEvento(evento); return Response.json({ok: true}); }
+  if (cuerpo.accion === "borrarTodo") {
+    const {count} = await db.perfil.deleteMany({where: {evento}});
+    await limpiarEvento(evento);
+    return Response.json({ok: true, borrados: count});
+  }
   if (typeof cuerpo.id !== "string" || typeof cuerpo.quitar !== "boolean") return Response.json({error: "Faltan id y quitar."}, {status: 400});
   await quitar(eventoActual(), cuerpo.id, cuerpo.quitar);
   return Response.json({ok: true});

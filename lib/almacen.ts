@@ -67,3 +67,12 @@ export async function reiniciarEvento(evento: string) {
   e.ronda[evento] = (e.ronda[evento] ?? 0) + 1;
   await escribir(e);
 }
+
+/** «Borrar todos los perfiles»: el evento empieza de cero (registro, sin quitados). Los perfiles se borran aparte. */
+export async function limpiarEvento(evento: string) {
+  const e = await leer();
+  e.fase[evento] = "registro";
+  e.quitados[evento] = [];
+  e.ronda[evento] = (e.ronda[evento] ?? 0) + 1;
+  await escribir(e);
+}
