@@ -1,6 +1,6 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { UMBRAL, type Item, type Perfil } from "@/lib/match";
+import { UMBRAL, nombreVisible, type Item, type Pareja, type Perfil } from "@/lib/match";
 import { Aviso, Carta, Duo, Pie, Porque } from "./ui";
 import { Buscando, type Busqueda } from "./Buscando";
 
@@ -18,9 +18,30 @@ type Props = {
   personas: number;
   /** Ya empezaron los matches y todavía no vio el suyo: se muestra el botón «Ver mi match». */
   revelar: boolean; onRevelar: () => void;
+  /** Solo la presentadora, cuando empezaron los matches: las mejores parejas para mostrar. */
+  top: Pareja[] | null;
 };
 
-export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, ...resto}: Props) {
+export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, top, ...resto}: Props) {
+  if (top) return (
+    <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
+      <h2 className="titulo" id="t-clics">Los mejores matches</h2>
+      {!top.length
+        ? <div className="vacio-grande"><Duo chico/><p>Todavía no hay matches. Aparecen aquí en cuanto haya gente que encaje.</p></div>
+        : <ol className="panel-top">
+            {top.map(x => (
+              <li key={x.suena.id + x.ayuda.id}>
+                <b className="panel-top-pct">{x.pct} %</b>
+                <div>
+                  <p><small>Sueño de {nombreVisible(x.suena)}</small>{x.suena.idea}</p>
+                  <p><small>Superpoder de {nombreVisible(x.ayuda)}</small>{x.ayuda.power}</p>
+                  {x.doble && <p className="panel-top-doble">Se ayudan los dos</p>}
+                </div>
+              </li>
+            ))}
+          </ol>}
+    </section>
+  );
   return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
       <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : resto.revelar ? "Llegó el momento" : resto.esperando && resto.me ? "¡Ya estás en el Mapa de Sueños!" : "Mis matches"}</h2>
@@ -38,7 +59,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando, personas}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
+function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando, personas}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct" | "top">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">

@@ -2,7 +2,7 @@
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, claveIA, limpiar, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
+import { UMBRAL, aplicarIA, analizar, claveIA, limpiar, mejoresParejas, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Fase } from "@/lib/fase";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
@@ -414,6 +414,10 @@ export default function App() {
     return n;
   }, [perfilesMap, enProyectar]);
 
+  // La presentadora, cuando empiezan los matches, ve en «Matches» las 5 mejores parejas para mostrar.
+  const verTop = S.presentadora && !S.demo && S.fase === "matches";
+  const top = useMemo(() => verTop ? mejoresParejas([...perfilesMap.values()].slice(0, 300), 5).top : null, [perfilesMap, verTop]);
+
   let aviso: ReactNode = null;
   if (!S.demo) {
     if (S.avail === "pending") aviso = "Conectando…";
@@ -433,7 +437,7 @@ export default function App() {
         <VistaPerfil activo={S.vista === "perfil"} buscar={S.demo || S.fase === "matches"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
           esperando={!hayMatches()} personas={S.demo ? S.perfiles.size : S.total}
-          revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch}/>
+          revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch} top={top}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.demo ? S.perfiles.size : S.total} pares={pares}
           fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaPanel activo={S.vista === "panel"} cambiando={S.cambiandoFase} onFase={cambiarFase}/>

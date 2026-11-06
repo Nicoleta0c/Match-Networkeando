@@ -338,4 +338,28 @@ export function ordenarMatches(me: Perfil, perfiles: Iterable<Perfil>): Item[] {
     .sort((x, y) => (y.r.pct - x.r.pct) || (y.o.createdAt - x.o.createdAt));
 }
 
+/** Una pareja: «suena» es la persona cuyo sueño recibe ayuda; «ayuda», la del superpoder. */
+export type Pareja = { suena: Perfil; ayuda: Perfil; pct: number; doble: boolean };
+
+/** Todas las parejas con match (ordenadas de mejor a peor) y las n mejores sin repetir personas. */
+export function mejoresParejas(perfiles: Perfil[], n: number): { total: number; top: Pareja[] } {
+  const lista: Pareja[] = [];
+  for (let i = 0; i < perfiles.length; i++) for (let j = i + 1; j < perfiles.length; j++) {
+    const a = perfiles[i], b = perfiles[j];
+    const ab = analizar(a, b).pct, ba = analizar(b, a).pct;
+    if (Math.max(ab, ba) < UMBRAL) continue;
+    lista.push(ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL});
+  }
+  lista.sort((x, y) => y.pct - x.pct);
+  const usados = new Set<string>(), top: Pareja[] = [];
+  for (const x of lista) {
+    if (top.length >= n) break;
+    if (usados.has(x.suena.id) || usados.has(x.ayuda.id)) continue;
+    usados.add(x.suena.id); usados.add(x.ayuda.id); top.push(x);
+  }
+  return {total: lista.length, top};
+}
+
+export const nombreVisible = (p: Perfil) => p.anon || !p.alias ? "Anónimo" : p.alias;
+
 export const sinComillas = (t: string) => t.replace(/^[“"]|[”"]$/g, "");
