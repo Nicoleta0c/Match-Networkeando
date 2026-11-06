@@ -4,7 +4,8 @@ import { LIMITES } from "@/lib/match";
 import { miId } from "@/lib/identidad";
 
 /* POST /api/match: le pide a Claude las mejores conexiones para una persona.
-   La clave (ANTHROPIC_API_KEY) solo existe aquí en el servidor, nunca llega al navegador.
+   La clave (variable Networkeando_Match, o ANTHROPIC_API_KEY) solo existe aquí en el servidor:
+   nunca llega al navegador ni se escribe en ningún registro.
    Si no hay clave o algo falla, responde con error y la app usa su método básico. */
 
 // Haiku: el modelo más rápido y barato de Claude (unos centavos por evento). Se puede cambiar con ANTHROPIC_MODEL.
@@ -16,7 +17,7 @@ const MAX_CANDIDATOS = 30;
 /* El prompt de la reunión del 5 de noviembre (docs/reunion-2026-11-05.md), adaptado a la app:
    los perfiles llegan en JSON y el sueño viene en el campo "idea". Ajuste del 5 de nov (noche):
    la app solo muestra el sueño y quién lo puede ayudar; la IA elige con quién y en qué dirección. */
-const INSTRUCCIONES = `Eres el conector del "Mapa de Sueños", una dinámica de networking en eventos en República Dominicana.
+const INSTRUCCIONES = `Eres el conector de "Match Networkeando", una dinámica de networking en eventos en República Dominicana.
 Cada participante registró un SUEÑO (algo que quiere lograr; viene en el campo "idea") y un SUPERPODER (lo que mejor sabe hacer).
 
 Tu trabajo es encontrar, para la persona principal, a quién le puede servir: alguien cuyo superpoder ayude a su sueño, o cuyo sueño pueda ayudar ella con su superpoder. La app muestra el sueño, el superpoder y una frase general de por qué encajan; los detalles los hablan ellos en persona.
@@ -79,15 +80,17 @@ function permitido(quien: string) {
 }
 
 let cliente: Anthropic | null = null;
-const claude = () => (cliente ??= new Anthropic({timeout: 18_000, maxRetries: 1}));
+/** La clave de la IA: en Railway se llama Networkeando_Match (también sirve el nombre estándar ANTHROPIC_API_KEY). */
+const claveIA = () => process.env.Networkeando_Match || process.env.ANTHROPIC_API_KEY || "";
+const claude = () => (cliente ??= new Anthropic({apiKey: claveIA(), timeout: 18_000, maxRetries: 1}));
 
 /* GET /api/match: dice si la IA está disponible (sin revelar la clave). */
 export function GET() {
-  return Response.json({ia: !!process.env.ANTHROPIC_API_KEY});
+  return Response.json({ia: !!claveIA()});
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) return Response.json({error: "La IA no está configurada."}, {status: 503});
+  if (!claveIA()) return Response.json({error: "La IA no está configurada."}, {status: 503});
   const yo = await miId(req);
   if (!permitido(yo)) return Response.json({error: "Demasiados pedidos. Espera un minuto."}, {status: 429});
 

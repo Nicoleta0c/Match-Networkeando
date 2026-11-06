@@ -31,7 +31,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
   return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
-      <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : resto.revelar ? "Llegó el momento" : resto.esperando && resto.me ? "¡Ya estás en el Mapa de Sueños!" : "Mis matches"}</h2>
+      <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : resto.revelar ? "Llegó el momento" : resto.esperando && resto.me ? "¡Ya estás en el Match!" : "Mis matches"}</h2>
       <Aviso>{aviso}</Aviso>
       {busqueda && resto.me
         ? <Buscando key={busqueda.id} b={busqueda} me={resto.me} pasoFinal={pasoFinal} ganador={ganador} pct={ganadorPct}/>
@@ -59,8 +59,8 @@ function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando
   if (esperando) return (
     <div className="vacio-grande esperando">
       <Duo chico/>
-      <p><b>Tu sueño y tu superpoder ya están en el mapa.</b> Cuando la presentadora empiece los matches, aquí aparecerá con quién encajas. No cierres esta página.</p>
-      <p className="esperando-cifra" aria-live="polite"><b>{personas}</b> {personas === 1 ? "persona en el mapa" : "personas en el mapa"}</p>
+      <p><b>Tu sueño y tu superpoder ya están guardados.</b> Cuando la presentadora empiece los matches, aquí aparecerá con quién encajas. No cierres esta página.</p>
+      <p className="esperando-cifra" aria-live="polite"><b>{personas}</b> {personas === 1 ? "persona registrada" : "personas registradas"}</p>
       <div className="acciones"><a className="boton" href="#perfil">Revisar mi perfil</a></div>
     </div>
   );
