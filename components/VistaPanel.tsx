@@ -108,7 +108,6 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
             <div className="cifra"><b>{calculo.activos}</b>en el evento</div>
             <div className="cifra"><b>{calculo.conMatch}</b>con match</div>
             <div className="cifra"><b>{calculo.pares}</b>matches detectados</div>
-            {calculo.quitados > 0 && <div className="cifra"><b>{calculo.quitados}</b>quitados</div>}
           </div>
           <div className="fase">
             {fase === "registro"
