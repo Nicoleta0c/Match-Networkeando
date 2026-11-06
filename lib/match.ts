@@ -145,7 +145,8 @@ export type Conexion = { teAyuda: string; leAyudas: string; paso: string; tipo: 
 export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; conexion?: Conexion; ia?: boolean };
 export type Item = { o: Perfil; r: Analisis };
 
-export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
+/** sal: otra forma de decir lo mismo (la usa ordenarMatches para no repetir frases en tu lista). */
+export function analizar(me: Perfil | null, o: Perfil | null, sal = 0): Analisis {
   if (!me || !o || me.id === o.id) return {pct: 0, a: [], b: [], razones: []};
   const a = me.needs.filter(x => o.powers.includes(x));
   const b = o.needs.filter(x => me.powers.includes(x));
@@ -201,7 +202,7 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   const rompe = aT.length && me.idea
     ? `¿Me ayudarías a ${accion(o, aT[0]).pedir}? Mi sueño es ${enFrase(me.idea)}.`
     : (b.length && o.idea ? `Vi que tu sueño es ${enFrase(o.idea)}. ¿Qué te falta? Yo te puedo ${accion(me, b[0]).pedir.replace(/^(\S+)/, "ayudar a $1")}.` : undefined);
-  return {pct, a, b, razones, rompe, conexion: conexionBasica(me, o, aT, b, kwA, kwB)};
+  return {pct, a, b, razones, rompe, conexion: conexionBasica(me, o, aT, b, kwA, kwB, sal)};
 }
 
 /* En qué se pueden ayudar, dicho de forma general (por área). Los detalles los hablan ellos en persona. */
@@ -211,20 +212,21 @@ const AYUDA_GENERAL: Record<number, string> = {
   9: "la comunidad", 10: "la parte de construir y armar", 11: "la investigación y los datos", 12: "lo legal y los trámites"
 };
 
-/* Qué tipo de ayuda da cada área, dicho en general (va después de "te puede ayudar a"). */
-const AYUDA_DETALLE: Record<number, string> = {
-  1: "convertirlo en algo que la gente pueda usar, como una app, una página o un sistema",
-  2: "que tu sueño se vea bien y se entienda a primera vista",
-  3: "contar tu sueño de una forma que la gente entienda y se entusiasme",
-  4: "darlo a conocer y conseguir a las primeras personas que lo usen",
-  5: "poner los números en orden: cuánto cuesta, cómo se paga y cómo se sostiene",
-  6: "organizar el plan, los pasos y a la gente para que avance",
-  7: "explicar y enseñar lo que hace falta para que más gente se sume",
-  8: "cuidar la salud y el bienestar de quienes participen",
-  9: "conectarlo con la comunidad y con la gente que lo necesita",
-  10: "construir y armar lo que haga falta para hacerlo realidad",
-  11: "entender mejor a la gente y decidir con datos",
-  12: "ponerlo en regla: permisos, registros y la parte legal"
+/* Qué tipo de ayuda da cada área, dicho en general (va después de "te puede ayudar a").
+   Varias formas por área, para que dos matches de la misma área no digan lo mismo. */
+const AYUDA_DETALLE: Record<number, string[]> = {
+  1: ["convertirlo en algo que la gente pueda usar, como una app, una página o un sistema", "llevarlo a la tecnología para que funcione solo y llegue a más gente", "resolver la parte técnica que hoy le falta"],
+  2: ["que tu sueño se vea bien y se entienda a primera vista", "darle una imagen clara y atractiva", "que la gente lo vea y lo entienda sin explicaciones"],
+  3: ["contar tu sueño de una forma que la gente entienda y se entusiasme", "comunicar bien lo que quieres lograr", "encontrar las palabras para que más gente se sume"],
+  4: ["darlo a conocer y conseguir a las primeras personas que lo usen", "llegar a la gente correcta y que lo prueben", "venderlo y hacer que se hable de él"],
+  5: ["poner los números en orden: cuánto cuesta, cómo se paga y cómo se sostiene", "que salgan las cuentas y no pierda dinero", "pensar cómo financiarlo y hacerlo sostenible"],
+  6: ["organizar el plan, los pasos y a la gente para que avance", "ordenar las tareas para que no se quede a medias", "convertir la idea en un plan con pasos claros"],
+  7: ["explicar y enseñar lo que hace falta para que más gente se sume", "que otros lo entiendan y puedan aprenderlo", "formar a las personas que lo van a llevar adelante"],
+  8: ["cuidar la salud y el bienestar de quienes participen", "que lo que haga sea bueno para la salud de la gente", "cuidar a las personas en cada paso"],
+  9: ["conectarlo con la comunidad y con la gente que lo necesita", "que la comunidad lo sienta suyo y lo apoye", "llegar a las personas que más lo necesitan"],
+  10: ["construir y armar lo que haga falta para hacerlo realidad", "pasar del papel a algo que se pueda tocar", "armar lo físico que tu sueño necesita"],
+  11: ["entender mejor a la gente y decidir con datos", "medir lo que funciona y lo que no", "conocer bien a quién va dirigido antes de invertir"],
+  12: ["ponerlo en regla: permisos, registros y la parte legal", "evitar problemas legales desde el principio", "tener los papeles y permisos en orden"]
 };
 /* La misma ayuda, pero para el sueño de la otra persona ("tu idea" -> "su idea"). */
 const paraSu = (t: string) => t.replace(/(^|[^a-záéíóúñ])tu(?=[^a-záéíóúñ]|$)/gi, "$1su");
@@ -281,18 +283,32 @@ const ENTRADAS = [
   (g: string) => `Su superpoder encaja con ${g} de tu sueño.`,
   (g: string) => `Es una buena conexión para ${g} de tu sueño.`,
   (g: string) => `Puede aportar mucho en ${g} de tu sueño.`,
-  (g: string) => `Tu sueño necesita ${g}, y esta persona sabe de eso.`
+  (g: string) => `Tu sueño necesita ${g}, y esta persona sabe de eso.`,
+  (g: string) => `Lo que sabe hacer sirve justo para ${g} de tu sueño.`,
+  (g: string) => `En ${g} de tu sueño, esta persona tiene mucho que aportar.`
 ];
+/* Cómo sigue la segunda frase. */
+const PUENTES = ["Te puede ayudar a", "Puede ayudarte a", "Con su experiencia, te puede ayudar a"];
+/* Cuando quien mira es el que ayuda: las mismas ideas, hablando del sueño de la otra persona. */
+const ENTRADAS_SU = [
+  (g: string) => `Tu superpoder encaja con ${g} de su sueño.`,
+  (g: string) => `Su sueño necesita ${g}, y tú sabes de eso.`,
+  (g: string) => `Puedes aportar mucho en ${g} de su sueño.`,
+  (g: string) => `Lo que sabes hacer sirve justo para ${g} de su sueño.`,
+  (g: string) => `Es una buena conexión para ${g} de su sueño.`
+];
+const PUENTES_SU = ["Le puedes ayudar a", "Puedes ayudarle a", "Con tu experiencia, le puedes ayudar a"];
+const elegir = <T,>(lista: T[], semilla: string, parte: string) => lista[hash(parte + "|" + semilla) % lista.length];
 
 /** La ayuda de alguien, según su superpoder: primero en el área que tu sueño necesita, si no en cualquiera. */
-function matiz(p: Perfil, areas: number[]): [number, string] {
+function matiz(p: Perfil, areas: number[], h: string): [number, string] {
   const n = norm(p.power);
   for (const a of areas) { const m = MATICES.find(([ar, re]) => ar === a && re.test(n)); if (m) return [a, m[2]]; }
-  return [areas[0], AYUDA_DETALLE[areas[0]]];
+  return [areas[0], elegir(AYUDA_DETALLE[areas[0]], h, "detalle")];
 }
 
 /* El método básico (sin IA) dice en qué se pueden ayudar, sin entrar en detalles. */
-function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: string[], kwB: string[]): Conexion | undefined {
+function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: string[], kwB: string[], sal = 0): Conexion | undefined {
   let teAyuda = "", leAyudas = "";
   if (me.idea && aT.length) teAyuda = `Su superpoder te puede ayudar con ${AYUDA_GENERAL[aT[0]]} de tu sueño.`;
   else if (me.idea && kwA.length) teAyuda = "Su superpoder tiene que ver con lo que necesita tu sueño.";
@@ -302,15 +318,17 @@ function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: s
   // La respuesta que se muestra: cómo te ayuda a ti. Solo si esa persona no te aporta (o no tienes sueño), cómo ayudas tú.
   let texto: string;
   if (me.idea && aT.length) {
-    const [area, ayuda] = matiz(o, aT);
-    // La forma de empezar depende de su superpoder y de tu sueño: así varía de un match a otro.
-    const entrada = ENTRADAS[hash(norm(o.power) + "|" + norm(me.idea)) % ENTRADAS.length](AYUDA_GENERAL[area]);
-    texto = `${entrada} Te puede ayudar a ${ayuda}.`;
+    // Las palabras dependen de su superpoder y de tu sueño: así varían de un match a otro,
+    // pero la misma pareja siempre lee lo mismo (en su celular y en la pantalla de la presentadora).
+    const h = norm(o.power) + "|" + norm(me.idea) + "|" + sal;
+    const [area, ayuda] = matiz(o, aT, h);
+    texto = `${elegir(ENTRADAS, h, "entrada")(AYUDA_GENERAL[area])} ${elegir(PUENTES, h, "puente")} ${ayuda}.`;
   } else if (teAyuda) {
     texto = "Sabe de lo mismo que necesita tu sueño. Es una buena persona para pedirle consejo y dar el primer paso.";
   } else if (o.idea && b.length) {
-    const [area, ayuda] = matiz(me, b);
-    texto = `Tu superpoder encaja con ${AYUDA_GENERAL[area]} de su sueño. Le puedes ayudar a ${paraSu(ayuda)}.`;
+    const h = norm(me.power) + "|" + norm(o.idea) + "|" + sal;
+    const [area, ayuda] = matiz(me, b, h);
+    texto = `${elegir(ENTRADAS_SU, h, "entrada")(AYUDA_GENERAL[area])} ${elegir(PUENTES_SU, h, "puente")} ${paraSu(ayuda)}.`;
   } else {
     texto = "Tu superpoder tiene que ver con su sueño. Le puedes dar tu mirada y tus consejos para arrancar.";
   }
@@ -334,8 +352,16 @@ export function aplicarIA(me: Perfil, lista: Item[], res: ResIA | null): Item[] 
   }).sort((a, b) => (b.r.pct - a.r.pct) || (b.o.createdAt - a.o.createdAt));
 }
 export function ordenarMatches(me: Perfil, perfiles: Iterable<Perfil>): Item[] {
-  return [...perfiles].filter(o => o.id !== me.id).map(o => ({o, r: analizar(me, o)}))
+  const lista = [...perfiles].filter(o => o.id !== me.id).map(o => ({o, r: analizar(me, o)}))
     .sort((x, y) => (y.r.pct - x.r.pct) || (y.o.createdAt - x.o.createdAt));
+  // En tu lista no se repite ninguna frase: si una ya salió más arriba, se dice de otra forma.
+  const vistas = new Set<string>();
+  for (const x of lista) {
+    if (x.r.pct < UMBRAL) continue;
+    for (let sal = 1; sal <= 8 && x.r.conexion?.texto && vistas.has(x.r.conexion.texto); sal++) x.r = analizar(me, x.o, sal);
+    if (x.r.conexion?.texto) vistas.add(x.r.conexion.texto);
+  }
+  return lista;
 }
 
 /** Una pareja: «suena» es la persona cuyo sueño recibe ayuda; «ayuda», la del superpoder. */
@@ -351,10 +377,17 @@ export function mejoresParejas(perfiles: Perfil[], n: number): { total: number; 
     lista.push(ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL, r: rab} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL, r: rba});
   }
   lista.sort((x, y) => y.pct - x.pct);
-  const usados = new Set<string>(), top: Pareja[] = [];
+  const usados = new Set<string>(), frases = new Set<string>(), top: Pareja[] = [];
   for (const x of lista) {
     if (top.length >= n) break;
     if (usados.has(x.suena.id) || usados.has(x.ayuda.id)) continue;
+    // El texto de la pareja es el mismo que esa persona ve en su lista.
+    const mio = ordenarMatches(x.suena, perfiles).find(y => y.o.id === x.ayuda.id);
+    if (mio) x.r = mio.r;
+    // Tampoco repite la frase: si ya salió, pasa a la siguiente mejor pareja.
+    const t = x.r.conexion?.texto;
+    if (t && frases.has(t)) continue;
+    if (t) frases.add(t);
     usados.add(x.suena.id); usados.add(x.ayuda.id); top.push(x);
   }
   return {total: lista.length, top};
