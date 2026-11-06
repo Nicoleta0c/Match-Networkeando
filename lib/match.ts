@@ -42,7 +42,11 @@ export function inferirPoder(t: string) {
 }
 /* Qué suele necesitar cada tipo de idea, además de su tema.
    Ej.: una charla necesita quien organice y consiga voluntarios, quien la difunda y quien diseñe. */
+/* Metas de carrera ("quiero ser gerente", "llegar a ser líder"): lo que más ayuda es alguien que lidere y guíe. */
+const CARRERA = /(quiero|quisiera|me gustaria|sueno con|mi sueno es)\s+(ser|llegar a ser|convertirme en)\s|gerente|director|jefe de|manager|liderar|guiar a|guide/;
 const NECESIDADES: [RegExp, number[]][] = [
+  [CARRERA, [6, 7]],  // va primero para que pese más que el tema
+  [/videojuego|(^|[^a-z])juegos?([^a-z]|$)|gaming/, [1, 2, 4]],
   [/charla|conferencia|ponencia|taller|evento|feria|festival|jornada|encuentro|concierto|torneo|competencia|hackat|congreso/, [6, 4, 2]],
   [/(^|[^a-z])(app|aplicacion|plataforma|pagina web|sitio web|sistema|software|bot)/, [1, 2]],
   [/podcast|video|canal|documental|revista|blog|contenido|libro|cuento|programa de radio/, [3, 2, 4]],
@@ -335,8 +339,14 @@ function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: s
     // Las palabras dependen de su superpoder y de tu sueño: así varían de un match a otro,
     // pero la misma pareja siempre lee lo mismo (en su celular y en la pantalla de la presentadora).
     const h = norm(o.power) + "|" + norm(me.idea) + "|" + sal;
-    const [area, ayuda] = matiz(o, aT, h);
-    texto = `${elegir(ENTRADAS, h, "entrada")(AYUDA_GENERAL[area])} ${elegir(PUENTES, h, "puente")} ${ayuda}.`;
+    let [area, ayuda] = matiz(o, aT, h);
+    let tema = AYUDA_GENERAL[area];
+    // Si tu sueño es una meta de carrera, la ayuda es de liderazgo y guía, no "organizar un equipo".
+    if (CARRERA.test(norm(me.idea)) && (area === 6 || area === 7)) {
+      tema = "el liderazgo";
+      ayuda = elegir(["crecer como líder con el ejemplo de alguien que ya guía a otros", "prepararte para dirigir equipos y guiar a la gente", "dar los pasos para llegar a esa meta, con consejos de quien ya lo vivió"], h, "carrera");
+    }
+    texto = `${elegir(ENTRADAS, h, "entrada")(tema)} ${elegir(PUENTES, h, "puente")} ${ayuda}.`;
   } else if (teAyuda) {
     texto = "Sabe de lo mismo que necesita tu sueño. Es una buena persona para pedirle consejo y dar el primer paso.";
   } else if (o.idea && b.length) {

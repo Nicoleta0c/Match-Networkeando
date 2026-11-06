@@ -7,7 +7,10 @@ import { miId } from "@/lib/identidad";
    La clave (ANTHROPIC_API_KEY) solo existe aquí en el servidor, nunca llega al navegador.
    Si no hay clave o algo falla, responde con error y la app usa su método básico. */
 
-const MODELO = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
+// Haiku: el modelo más rápido y barato de Claude (unos centavos por evento). Se puede cambiar con ANTHROPIC_MODEL.
+const MODELO = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
+// El "modelo de respaldo" del servidor no existe para Haiku: solo se pide con los demás modelos.
+const CON_RESPALDO = !MODELO.includes("haiku");
 const MAX_CANDIDATOS = 30;
 
 /* El prompt de la reunión del 5 de noviembre (docs/reunion-2026-11-05.md), adaptado a la app:
@@ -98,8 +101,7 @@ export async function POST(req: NextRequest) {
     const respuesta = await claude().beta.messages.create({
       model: MODELO,
       max_tokens: 1000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      ...(CON_RESPALDO ? {betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const} : {}),
       output_config: {effort: "low", format: {type: "json_schema", schema: ESQUEMA}},
       system: INSTRUCCIONES,
       messages: [{
