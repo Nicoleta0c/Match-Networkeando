@@ -68,7 +68,6 @@ export function VistaInicio({activo, qrUrl}: {activo: boolean; qrUrl: string}) {
           </ol>
           <div className="acciones">
             <a className="boton fuerte" href="#perfil">Crear mi perfil</a>
-            <a className="boton" href="#demo">Probar la demo</a>
           </div>
         </div>
       </div>

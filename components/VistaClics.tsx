@@ -52,7 +52,7 @@ function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando
     <div className="vacio-grande">
       <Duo chico/>
       <p>Crea tu perfil y la app buscará con quién encajas mejor.</p>
-      <div className="acciones"><a className="boton fuerte" href="#perfil">Crear mi perfil</a><a className="boton" href="#demo">Probar la demo</a></div>
+      <div className="acciones"><a className="boton fuerte" href="#perfil">Crear mi perfil</a></div>
     </div>
   );
   // Fase de registro: tu perfil ya está guardado y esperas a que la presentadora empiece los matches.

@@ -397,6 +397,8 @@ body[data-view="mapa"] .barra{display:none}
   .proy .fase{justify-content:center}
 }
 @media (max-width:640px){
+  /* En el celular, «Crear mi perfil» va centrado. */
+  .acciones{justify-content:center}
   /* Proyectar en el celular: sin «Pantalla completa» (no hace falta) y el logo más chico. */
   #b-pantalla{display:none}
   .logo-proy{height:36px;top:calc(env(safe-area-inset-top,0px) + 16px)}
