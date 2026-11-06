@@ -7,6 +7,8 @@ import { Cara } from "./Buscando";
 export type DatosForm = {idea: string; power: string; anon: boolean; alias: string; que: string; contact: string};
 
 type Props = {
+  /** Ya empezaron los matches (o es la demo): el botón también busca. */
+  buscar: boolean;
   activo: boolean; aviso: ReactNode; me: Perfil | null;
   puede: boolean; guardando: boolean;
   /* Cada vez que cambia, el formulario se vuelve a llenar con el perfil guardado (llenarForm del original). */
@@ -16,7 +18,7 @@ type Props = {
   onBorrar: () => Promise<boolean>;
 };
 
-export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocadoRef, onGuardar, onBorrar}: Props) {
+export function VistaPerfil({activo, buscar, aviso, me, puede, guardando, relleno, tocadoRef, onGuardar, onBorrar}: Props) {
   const [idea, setIdea] = useState("");
   const [poder, setPoder] = useState("");
   // "Mi nombre" siempre empieza cerrado; lo abre quien quiera. Ser anónimo depende de si escribes tu nombre.
@@ -94,7 +96,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
 
         <p className="error" id="error" role="alert">{error}</p>
         <div className="form-acciones">
-          <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
+          <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{!buscar ? "Guardar" : me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
           {/* Solo dos preguntas. Quien quiera, abre esto y pone su nombre; si no, queda anónimo. */}
           <details className="aparecer" open={abierto} onToggle={e => setAbierto(e.currentTarget.open)}>
             <summary>

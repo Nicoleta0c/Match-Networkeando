@@ -426,7 +426,7 @@ export default function App() {
       <Barra vista={S.vista} burbuja={burbuja} verMatches={S.demo || S.fase === "matches"} presentadora={S.presentadora}/>
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
-        <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
+        <VistaPerfil activo={S.vista === "perfil"} buscar={S.demo || S.fase === "matches"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
           esperando={!hayMatches()} personas={S.demo ? S.perfiles.size : S.total}
           revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch}/>

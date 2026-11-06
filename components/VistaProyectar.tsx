@@ -38,9 +38,7 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
           {registro
             ? <h1 id="t-proy">Escanea y escribe tu <span className="marca">sueño</span> y tu superpoder.</h1>
             : <h1 id="t-proy">Escanea y la app te busca tu <span className="marca">match</span>.</h1>}
-          <p className="intro">{registro
-            ? "Cuando estemos todos, empezamos los matches al mismo tiempo."
-            : "Tu sueño, tu superpoder y la gente del evento que encaja contigo."}</p>
+          {!registro && <p className="intro">Tu sueño, tu superpoder y la gente del evento que encaja contigo.</p>}
           <div className="cifras" aria-live="polite">
             <div className="cifra"><b id="n-perfiles">{perfiles}</b>{perfiles === 1 ? "registrado" : "registrados"}</div>
             <div className="cifra"><b id="n-clics">{pares}</b>{registro ? "matches detectados" : "matches encontrados"}</div>
