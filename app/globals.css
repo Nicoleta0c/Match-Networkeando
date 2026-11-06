@@ -54,9 +54,9 @@ main{position:relative;z-index:1}
 /* botones */
 .boton{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:14px 26px;border-radius:999px;border:1.5px solid var(--b2);background:transparent;color:var(--t);font-weight:800;font-size:17px;text-decoration:none;cursor:pointer;transition:transform .16s var(--ease),background-color .2s,border-color .2s,box-shadow .2s}
 .boton:active{transform:scale(.97)}
-.boton.fuerte{background:var(--h);border-color:var(--h);color:var(--on-h);box-shadow:0 12px 32px -14px var(--h)}
+.boton.fuerte{background:var(--h);border-color:var(--h);color:var(--on-h)}
 .boton.chico{min-height:44px;padding:9px 20px;font-size:15px}
-@media (hover:hover) and (pointer:fine){.boton:hover:not([disabled]){border-color:var(--m)}.boton.fuerte:hover:not([disabled]){border-color:var(--h);box-shadow:0 16px 40px -12px var(--h)}}
+@media (hover:hover) and (pointer:fine){.boton:hover:not([disabled]){border-color:var(--m)}.boton.fuerte:hover:not([disabled]){border-color:var(--h);filter:brightness(1.06)}}
 .boton[disabled]{opacity:.5;cursor:not-allowed;box-shadow:none}
 .acciones{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
 
