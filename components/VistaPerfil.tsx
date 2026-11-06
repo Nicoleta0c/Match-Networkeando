@@ -19,7 +19,8 @@ type Props = {
 export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocadoRef, onGuardar, onBorrar}: Props) {
   const [idea, setIdea] = useState("");
   const [poder, setPoder] = useState("");
-  const [anon, setAnon] = useState(true);
+  // "Mi nombre" siempre empieza cerrado; lo abre quien quiera. Ser anónimo depende de si escribes tu nombre.
+  const [abierto, setAbierto] = useState(false);
   const [alias, setAlias] = useState("");
   const [que, setQue] = useState("");
   const [contacto, setContacto] = useState("");
@@ -38,10 +39,10 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
     // Si llegan perfiles nuevos mientras la persona escribe, no le borramos lo escrito.
     if (!pedido && tocadoRef.current) return;
     if (me) {
-      setIdea(me.idea); setPoder(me.power); setAnon(me.anon);
-      setAlias(me.alias); setQue(me.que); setContacto(me.contact);
+      setIdea(me.idea); setPoder(me.power);
+      setAlias(me.anon ? "" : me.alias); setQue(me.anon ? "" : me.que); setContacto(me.anon ? "" : me.contact);
     }
-    setArmado(false); setError(""); setMalo(null);
+    setAbierto(false); setArmado(false); setError(""); setMalo(null);
   }, [relleno, me, tocadoRef]);
 
   const tocar = () => { tocadoRef.current = true; };
@@ -49,18 +50,21 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setMalo(null);
-    const d: DatosForm = {idea: idea.trim(), power: poder.trim(), anon, alias: alias.trim(), que: que.trim(), contact: contacto.trim()};
+    const nombre = alias.trim(), contact = contacto.trim();
+    // Con nombre o con contacto, sales con tu nombre; si no escribes nada ahí, quedas anónimo.
+    const anon = !nombre && !contact;
+    const d: DatosForm = {idea: idea.trim(), power: poder.trim(), anon, alias: nombre, que: que.trim(), contact};
     if (!d.idea) { setError("Escribe tu sueño para continuar."); setMalo("idea"); ideaRef.current?.focus(); return; }
     if (!d.power) { setError("Escribe tu superpoder para continuar."); setMalo("poder"); poderRef.current?.focus(); return; }
-    if (!anon && !d.alias) { setError("Escribe tu nombre o cambia a Anónimo."); setMalo("nombre"); nombreRef.current?.focus(); return; }
-    if (!anon && !d.contact) { setError("Agrega cómo contactarte para que tus matches puedan escribirte."); setMalo("contacto"); contactoRef.current?.focus(); return; }
+    if (!anon && !d.alias) { setAbierto(true); setError("Escribe tu nombre, o borra el contacto para quedar anónimo."); setMalo("nombre"); setTimeout(() => nombreRef.current?.focus()); return; }
+    if (!anon && !d.contact) { setAbierto(true); setError("Agrega cómo contactarte para que tus matches puedan escribirte."); setMalo("contacto"); setTimeout(() => contactoRef.current?.focus()); return; }
     await onGuardar(d);
   };
 
   const quitar = async () => {
     if (!armado) { setArmado(true); return; }
     if (await onBorrar()) {
-      setIdea(""); setPoder(""); setAlias(""); setQue(""); setContacto(""); setAnon(true);
+      setIdea(""); setPoder(""); setAlias(""); setQue(""); setContacto(""); setAbierto(false);
     }
   };
 
@@ -91,13 +95,13 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
         <p className="error" id="error" role="alert">{error}</p>
         <div className="form-acciones">
           <button className="boton fuerte" type="submit" id="b-guardar" disabled={!puede || guardando}>{me ? "Guardar y buscar de nuevo" : "Guardar y buscar mi match"}</button>
-          {/* Solo dos preguntas. Quien quiera, abre esto y sale con su nombre; si no, queda anónimo. */}
-          <details className="aparecer" open={!anon} onToggle={e => { const abierto = e.currentTarget.open; if (abierto === anon) { tocar(); setAnon(!abierto); } }}>
+          {/* Solo dos preguntas. Quien quiera, abre esto y pone su nombre; si no, queda anónimo. */}
+          <details className="aparecer" open={abierto} onToggle={e => setAbierto(e.currentTarget.open)}>
             <summary>
               <span className="desplegar-signo" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path className="vertical" d="M12 5v14"/></svg>
               </span>
-              <span>Mi nombre <small>(opcional)</small></span>
+              <span>Mi nombre <small>{!abierto && alias.trim() ? "· " + alias.trim() : "(opcional)"}</small></span>
             </summary>
             <div className="campos-nombre" id="campos-nombre">
               <div className="campo">
