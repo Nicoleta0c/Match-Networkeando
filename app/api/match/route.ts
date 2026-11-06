@@ -103,7 +103,10 @@ export async function POST(req: NextRequest) {
   try {
     const respuesta = await claude().beta.messages.create({
       model: MODELO,
-      max_tokens: 1000,
+      // Espacio de sobra para la respuesta (si se corta, el JSON queda incompleto y falla).
+      max_tokens: 4000,
+      // Haiku no necesita "pensar" para esto: sin pensamiento responde más rápido y no gasta espacio.
+      ...(CON_RESPALDO ? {} : {thinking: {type: "disabled" as const}}),
       ...(CON_RESPALDO ? {betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const} : {}),
       output_config: {effort: "low", format: {type: "json_schema", schema: ESQUEMA}},
       system: INSTRUCCIONES,
@@ -113,6 +116,7 @@ export async function POST(req: NextRequest) {
       }]
     });
     if (respuesta.stop_reason === "refusal") return Response.json({error: "La IA no quiso responder."}, {status: 502});
+    if (respuesta.stop_reason === "max_tokens") { console.error("[match] La respuesta de la IA se cortó."); return Response.json({error: "La IA no terminó de responder."}, {status: 502}); }
     const texto = respuesta.content.find(b => b.type === "text");
     if (!texto || texto.type !== "text") return Response.json({error: "La IA no devolvió texto."}, {status: 502});
     const datos = JSON.parse(texto.text) as {conexiones: {id?: unknown}[]; consejo: string};
