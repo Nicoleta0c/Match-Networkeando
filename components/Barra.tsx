@@ -1,9 +1,11 @@
 "use client";
 import type { Vista } from "./App";
 
-type Props = {vista: Vista; burbuja: number};
+/* Menú: Inicio y Mi perfil para todos. «Matches» aparece cuando la presentadora los empieza;
+   «Proyectar» solo lo ve la presentadora. */
+type Props = {vista: Vista; burbuja: number; verMatches: boolean; presentadora: boolean};
 
-export function Barra({vista, burbuja}: Props) {
+export function Barra({vista, burbuja, verMatches, presentadora}: Props) {
   const actual = (v: Vista) => vista === v ? "page" as const : undefined;
   return (
     <header className="barra">
@@ -15,8 +17,8 @@ export function Barra({vista, burbuja}: Props) {
         <nav className="nav" aria-label="Secciones">
           <a href="#inicio" aria-current={actual("inicio")}>Inicio</a>
           <a href="#perfil" aria-current={actual("perfil")}>Mi perfil</a>
-          <a href="#clics" aria-current={actual("clics")}>Mis matches<span className="burbuja" id="burbuja" hidden={!burbuja}>{burbuja || ""}</span></a>
-          <a className="opc" href="#proyectar">Proyectar</a>
+          {verMatches && <a href="#clics" aria-current={actual("clics")}>Matches<span className="burbuja" id="burbuja" hidden={!burbuja}>{burbuja || ""}</span></a>}
+          {presentadora && <a className="opc" href="#proyectar">Proyectar</a>}
         </nav>
       </div>
     </header>

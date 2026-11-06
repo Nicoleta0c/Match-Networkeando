@@ -9,6 +9,7 @@ import type { Fase } from "@/lib/fase";
 
 type Fila = Record<string, unknown> & {id: string; quitado: boolean};
 type Datos = {evento: string; fase: Fase; perfiles: Fila[]};
+const POR_PAGINA = 20;
 
 export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambiando: boolean; onFase: (f: Fase) => void}) {
   const [datos, setDatos] = useState<Datos | null>(null);
@@ -16,6 +17,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
   const [clave, setClave] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
+  const [pagina, setPagina] = useState(0);
 
   /* Pide los perfiles cada 4 segundos mientras el panel está abierto. */
   useEffect(() => {
@@ -69,6 +71,9 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
   }, [datos]);
 
   const fase = datos?.fase ?? "registro";
+  const paginas = Math.max(1, Math.ceil((calculo?.perfiles.length ?? 0) / POR_PAGINA));
+  const pag = Math.min(pagina, paginas - 1);
+  const enPagina = calculo ? calculo.perfiles.slice(pag * POR_PAGINA, (pag + 1) * POR_PAGINA) : [];
 
   return (
     <section className="cont vista panel" data-view-panel="panel" aria-labelledby="t-panel" hidden={!activo}>
@@ -107,7 +112,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
         {!calculo.perfiles.length
           ? <div className="vacio-grande"><p>Todavía no se ha registrado nadie. Los perfiles aparecen aquí en cuanto la gente escanea el QR.</p></div>
           : <ul className="panel-lista">
-              {calculo.perfiles.map(({fila, p}) => {
+              {enPagina.map(({fila, p}) => {
                 const m = calculo.mejor.get(p.id);
                 const quien = p.anon || !p.alias ? "Anónimo" : p.alias + (p.contact ? " · " + p.contact : "");
                 return (
@@ -124,6 +129,14 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
                 );
               })}
             </ul>}
+
+        {paginas > 1 && (
+          <nav className="panel-paginas" aria-label="Páginas">
+            <button type="button" className="boton chico" disabled={pag === 0} onClick={() => setPagina(pag - 1)}>Anterior</button>
+            <span>Página {pag + 1} de {paginas}</span>
+            <button type="button" className="boton chico" disabled={pag >= paginas - 1} onClick={() => setPagina(pag + 1)}>Siguiente</button>
+          </nav>
+        )}
       </>}
     </section>
   );

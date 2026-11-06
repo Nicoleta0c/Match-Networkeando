@@ -48,7 +48,7 @@ type Estado = {
   /** Fase del evento: en "registro" la gente espera; en "matches" ve su match (la presentadora la cambia). */
   fase: Fase; cambiandoFase: boolean;
   /** Cuánta gente hay en el evento (en registro, cada celular solo recibe su propio perfil). */
-  total: number;
+  total: number; presentadora: boolean;
   /** Ya tocó «Ver mi match» después de que empezaron los matches. */
   yaVio: boolean;
   toast: {texto: string; ver: boolean};
@@ -63,7 +63,7 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
-  fase: "registro", cambiandoFase: false, total: 0, yaVio: false,
+  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -314,7 +314,7 @@ export default function App() {
         // "no-cache" deja que el navegador pregunte "¿cambió algo?" (ETag) y reciba un 304 vacío si no.
         const r = await fetch("/api/perfiles", {cache: "no-cache"});
         if (!r.ok) throw new ErrorAPI(r.status);
-        const data: {yo: string; fase?: Fase; total?: number; perfiles: Record<string, unknown>[]} = await r.json();
+        const data: {yo: string; fase?: Fase; total?: number; presentadora?: boolean; perfiles: Record<string, unknown>[]} = await r.json();
         if (parado) return;
         clearTimeout(lento);
         S.slow = false; S.avail = "ok"; fallos = 0;
@@ -334,6 +334,7 @@ export default function App() {
         if (fase === "registro") S.yaVio = false;
         S.fase = fase;
         S.total = Number(data.total) || 0;
+        S.presentadora = data.presentadora === true;
         if (primera) { primera = false; cargarNotificados(); }
         forzar();
         if (empezo && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "panel" && S.vista !== "mapa") {
@@ -422,7 +423,7 @@ export default function App() {
   return (
     <>
       <Iconos/>
-      <Barra vista={S.vista} burbuja={burbuja}/>
+      <Barra vista={S.vista} burbuja={burbuja} verMatches={S.demo || S.fase === "matches"} presentadora={S.presentadora}/>
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>

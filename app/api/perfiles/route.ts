@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   ]);
   const validos = filas.filter(f => !quitados.has(f.id));
   const visibles = fase === "matches" || presentadora ? validos : validos.filter(f => f.id === yo);
-  const cuerpo = JSON.stringify({yo, fase, total: validos.length, quitado: quitados.has(yo), perfiles: visibles.map(aDocumento)});
+  const cuerpo = JSON.stringify({yo, fase, presentadora, total: validos.length, quitado: quitados.has(yo), perfiles: visibles.map(aDocumento)});
   const etag = '"' + createHash("sha1").update(cuerpo).digest("base64url") + '"';
   const cabeceras = {"Cache-Control": "private, no-cache", "ETag": etag, "Content-Type": "application/json"};
   if (req.headers.get("if-none-match") === etag) return new Response(null, {status: 304, headers: cabeceras});
