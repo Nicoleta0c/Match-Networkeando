@@ -121,7 +121,7 @@ export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode
         <b><span>{x.r.pct}%</span></b>
       </div>
       {/* Solo el sueño y quién lo puede ayudar (la tarjeta de al lado los muestra). Los detalles, en persona. */}
-      <h3>{(c ? !!c.teAyuda : me.idea && !alReves(me, x.r)) ? "En esto te puede ayudar" : "En esto puedes ayudar tú"}</h3>
+      <h3>{(c ? !!c.teAyuda : me.idea && !alReves(me, x.r)) ? "¿Cómo te puede ayudar?" : "¿Cómo puedes ayudar tú?"}</h3>
       {c?.texto && <p className="porque-texto">{c.texto}</p>}
       {x.r.ia && <div className="chips"><span className="ia-chip">Según la IA</span></div>}
       {accion && <div className="porque-accion">{accion}</div>}

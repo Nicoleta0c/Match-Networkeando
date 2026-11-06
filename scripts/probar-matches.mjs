@@ -28,7 +28,7 @@ for (const yo of elegidas) {
   const top = ordenarMatches(yo, gente).filter(x => x.r.pct >= UMBRAL).slice(0, 3);
   if (!top.length) { console.log("    Sin match todavía."); continue; }
   top.forEach((x, i) => {
-    const titulo = x.r.conexion?.teAyuda ? "En esto te puede ayudar" : "En esto puedes ayudar tú";
+    const titulo = x.r.conexion?.teAyuda ? "¿Cómo te puede ayudar?" : "¿Cómo puedes ayudar tú?";
     console.log(`  ${i + 1}. ${x.r.pct}% · superpoder: "${x.o.power}"`);
     console.log(`     ${titulo}: ${x.r.conexion?.texto ?? "(sin texto)"}`);
   });
