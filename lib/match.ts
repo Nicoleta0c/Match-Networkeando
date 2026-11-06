@@ -207,8 +207,8 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
 /* En qué se pueden ayudar, dicho de forma general (por área). Los detalles los hablan ellos en persona. */
 const AYUDA_GENERAL: Record<number, string> = {
   1: "la parte de tecnología", 2: "el diseño", 3: "la comunicación y el contenido", 4: "las ventas y el marketing",
-  5: "los números y el dinero", 6: "la organización", 7: "enseñar y explicar", 8: "la salud y el bienestar",
-  9: "la comunidad", 10: "construir y armar cosas", 11: "la investigación y los datos", 12: "lo legal y los trámites"
+  5: "los números y el dinero", 6: "la organización", 7: "la parte de enseñar y explicar", 8: "la salud y el bienestar",
+  9: "la comunidad", 10: "la parte de construir y armar", 11: "la investigación y los datos", 12: "lo legal y los trámites"
 };
 
 /* Qué tipo de ayuda da cada área, dicho en general (va después de "te puede ayudar a"). */
@@ -229,6 +229,68 @@ const AYUDA_DETALLE: Record<number, string> = {
 /* La misma ayuda, pero para el sueño de la otra persona ("tu idea" -> "su idea"). */
 const paraSu = (t: string) => t.replace(/(^|[^a-záéíóúñ])tu(?=[^a-záéíóúñ]|$)/gi, "$1su");
 
+/* Matices: dentro de un área, la ayuda cambia según lo que la persona sabe hacer de verdad.
+   Así cada match dice algo distinto (sin repetir su superpoder). Se busca en su superpoder sin tildes. */
+const MATICES: [number, RegExp, string][] = [
+  [1, /flutter|movil|android|iphone|swift|kotlin|apps? movil/, "llevar tu sueño al celular con una app que la gente use todos los días"],
+  [1, /videojuego|unity|juego/, "hacerlo interactivo y divertido, como un juego que engancha"],
+  [1, /arduino|sensor|iot|hardware/, "conectar tu sueño con el mundo físico: aparatos, sensores y cosas que se puedan tocar"],
+  [1, /soporte|computadora|tecnico/, "tener los equipos y la tecnología funcionando sin dolores de cabeza"],
+  [1, /blockchain|cripto/, "explorar pagos y registros digitales seguros"],
+  [1, /segur|fallas|vulnerab/, "que lo que construyas sea seguro y la gente confíe en usarlo"],
+  [1, /inteligencia artificial|chatbot|modelos?|\bbots?\b/, "sumarle inteligencia artificial o un asistente que trabaje solo"],
+  [1, /backend|apis?\b|bases? de datos|servidor|nube|devops|desplieg/, "armar lo que no se ve: los datos, los servidores y que todo funcione sin caerse"],
+  [1, /react|frontend|pagina|web|wordpress|shopify|tienda/, "tener una página o tienda en línea donde la gente lo encuentre y lo use"],
+  [1, /prueb|errores|qa\b|tester/, "que todo funcione bien antes de mostrárselo al mundo"],
+  [1, /automatiz|zapier|make\b/, "automatizar las tareas repetitivas para que avance más rápido"],
+  [11, /datos|python|sql|power bi|analiz|estadist/, "entender lo que pasa con datos y decidir con evidencia, no a ojo"],
+  [11, /encuesta|estudio de mercado|investig/, "saber qué quiere de verdad la gente antes de invertir tiempo y dinero"],
+  [10, /arduino|sensor|iot|hardware|prototipo|maqueta/, "construir un prototipo que funcione en el mundo real"],
+  [10, /electric|instalac/, "resolver la parte eléctrica y las instalaciones"],
+  [10, /repar|manten/, "reparar y mantener los equipos para que nada se detenga"],
+  [10, /construy|cocin|cos[eu]|manual/, "construir con sus manos lo que tu sueño necesite"],
+  [2, /ux|ui\b|interfa|figma|usabil/, "que sea fácil y agradable de usar desde el primer día"],
+  [2, /presentac/, "presentarlo con materiales que se vean profesionales y convenzan"],
+  [2, /flyer|publicacion|redes/, "tener publicaciones que se vean profesionales en redes"],
+  [2, /interior|espacio|3d|modelado/, "imaginar y diseñar el espacio o el producto antes de construirlo"],
+  [2, /ropa|moda/, "darle un estilo propio que la gente quiera llevar"],
+  [2, /logo|marca|identidad|branding/, "darle una marca e imagen que la gente recuerde"],
+  [2, /foto|video|anim|ilustr/, "mostrarlo con imágenes que llamen la atención"],
+  [3, /video|tiktok|contenido|youtube|grab/, "crear contenido que haga que la gente hable de tu sueño"],
+  [3, /habl|present|publico|locu/, "presentarlo con seguridad frente a cualquier público"],
+  [3, /escrib|guion|redact|propuesta|periodis/, "ponerlo en palabras claras: textos, guiones o propuestas que convenzan"],
+  [4, /b2b|empresas|cierr|acuerdo|vend|venta|clientes/, "conseguir los primeros clientes y cerrar las primeras ventas"],
+  [4, /redes|instagram|community|comunidad|seguidores|influen/, "construir una comunidad en redes alrededor de tu sueño"],
+  [4, /anuncio|publicidad|marketing digital|growth|usuarios|seo|lanz/, "llegar a mucha gente y conseguir a los primeros usuarios"],
+  [5, /patrocin|inversion|inversionistas|fondos|subvenc/, "conseguir el dinero para arrancar: patrocinadores, inversión o fondos"],
+  [5, /proveedor/, "conseguir buenos proveedores y mejores precios"],
+  [5, /excel|contab|cuentas/, "llevar las cuentas claras y los números en orden"],
+  [5, /modelo de negocio|plan de negocio|negocio/, "convertirlo en un negocio que se sostenga solo"],
+  [5, /presupuest|proyecc|costos|precios|finanz|econom/, "saber cuánto cuesta y ponerle precio sin perder dinero"],
+  [5, /administr/, "administrarlo bien desde el día uno"],
+  [6, /scrum|producto|prioridad|gestion|proyecto/, "ordenar las prioridades y avanzar paso a paso sin perderse"],
+  [6, /evento|logist|entreg/, "organizar la logística para que todo llegue a tiempo"],
+  [6, /voluntari|equipo|lider|motiv|operacion/, "armar y coordinar un equipo que empuje en la misma dirección"],
+  [7, /mentor/, "tomar mejores decisiones con la guía de alguien que ya pasó por ahí"],
+  [7, /curso|taller|clase|ensen|explic|profe/, "convertirlo en algo que otros puedan aprender fácil"],
+  [12, /contrato|termino|proteccion de datos/, "cuidar los contratos y la protección de datos desde el principio"],
+  [12, /registr|marca|permiso|tramit/, "registrar la marca y tener los permisos en regla"]
+];
+/* Varias formas de empezar la frase, para que los matches no suenen todos iguales. */
+const ENTRADAS = [
+  (g: string, de: string) => `Su superpoder encaja con ${g} de ${de}.`,
+  (g: string, de: string) => `Lo que mejor sabe hacer cubre ${g} de ${de}.`,
+  (g: string, de: string) => `Es una buena pieza para ${g} de ${de}.`,
+  (g: string, de: string) => `Ahí donde ${de} necesita ayuda con ${g}, esta persona suma.`
+];
+
+/** La ayuda de alguien, según su superpoder: primero en el área que tu sueño necesita, si no en cualquiera. */
+function matiz(p: Perfil, areas: number[]): [number, string] {
+  const n = norm(p.power);
+  for (const a of areas) { const m = MATICES.find(([ar, re]) => ar === a && re.test(n)); if (m) return [a, m[2]]; }
+  return [areas[0], AYUDA_DETALLE[areas[0]]];
+}
+
 /* El método básico (sin IA) dice en qué se pueden ayudar, sin entrar en detalles. */
 function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: string[], kwB: string[]): Conexion | undefined {
   let teAyuda = "", leAyudas = "";
@@ -240,11 +302,14 @@ function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: s
   // La respuesta que se muestra: cómo te ayuda a ti. Solo si esa persona no te aporta (o no tienes sueño), cómo ayudas tú.
   let texto: string;
   if (me.idea && aT.length) {
-    texto = `Su superpoder encaja con ${AYUDA_GENERAL[aT[0]]} de tu sueño. Te puede ayudar a ${AYUDA_DETALLE[aT[0]]}.`;
+    const [area, ayuda] = matiz(o, aT);
+    const entrada = ENTRADAS[hash(me.id + "|" + o.id) % ENTRADAS.length](AYUDA_GENERAL[area], "tu sueño");
+    texto = `${entrada} Te puede ayudar a ${ayuda}.`;
   } else if (teAyuda) {
     texto = "Su superpoder tiene que ver con lo que necesita tu sueño: es una buena persona para pedirle consejo y empezar.";
   } else if (o.idea && b.length) {
-    texto = `Tu superpoder encaja con ${AYUDA_GENERAL[b[0]]} de su sueño. Le puedes ayudar a ${paraSu(AYUDA_DETALLE[b[0]])}.`;
+    const [area, ayuda] = matiz(me, b);
+    texto = `Tu superpoder encaja con ${AYUDA_GENERAL[area]} de su sueño. Le puedes ayudar a ${paraSu(ayuda)}.`;
   } else {
     texto = "Tu superpoder tiene que ver con lo que necesita su sueño: le puedes dar tu mirada y tus consejos.";
   }
