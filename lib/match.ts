@@ -232,9 +232,9 @@ const paraSu = (t: string) => t.replace(/(^|[^a-záéíóúñ])tu(?=[^a-záéí�
 /* Matices: dentro de un área, la ayuda cambia según lo que la persona sabe hacer de verdad.
    Así cada match dice algo distinto (sin repetir su superpoder). Se busca en su superpoder sin tildes. */
 const MATICES: [number, RegExp, string][] = [
-  [1, /flutter|movil|android|iphone|swift|kotlin|apps? movil/, "llevar tu sueño al celular con una app que la gente use todos los días"],
+  [1, /flutter|movil|android|iphone|swift|kotlin|apps? movil/, "crear la app para que la gente pueda usar tu idea desde el celular"],
   [1, /videojuego|unity|juego/, "hacerlo interactivo y divertido, como un juego que engancha"],
-  [1, /arduino|sensor|iot|hardware/, "conectar tu sueño con el mundo físico: aparatos, sensores y cosas que se puedan tocar"],
+  [1, /arduino|sensor|iot|hardware/, "armar aparatos o sensores que hagan funcionar tu idea en la vida real"],
   [1, /soporte|computadora|tecnico/, "tener los equipos y la tecnología funcionando sin dolores de cabeza"],
   [1, /blockchain|cripto/, "explorar pagos y registros digitales seguros"],
   [1, /segur|fallas|vulnerab/, "que lo que construyas sea seguro y la gente confíe en usarlo"],
