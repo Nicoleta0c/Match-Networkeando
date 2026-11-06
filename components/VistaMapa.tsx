@@ -70,10 +70,11 @@ export function VistaMapa({activo, demo}: Props) {
     const medir = () => {
       const p = pie.current, t = tarjeta.current;
       // La franja de abajo empieza transparente: la red puede llegar hasta los textos.
-      const txt = p?.querySelector(".mapa-txt") as HTMLElement | null;
-      const abajo = p && txt ? p.offsetHeight - txt.offsetTop + 8 : 0;
+      // La red puede pasar por detrás del título: solo se reserva la línea de la leyenda.
+      const ley = p?.querySelector(".mapa-leyenda") as HTMLElement | null;
+      const abajo = p && ley ? p.offsetHeight - ley.offsetTop + 4 : (p ? 60 : 0);
       // Si la tarjeta va arriba a lo ancho (celular, tablet en vertical), la red empieza debajo de ella.
-      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 48;
+      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 28;
       const r = t?.getBoundingClientRect();
       motor.current?.reservar(arriba, abajo, r ? [r.left - 8, r.top - 8, r.right + 8, r.bottom + 8] : null);
     };

@@ -15,7 +15,8 @@ export type Filtro = "doble" | "una" | "sola" | null;
 export type Foco = {id: number; tipo: "doble" | "una" | "sola"; filas: {sueno: string; poder: string}[]};
 type Nodo = {k: string; e: number; s: 0 | 1; t: string; p: string; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number; r: number};
 type Enlace = {a: Nodo; b: Nodo; t: TipoEnlace; i: number};
-type Cam = {x: number; y: number; k: number};
+/** sx y sy estiran la red un poco a lo ancho o a lo alto para que llene todo el hueco libre. */
+type Cam = {x: number; y: number; k: number; sx: number; sy: number};
 
 const RADIO_REPULSION = 46;
 const LARGO: Record<TipoEnlace, number> = {2: 46, 1: 62, 0: 96};
@@ -46,7 +47,7 @@ export class Motor {
   private enlaces: Enlace[] = [];
   private centros: {x: number; y: number}[] = [];
   private actual = -1;
-  private cam: Cam = {x: 0, y: 0, k: 1};
+  private cam: Cam = {x: 0, y: 0, k: 1, sx: 1, sy: 1};
   private tween: {desde: Cam; t0: number} | null = null;
   private alpha = 0;
   private col = {bg: "#111", a: "#fc0", h: "#3fe", t: "#fff", m: "#999"};
@@ -209,7 +210,7 @@ export class Motor {
   /* Margen que ocupan los textos de la vista, para que la red no quede detrás. */
   private marco() {
     const abajo = this.reserva.abajo > 0 ? limitar(this.reserva.abajo, 0, this.h * .6) : limitar(this.h * .3, 150, 300);
-    const arriba = limitar(this.reserva.arriba, 40, this.h * .45), lado = this.w > 700 ? 40 : 12;
+    const arriba = limitar(this.reserva.arriba, 24, this.h * .45), lado = this.w > 700 ? 28 : 12;
     // En pantallas anchas la tarjeta del foco va a la izquierda: la red usa el espacio a su derecha.
     const t = this.reserva.tapa, izq = t && this.w > 700 && t[2] < this.w * .45 ? t[2] + 16 : lado;
     return {abajo, arriba, lado, izq, ancho: this.w - izq - lado, cx: (izq + this.w - lado) / 2, cy: arriba + (this.h - abajo - arriba) / 2};
@@ -299,27 +300,30 @@ export class Motor {
   private objetivo(): Cam {
     // El mapa es general: la cámara encuadra a todo el mundo, de todos los eventos.
     const sel = this.lista;
-    if (!sel.length) return {x: 0, y: 0, k: 1};
+    if (!sel.length) return {x: 0, y: 0, k: 1, sx: 1, sy: 1};
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const n of sel) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); }
-    const m = this.marco(), pad = 10;
-    const bw = Math.max(x1 - x0 + pad * 2, 160), bh = Math.max(y1 - y0 + pad * 2, 160);
+    const m = this.marco(), pad = 6;
+    const bw = Math.max(x1 - x0 + pad * 2, 120), bh = Math.max(y1 - y0 + pad * 2, 120);
     const escala = Math.min(this.w, this.h) / 800;
-    let k = Math.min(m.ancho / bw, (this.h - m.arriba - m.abajo) / bh);
-    k = limitar(k, .08, 6 * Math.max(escala, .6));
-    return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k};
+    const kx = m.ancho / bw, ky = (this.h - m.arriba - m.abajo) / bh;
+    const k = limitar(Math.min(kx, ky), .08, 8 * Math.max(escala, .6));
+    // Lo que sobra en un sentido se llena estirando un poco la red (como mucho 1,8 veces).
+    return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k, sx: limitar(kx / k, 1, 1.8), sy: limitar(ky / k, 1, 1.8)};
   }
+
 
   private moverCamara(ahora: number) {
     const o = this.objetivo();
     if (this.tween) {
       const t = Math.min(1, (ahora - this.tween.t0) / DURA_ZOOM), e = suave(t), d = this.tween.desde;
-      this.cam = {x: d.x + (o.x - d.x) * e, y: d.y + (o.y - d.y) * e, k: Math.exp(Math.log(d.k) + (Math.log(o.k) - Math.log(d.k)) * e)};
+      this.cam = {x: d.x + (o.x - d.x) * e, y: d.y + (o.y - d.y) * e, k: Math.exp(Math.log(d.k) + (Math.log(o.k) - Math.log(d.k)) * e), sx: d.sx + (o.sx - d.sx) * e, sy: d.sy + (o.sy - d.sy) * e};
       if (t >= 1) this.tween = null;
     } else if (this.quieto) this.cam = o;
     else {
       const f = .06;
-      this.cam = {x: this.cam.x + (o.x - this.cam.x) * f, y: this.cam.y + (o.y - this.cam.y) * f, k: Math.exp(Math.log(this.cam.k) + (Math.log(o.k) - Math.log(this.cam.k)) * f)};
+      const c = this.cam;
+      this.cam = {x: c.x + (o.x - c.x) * f, y: c.y + (o.y - c.y) * f, k: Math.exp(Math.log(c.k) + (Math.log(o.k) - Math.log(c.k)) * f), sx: c.sx + (o.sx - c.sx) * f, sy: c.sy + (o.sy - c.sy) * f};
     }
   }
 
@@ -346,13 +350,14 @@ export class Motor {
     const enfoque = true;
     this.visibles = new Set(this.filtro === "sola" ? this.lista.filter(n => !n.empalma)
       : this.filtro ? this.enlaces.filter(l => this.pasa(l)).flatMap(l => [l.a, l.b]) : this.lista);
-    const z = limitar(cam.k, .35, 3);
+    // Tamaño de puntos y líneas: crece con el zoom, pero con un tope según la pantalla (en el celular no se inflan).
+    const z = limitar(cam.k, .35, Math.min(3, Math.min(this.w, this.h) / 230));
     const grosor = .55 + z * .45;
     // La red respira: cada nodo se mece un poco alrededor de su lugar.
     for (const n of this.lista) {
       const b = this.quieto ? 0 : 2.2;
-      n.px = (n.x + Math.sin(ahora / 1700 + n.fase) * b - cam.x) * cam.k + m.cx;
-      n.py = (n.y + Math.cos(ahora / 1900 + n.fase) * b - cam.y) * cam.k + m.cy;
+      n.px = (n.x + Math.sin(ahora / 1700 + n.fase) * b - cam.x) * cam.k * cam.sx + m.cx;
+      n.py = (n.y + Math.cos(ahora / 1900 + n.fase) * b - cam.y) * cam.k * cam.sy + m.cy;
     }
 
     ctx.lineCap = "round";
