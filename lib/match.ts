@@ -278,10 +278,12 @@ const MATICES: [number, RegExp, string][] = [
 ];
 /* Varias formas de empezar la frase, para que los matches no suenen todos iguales. */
 const ENTRADAS = [
-  (g: string, de: string) => `Su superpoder encaja con ${g} de ${de}.`,
-  (g: string, de: string) => `Lo que mejor sabe hacer cubre ${g} de ${de}.`,
-  (g: string, de: string) => `Es una buena pieza para ${g} de ${de}.`,
-  (g: string, de: string) => `Ahí donde ${de} necesita ayuda con ${g}, esta persona suma.`
+  (g: string) => `¡Justo lo que tu sueño necesita en ${g}!`,
+  (g: string) => `¡Esta persona puede ser clave en ${g} de tu sueño!`,
+  (g: string) => `¡Buenas noticias para tu sueño! En ${g}, esta persona tiene mucho que aportar.`,
+  (g: string) => `¡Con esta persona, tu sueño gana mucho en ${g}!`,
+  (g: string) => `¡Aquí hay match! Esta persona le suma mucho a ${g} de tu sueño.`,
+  (g: string) => `¡Qué buena combinación para ${g} de tu sueño!`
 ];
 
 /** La ayuda de alguien, según su superpoder: primero en el área que tu sueño necesita, si no en cualquiera. */
@@ -303,15 +305,16 @@ function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: s
   let texto: string;
   if (me.idea && aT.length) {
     const [area, ayuda] = matiz(o, aT);
-    const entrada = ENTRADAS[hash(me.id + "|" + o.id) % ENTRADAS.length](AYUDA_GENERAL[area], "tu sueño");
+    // La forma de empezar depende de su superpoder y de tu sueño: así varía de un match a otro.
+    const entrada = ENTRADAS[hash(norm(o.power) + "|" + norm(me.idea)) % ENTRADAS.length](AYUDA_GENERAL[area]);
     texto = `${entrada} Te puede ayudar a ${ayuda}.`;
   } else if (teAyuda) {
-    texto = "Su superpoder tiene que ver con lo que necesita tu sueño: es una buena persona para pedirle consejo y empezar.";
+    texto = "¡Habla el mismo idioma que tu sueño! Es la persona ideal para pedirle consejo y dar el primer paso.";
   } else if (o.idea && b.length) {
     const [area, ayuda] = matiz(me, b);
-    texto = `Tu superpoder encaja con ${AYUDA_GENERAL[area]} de su sueño. Le puedes ayudar a ${paraSu(ayuda)}.`;
+    texto = `¡Tu superpoder es justo lo que su sueño necesita en ${AYUDA_GENERAL[area]}! Le puedes ayudar a ${paraSu(ayuda)}.`;
   } else {
-    texto = "Tu superpoder tiene que ver con lo que necesita su sueño: le puedes dar tu mirada y tus consejos.";
+    texto = "¡Tu superpoder tiene mucho que ver con su sueño! Le puedes dar tu mirada y tus consejos para arrancar.";
   }
   return {teAyuda, leAyudas, paso: "", tipo: teAyuda && leAyudas ? "doble" : "una", texto};
 }
