@@ -115,7 +115,7 @@ main{position:relative;z-index:1}
 .union{position:absolute;left:50%;top:50%;width:72px;height:4px;margin:-2px 0 0 -36px;background:var(--h);border-radius:4px;box-shadow:0 0 12px var(--hglow);animation:ancho .9s var(--ease) .3s both}
 @keyframes ancho{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .union::after{content:"+";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;font-size:22px;box-shadow:0 0 0 6px var(--bg)}
-.bloque{--tono:var(--a);display:flex;flex-direction:column;gap:16px;padding:22px 24px 16px;border-radius:24px;border:1px solid color-mix(in srgb,var(--tono) 28%,var(--b));background:linear-gradient(155deg,color-mix(in srgb,var(--tono) 14%,var(--bg)),var(--bg) 65%);transition:border-color .2s,box-shadow .2s}
+.bloque{--tono:var(--a);display:flex;flex-direction:column;gap:16px;padding:22px 24px;border-radius:24px;border:1px solid color-mix(in srgb,var(--tono) 28%,var(--b));background:linear-gradient(155deg,color-mix(in srgb,var(--tono) 14%,var(--bg)),var(--bg) 65%);transition:border-color .2s,box-shadow .2s}
 .bloque.poder{--tono:var(--h)}
 .bloque:focus-within{border-color:var(--tono);box-shadow:0 0 0 4px color-mix(in srgb,var(--tono) 18%,transparent)}
 .bloque:has([aria-invalid="true"]){border-color:#FF8A6B}
@@ -126,8 +126,6 @@ main{position:relative;z-index:1}
 .bloque textarea{width:100%;min-height:3.7em;resize:none;field-sizing:content;border:0;padding:0;background:transparent;color:var(--t);font-weight:800;font-size:clamp(20px,2vw,24px);line-height:1.22;letter-spacing:-.01em}
 .bloque textarea:focus{outline:none}
 .bloque textarea::placeholder{color:var(--m);font-weight:500;font-style:italic;opacity:1}
-.bloque-pie{display:flex;justify-content:space-between;gap:12px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--tono) 18%,var(--b));font-size:14px;color:var(--m)}
-.bloque-pie .cuenta{margin-left:auto;font-variant-numeric:tabular-nums}
 .aparecer{flex:none;min-width:0;margin:0;border:1px solid var(--b2);border-radius:999px;background:transparent;transition:border-color .2s}
 .aparecer[open]{flex-basis:100%;order:-1;border-radius:20px;background:var(--s);border-color:var(--h)}
 .aparecer summary{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 18px 0 8px;cursor:pointer;list-style:none;border-radius:999px;font-weight:800;font-size:15px}

@@ -20,6 +20,8 @@ export function validarPerfil(d: unknown): {ok: true; datos: PerfilEntrada} | {o
     if (v.length > LIMITES[campo]) return {ok: false, error: `"${campo}" puede tener como máximo ${LIMITES[campo]} caracteres.`};
     campos[campo] = v;
   }
+  // Los dos son obligatorios: el sueño y el superpoder.
+  if (!campos.idea) return {ok: false, error: "Escribe tu sueño para continuar."};
   if (!campos.power) return {ok: false, error: "Escribe tu superpoder para continuar."};
 
   if (o.anon !== undefined && typeof o.anon !== "boolean") return {ok: false, error: '"anon" debe ser true o false.'};

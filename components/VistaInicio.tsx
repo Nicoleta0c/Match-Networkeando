@@ -63,7 +63,7 @@ export function VistaInicio({activo, qrUrl}: {activo: boolean; qrUrl: string}) {
           <h2 className="titulo">Tres pasos y la app hace el resto</h2>
           <ol className="pasos">
             <li data-n="1"><h3><span className="sr">Paso 1: </span>Escanea el código y entra desde el navegador.</h3><p>Sin descargar nada. Te lleva directo a crear tu perfil.</p></li>
-            <li data-n="2"><h3><span className="sr">Paso 2: </span>Cuenta tu sueño y tu superpoder, con tus palabras.</h3><p>Con tu nombre o de forma anónima. Si todavía no tienes un sueño claro, ofrece tu superpoder.</p></li>
+            <li data-n="2"><h3><span className="sr">Paso 2: </span>Cuenta tu sueño y tu superpoder, con tus palabras.</h3><p>Con tu nombre o de forma anónima.</p></li>
             <li data-n="3"><h3><span className="sr">Paso 3: </span>La app encuentra tu match.</h3><p>Compara tu sueño y tu superpoder con los de todos y te muestra quién encaja mejor contigo. Tú no tienes que elegir.</p></li>
           </ol>
           <div className="acciones">

@@ -24,8 +24,9 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
   const [que, setQue] = useState("");
   const [contacto, setContacto] = useState("");
   const [error, setError] = useState("");
-  const [malo, setMalo] = useState<"poder" | "nombre" | "contacto" | null>(null);
+  const [malo, setMalo] = useState<"idea" | "poder" | "nombre" | "contacto" | null>(null);
   const [armado, setArmado] = useState(false);
+  const ideaRef = useRef<HTMLTextAreaElement>(null);
   const poderRef = useRef<HTMLTextAreaElement>(null);
   const nombreRef = useRef<HTMLInputElement>(null);
   const contactoRef = useRef<HTMLInputElement>(null);
@@ -49,6 +50,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
     e.preventDefault();
     setError(""); setMalo(null);
     const d: DatosForm = {idea: idea.trim(), power: poder.trim(), anon, alias: alias.trim(), que: que.trim(), contact: contacto.trim()};
+    if (!d.idea) { setError("Escribe tu sueño para continuar."); setMalo("idea"); ideaRef.current?.focus(); return; }
     if (!d.power) { setError("Escribe tu superpoder para continuar."); setMalo("poder"); poderRef.current?.focus(); return; }
     if (!anon && !d.alias) { setError("Escribe tu nombre o cambia a Anónimo."); setMalo("nombre"); nombreRef.current?.focus(); return; }
     if (!anon && !d.contact) { setError("Agrega cómo contactarte para que tus matches puedan escribirte."); setMalo("contacto"); contactoRef.current?.focus(); return; }
@@ -74,11 +76,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
               <Cara color="var(--a)"/>
               <span><b>Mi sueño</b><small>¿Cuál es tu sueño o qué quieres lograr?</small></span>
             </label>
-            <textarea id="f-idea" rows={3} maxLength={LIMITES.idea} placeholder="Ej.: lanzar una app para que los colmados lleven el fiado en el celular" aria-describedby="ayuda-idea" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
-            <div className="bloque-pie">
-              <span id="ayuda-idea">Opcional: si no tienes uno, te sumas al de alguien.</span>
-              <span className="cuenta" aria-hidden="true">{idea.length}/{LIMITES.idea}</span>
-            </div>
+            <textarea id="f-idea" rows={3} ref={ideaRef} required aria-invalid={malo === "idea" || undefined} aria-describedby={malo === "idea" ? "error" : undefined} maxLength={LIMITES.idea} placeholder="Ej.: lanzar una app para que los colmados lleven el fiado en el celular" value={idea} onChange={e => setIdea(e.target.value)}></textarea>
           </div>
           <span className="union" aria-hidden="true"></span>
           <div className="bloque poder">
@@ -86,11 +84,7 @@ export function VistaPerfil({activo, aviso, me, puede, guardando, relleno, tocad
               <Cara color="var(--h)"/>
               <span><b>Mi superpoder</b><small>¿Qué es lo que mejor haces?</small></span>
             </label>
-            <textarea id="f-poder" rows={3} ref={poderRef} aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : "ayuda-poder"} maxLength={LIMITES.power} placeholder="Ej.: programo apps en Flutter" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
-            <div className="bloque-pie">
-              <span id="ayuda-poder">Algo concreto que sabes hacer bien.</span>
-              <span className="cuenta" aria-hidden="true">{poder.length}/{LIMITES.power}</span>
-            </div>
+            <textarea id="f-poder" rows={3} ref={poderRef} required aria-invalid={malo === "poder" || undefined} aria-describedby={malo === "poder" ? "error" : undefined} maxLength={LIMITES.power} placeholder="Ej.: programo apps en Flutter" value={poder} onChange={e => setPoder(e.target.value)}></textarea>
           </div>
         </div>
 
