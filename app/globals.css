@@ -34,8 +34,8 @@ p{margin:0}
 .barra-in{display:flex;align-items:center;gap:16px;height:68px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;letter-spacing:-.03em;text-decoration:none;white-space:nowrap}
 .logo svg{width:34px;height:20px}
-.logo-img{display:block;height:40px;width:auto}
-.logo-proy{display:block;height:clamp(44px,4.5vw,72px);width:auto;margin-bottom:24px}
+.logo-img{display:block;height:54px;width:auto}
+.logo-proy{display:block;height:clamp(60px,6vw,100px);width:auto;margin-bottom:24px}
 .nav{margin-left:auto;display:flex;gap:4px}
 .nav a{position:relative;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none;color:var(--m);font-weight:700;font-size:15px;padding:8px 14px;border-radius:999px;transition:color .2s,background-color .2s}
 .nav a[aria-current="page"]{color:var(--on-h);background:var(--h)}
@@ -286,15 +286,9 @@ body[data-view="proyectar"] .barra{display:none}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translate(-50%,16px);background:var(--t);color:var(--bg);padding:12px 22px;border-radius:999px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--ease);z-index:60}
 .toast.ver{opacity:1;transform:translate(-50%,0)}
 
-/* selector de paletas */
-.paletas{position:fixed;right:16px;bottom:16px;z-index:40;display:flex;align-items:center;gap:6px;background:var(--s);border:1px solid var(--b2);border-radius:999px;padding:6px 6px 6px 14px;font-size:13px;font-weight:800;color:var(--m);box-shadow:0 18px 40px -16px rgba(0,0,0,.8)}
-.paletas button{width:28px;height:28px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;transition:transform .16s var(--ease),border-color .2s}
-.paletas button[aria-pressed="true"]{border-color:var(--t)}
-.paletas button:active{transform:scale(.9)}
-body[data-view="proyectar"] .paletas{display:none}
 
 /* Mapa de Sueños: la red a pantalla completa y los textos abajo, sobre una franja del fondo */
-body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
+body[data-view="mapa"] .barra{display:none}
 .mapa{position:fixed;inset:0;z-index:1;background:var(--bg);overflow:hidden}
 .mapa-red{position:absolute;inset:0;width:100%;height:100%;display:block}
 .mapa-pie{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:48px clamp(16px,3vw,48px) calc(env(safe-area-inset-bottom,0px) + clamp(14px,2.5vh,28px));background:linear-gradient(to top,color-mix(in srgb,var(--bg) 70%,transparent) 30%,transparent);pointer-events:none;text-shadow:0 0 12px var(--bg),0 0 4px var(--bg)}
@@ -391,7 +385,6 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
   .ficha{padding:10px 12px}
   .ficha p{font-size:14px}
   /* El selector de colores va al final de la página, no encima de las tarjetas. */
-  .paletas{position:static;width:max-content;margin:0 auto 16px;box-shadow:none}
   .par{padding:12px;gap:10px}
   .par .lado{padding:16px;gap:14px;border-radius:16px}
   .cabeza{padding:18px 16px 0}
@@ -422,7 +415,7 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
   .proy .qr-carta b{font-size:15px}
   .proy h1{font-size:clamp(26px,4.6vw,40px)}
   .proy .intro{font-size:16px;margin-top:10px}
-  .proy .logo{margin-bottom:10px!important;font-size:16px}
+  .logo-proy{height:44px;margin-bottom:10px}
   .cifras{justify-content:flex-start;margin-top:16px;gap:10px}
   .cifra{padding:10px 16px;border-radius:18px}
   .cifra b{font-size:30px}

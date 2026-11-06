@@ -12,7 +12,6 @@ import { VistaPerfil, type DatosForm } from "./VistaPerfil";
 import { VistaClics } from "./VistaClics";
 import { VistaProyectar } from "./VistaProyectar";
 import { VistaMapa } from "./VistaMapa";
-import { Paletas } from "./Paletas";
 import type { Busqueda } from "./Buscando";
 
 /* Enlace público de esta página: el QR apunta aquí + #perfil.
@@ -425,7 +424,6 @@ export default function App() {
           fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaMapa activo={S.vista === "mapa"} demo={S.demo ? S.perfiles : null}/>
       </main>
-      <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>
   );
