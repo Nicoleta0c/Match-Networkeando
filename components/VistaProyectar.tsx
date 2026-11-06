@@ -21,6 +21,9 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
 
   return (
     <section data-view-panel="proyectar" aria-labelledby="t-proy" hidden={!activo}>
+      {/* El logo va arriba a la izquierda, donde estaría la barra (que aquí se oculta). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="logo-proy" src="/logo-networkeando.webp" alt="Networkeando RD" width={2000} height={587}/>
       <div className="salir">
         <button className="boton chico" type="button" id="b-pantalla" hidden={!pantalla} onClick={alternar}>Pantalla completa</button>
         <a className="boton chico" href="#inicio">Salir</a>
@@ -31,8 +34,6 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
           <b>Escanea con la cámara</b>
         </figure>
         <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="logo-proy" src="/logo-networkeando.webp" alt="Networkeando RD" width={2000} height={587}/>
           {registro
             ? <h1 id="t-proy">Escanea y escribe tu <span className="marca">sueño</span> y tu superpoder.</h1>
             : <h1 id="t-proy">Escanea y la app te busca tu <span className="marca">match</span>.</h1>}
