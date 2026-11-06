@@ -1,32 +1,34 @@
-/* Motor del Mapa de Sueños: acomoda la red con fuerzas suaves y la dibuja en un <canvas>.
-   - Cada evento es un racimo; el evento de hoy va en el centro y los anteriores alrededor.
-   - "todos": la cámara se aleja y las líneas finas pulsan.
-   - "evento": la cámara entra al racimo de hoy; los empalmes se encienden y un punto de luz
-     viaja por cada línea (en doble vía, en las dos direcciones).
-   - Cada persona nueva entra con un destello y sus líneas se dibujan poco a poco.
-   - Los sueños se ven como etiquetas junto a cada punto, y un foco recorre los empalmes uno por uno:
-     resalta la pareja y avisa (onFoco) para que la vista muestre su sueño y el superpoder que lo ayuda. */
+/* Motor del Mapa de Sueños, dibujado como una red neuronal en capas:
+     SUEÑOS (izquierda)  →  ÁREAS (centro, la "capa oculta")  →  SUPERPODERES (derecha)
+   - Cada sueño se conecta con las áreas que necesita; cada superpoder sale de sus áreas.
+   - Un match es un camino: sueño → área → superpoder. Por esos caminos viajan señales de luz.
+   - En pantallas altas (celular vertical) las capas van de arriba a abajo.
+   - Un foco recorre los matches uno por uno (o el que elijas con un clic) y avisa (onFoco)
+     para que la vista muestre ese sueño y el superpoder que hace match. */
+import { AREAS } from "@/lib/match";
 import type { Red, TipoEnlace } from "@/lib/red";
 
-/** Lo que muestra la tarjeta del foco: cada sueño con el superpoder que lo ayuda (dos filas en doble vía). */
-/** tipo "sola": alguien que elegiste con un clic y todavía no tiene con quién impulsarse. */
 /** Filtro de la leyenda: solo las parejas que se ayudan los dos, solo las de una vía, o solo quien no conecta. */
 export type Filtro = "doble" | "una" | "sola" | null;
+/** Lo que muestra la tarjeta del foco: cada sueño con el superpoder que hace match (dos filas en doble vía).
+    tipo "sola": alguien que todavía no tiene con quién conectar. */
 export type Foco = {id: number; tipo: "doble" | "una" | "sola"; filas: {sueno: string; poder: string}[]};
-type Nodo = {k: string; e: number; s: 0 | 1; t: string; p: string; x: number; y: number; vx: number; vy: number; nace: number; fase: number; grado: number; empalma: boolean; px: number; py: number; r: number};
-type Enlace = {a: Nodo; b: Nodo; t: TipoEnlace; i: number};
-/** sx y sy estiran la red un poco a lo ancho o a lo alto para que llene todo el hueco libre. */
-type Cam = {x: number; y: number; k: number; sx: number; sy: number};
 
-const RADIO_REPULSION = 46;
-const LARGO: Record<TipoEnlace, number> = {2: 46, 1: 62, 0: 96};
-const RESORTE: Record<TipoEnlace, number> = {2: .06, 1: .04, 0: .012};
-const DURA_ZOOM = 1600, DURA_DESTELLO = 1400, DURA_LINEA = 900, DURA_FOCO = 6500;
-/** Con más gente que esto, las etiquetas no caben: solo se rotula la pareja del foco. */
+type Punto = {x: number; y: number; tx: number; ty: number; r: number};
+type Persona = {k: string; t: string; p: string; needs: number[]; powers: number[]; orden: number; nace: number; empalma: boolean; sueno: Punto | null; poder: Punto};
+type Area = {id: number; nombre: string; pt: Punto; usada: boolean};
+type Enlace = {a: Persona; b: Persona; t: TipoEnlace; i: number};
+type Senal = {ruta: Punto[]; t0: number};
+
+const DURA_FOCO = 6500, DURA_DESTELLO = 1400, DURA_SENAL = 1800, CADA_SENAL = 240, MAX_SENALES = 36;
+/** Con más gente que esto, los textos no caben al lado de cada punto: solo se rotula el foco. */
 const MAX_ETIQUETAS = 40;
-const recortar = (t: string, n: number) => t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
 
-/* Cada sueño con el superpoder que lo ayuda. En una vía, a ayuda y b tiene el sueño. */
+const limitar = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const recortar = (t: string, n: number) => t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
+const punto = (): Punto => ({x: NaN, y: NaN, tx: 0, ty: 0, r: 3});
+
+/* Cada sueño con el superpoder que hace match. En una vía, a ayuda y b tiene el sueño. */
 function filasDe(l: Enlace) {
   const f: {sueno: string; poder: string}[] = [];
   if (l.b.t && l.a.p) f.push({sueno: l.b.t, poder: l.a.p});
@@ -34,37 +36,30 @@ function filasDe(l: Enlace) {
   return f;
 }
 
-const limitar = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-const suave = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-const salida = (t: number) => 1 - Math.pow(1 - t, 3);
-function hash(s: string) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
-const radioRacimo = (n: number) => 18 * Math.sqrt(n) + 24;
-
 export class Motor {
   private ctx: CanvasRenderingContext2D;
-  private nodos = new Map<string, Nodo>();
-  private lista: Nodo[] = [];
+  private personas = new Map<string, Persona>();
+  private lista: Persona[] = [];
+  private areas: Area[] = AREAS.map((nombre, i) => ({id: i + 1, nombre, pt: punto(), usada: false}));
   private enlaces: Enlace[] = [];
-  private centros: {x: number; y: number}[] = [];
-  private actual = -1;
-  private cam: Cam = {x: 0, y: 0, k: 1, sx: 1, sy: 1};
-  private tween: {desde: Cam; t0: number} | null = null;
-  private alpha = 0;
   private col = {bg: "#111", a: "#fc0", h: "#3fe", t: "#fff", m: "#999"};
+  private fuente = "system-ui, sans-serif";
   private w = 0; private h = 0; private dpr = 1;
   private raf = 0; private vivo = true; private primera = true;
   private quieto: boolean;
   private ro: ResizeObserver; private mo: MutationObserver;
-  private fuente = "system-ui, sans-serif";
-  private foco: Enlace | null = null;
+  /** "columnas": sueños a la izquierda y superpoderes a la derecha. "filas": arriba y abajo (pantallas altas). */
+  private forma: "columnas" | "filas" = "columnas";
+  private conTextos = false;
+  private foco: Enlace | null = null; private focoDesde = 0; private focoI = -1; private focoN = 0; private ultimoNuevo = "";
   /** Lo que elegiste con un clic: el foco se queda ahí un rato antes de volver a rotar. */
-  private elegido: Nodo | null = null; private fijoHasta = 0;
+  private elegido: Persona | null = null; private fijoHasta = 0;
   private filtro: Filtro = null;
-  /** Los puntos que deja ver el filtro (se recalcula en cada cuadro). */
-  private visibles = new Set<Nodo>(); private focoDesde = 0; private focoI = -1; private focoN = 0; private ultimoNuevo = "";
-  /** Espacio que ocupan los textos de la vista arriba y abajo (lo mide VistaMapa). */
+  private visibles = new Set<Persona>();
+  private senales: Senal[] = []; private ultimaSenal = 0;
+  /** Espacio que ocupan los textos de la vista arriba y abajo, y la tarjeta del foco (lo mide VistaMapa). */
   private reserva = {arriba: 72, abajo: 0, tapa: null as [number, number, number, number] | null};
-  /** Se llama cada vez que el foco cambia de pareja. */
+  /** Se llama cada vez que el foco cambia. */
   onFoco: ((f: Foco | null) => void) | null = null;
 
   constructor(private lienzo: HTMLCanvasElement) {
@@ -98,165 +93,58 @@ export class Motor {
   }
 
   /** La vista avisa cuánto ocupan sus textos, para que la red no quede detrás. */
-  reservar(arriba: number, abajo: number, tapa: [number, number, number, number] | null = null) { this.reserva = {arriba, abajo, tapa}; }
+  reservar(arriba: number, abajo: number, tapa: [number, number, number, number] | null = null) {
+    this.reserva = {arriba, abajo, tapa};
+    this.ubicar();
+  }
 
   private medir() {
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.w = this.lienzo.clientWidth; this.h = this.lienzo.clientHeight;
-    const r = {width: this.w, height: this.h};
-    this.lienzo.width = Math.round(r.width * this.dpr);
-    this.lienzo.height = Math.round(r.height * this.dpr);
+    this.lienzo.width = Math.round(this.w * this.dpr);
+    this.lienzo.height = Math.round(this.h * this.dpr);
+    this.ubicar();
   }
 
-  /** Recibe la red nueva: conserva la posición de quien ya estaba y hace entrar a los nuevos. */
+  /** Recibe la red nueva: conserva a quien ya estaba y hace entrar a los nuevos. */
   datos(red: Red | null) {
     if (!red) return;
     const ahora = performance.now();
-    this.actual = red.eventos.findIndex(e => e.nombre === red.evento);
-    this.ubicarEventos(red);
-    const nuevos = new Map<string, Nodo>();
-    const habia = this.nodos.size;
-    let llegaron = false;
-    const orden = red.nodos.map(d => {
-      let n = this.nodos.get(d.k);
-      if (!n) {
-        const c = this.centros[d.e] ?? {x: 0, y: 0}, ang = hash(d.k) * Math.PI * 2, rad = Math.sqrt(hash(d.k + "r")) * radioRacimo(red.eventos[d.e]?.n ?? 1);
-        n = {k: d.k, e: d.e, s: d.s, t: "", p: "", x: c.x + Math.cos(ang) * rad, y: c.y + Math.sin(ang) * rad, vx: 0, vy: 0, nace: this.primera ? -1e9 : ahora, fase: hash(d.k + "f") * 6.283, grado: 0, empalma: false, px: 0, py: 0, r: 0};
-        llegaron = true;
-      }
-      n.e = d.e; n.s = d.s; n.t = d.t ?? ""; n.p = d.p ?? ""; n.grado = 0; n.empalma = false;
-      nuevos.set(d.k, n);
-      return n;
+    const nuevas = new Map<string, Persona>();
+    const orden = red.nodos.map((d, i) => {
+      let p = this.personas.get(d.k);
+      if (!p) p = {k: d.k, t: "", p: "", needs: [], powers: [], orden: i, nace: this.primera ? -1e9 : ahora, empalma: false, sueno: null, poder: punto()};
+      p.t = d.t ?? ""; p.p = d.p ?? ""; p.needs = d.n ?? []; p.powers = d.w ?? []; p.orden = i; p.empalma = false;
+      if (d.s && !p.sueno) p.sueno = punto();
+      if (!d.s) p.sueno = null;
+      nuevas.set(d.k, p);
+      return p;
     });
-    this.nodos = nuevos;
+    this.personas = nuevas;
     this.lista = orden;
-    this.enlaces = red.enlaces.map(([a, b, t], i) => {
-      const A = orden[a], B = orden[b];
-      if (t) { A.grado++; B.grado++; A.empalma = B.empalma = true; }
-      return {a: A, b: B, t, i};
+    this.enlaces = [];
+    red.enlaces.forEach(([a, b, t], i) => {
+      if (!t) return;
+      orden[a].empalma = orden[b].empalma = true;
+      this.enlaces.push({a: orden[a], b: orden[b], t, i});
     });
     // Si la pareja del foco ya no existe (alguien borró su perfil), el foco pasa a la siguiente.
     if (this.foco) {
       const f = this.foco;
-      this.foco = this.enlaces.find(l => l.a === f.a && l.b === f.b && l.t > 0) ?? null;
+      this.foco = this.enlaces.find(l => l.a === f.a && l.b === f.b) ?? null;
       if (!this.foco) this.focoDesde = 0;
     }
-    if (this.primera) {
-      this.primera = false;
-      this.alpha = 1;
-      // Se acomoda casi todo antes de mostrarse; con movimiento reducido, del todo.
-      for (let i = 0; i < (this.quieto ? 400 : 160); i++) this.paso();
-      this.cam = this.objetivo();
-    } else if (llegaron || orden.length < habia) this.alpha = Math.max(this.alpha, .4);
-    else this.alpha = Math.max(this.alpha, .15);
-    if (this.quieto) for (let i = 0; i < 200; i++) this.paso();
+    if (this.elegido && !this.personas.has(this.elegido.k)) this.elegido = null;
+    this.senales = [];
+    this.primera = false;
+    this.ubicar();
   }
-
-  /* El evento de hoy en el centro; los demás en espiral alrededor, del más nuevo al más viejo. */
-  private ubicarEventos(red: Red) {
-    const idx = red.eventos.map((_, i) => i).reverse();
-    if (this.actual >= 0) { idx.splice(idx.indexOf(this.actual), 1); idx.unshift(this.actual); }
-    const mayor = Math.max(60, ...red.eventos.map(e => radioRacimo(e.n)));
-    const paso = mayor * 2.4 + 60;
-    this.centros = [];
-    idx.forEach((e, r) => {
-      const ang = r * 2.39996, rad = r ? paso * Math.sqrt(r) : 0;
-      this.centros[e] = {x: Math.cos(ang) * rad, y: Math.sin(ang) * rad};
-    });
-  }
-
-  /* Un paso de la simulación: atracción al centro del evento, repulsión entre vecinos y resortes. */
-  private paso() {
-    const a = this.alpha;
-    if (a < .004) return;
-    const L = this.lista;
-    // El racimo toma la forma de la pantalla: ancho en un proyector, alto en un celular.
-    const m = this.marco(), forma = limitar(m.ancho / Math.max(1, this.h - m.arriba - m.abajo), .45, 3);
-    const jx = .012 / Math.pow(forma, .85), jy = .012 * Math.pow(forma, .85);
-    for (const n of L) {
-      const c = this.centros[n.e] ?? {x: 0, y: 0};
-      n.vx += (c.x - n.x) * jx * a; n.vy += (c.y - n.y) * jy * a;
-    }
-    // Repulsión solo entre vecinos cercanos (con una grilla): rápido aunque haya miles.
-    const R = RADIO_REPULSION, celdas = new Map<string, Nodo[]>();
-    for (const n of L) {
-      const key = n.e + ":" + Math.floor(n.x / R) + ":" + Math.floor(n.y / R);
-      const c = celdas.get(key); if (c) c.push(n); else celdas.set(key, [n]);
-    }
-    for (const n of L) {
-      const cx = Math.floor(n.x / R), cy = Math.floor(n.y / R);
-      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-        const c = celdas.get(n.e + ":" + (cx + dx) + ":" + (cy + dy));
-        if (!c) continue;
-        for (const m of c) {
-          if (m === n) continue;
-          let ddx = n.x - m.x, ddy = n.y - m.y, d = Math.hypot(ddx, ddy);
-          if (d >= R) continue;
-          if (d < .01) { ddx = hash(n.k) - .5; ddy = hash(m.k) - .5; d = Math.hypot(ddx, ddy) || 1; }
-          const f = (1 - d / R) * 1.1 * a;
-          n.vx += ddx / d * f; n.vy += ddy / d * f;
-        }
-      }
-    }
-    for (const l of this.enlaces) {
-      const dx = l.b.x - l.a.x, dy = l.b.y - l.a.y, d = Math.hypot(dx, dy) || 1;
-      const f = (d - LARGO[l.t]) / d * RESORTE[l.t] * a;
-      l.a.vx += dx * f; l.a.vy += dy * f; l.b.vx -= dx * f; l.b.vy -= dy * f;
-    }
-    for (const n of L) { n.vx *= .8; n.vy *= .8; n.x += n.vx; n.y += n.vy; }
-    this.alpha *= .985;
-  }
-
-  /* Margen que ocupan los textos de la vista, para que la red no quede detrás. */
-  private marco() {
-    const abajo = this.reserva.abajo > 0 ? limitar(this.reserva.abajo, 0, this.h * .6) : limitar(this.h * .3, 150, 300);
-    const arriba = limitar(this.reserva.arriba, 24, this.h * .45), lado = this.w > 700 ? 28 : 12;
-    // En pantallas anchas la tarjeta del foco va a la izquierda: la red usa el espacio a su derecha.
-    const t = this.reserva.tapa, izq = t && this.w > 700 && t[2] < this.w * .45 ? t[2] + 16 : lado;
-    return {abajo, arriba, lado, izq, ancho: this.w - izq - lado, cx: (izq + this.w - lado) / 2, cy: arriba + (this.h - abajo - arriba) / 2};
-  }
-
-  /* El foco: cada 6,5 segundos pasa a otra pareja (primero las de doble vía).
-     Cuando alguien nuevo llega con un empalme, el foco salta a esa persona. */
-  /** El punto que está debajo del cursor o del dedo (con un margen para que sea fácil atinarle). */
-  private nodoEn(x: number, y: number) {
-    let mejor: Nodo | null = null, dist = Infinity;
-    for (const n of this.lista) {
-      const d = Math.hypot(n.px - x, n.py - y);
-      if (d < Math.max(n.r + 10, 20) && d < dist) { mejor = n; dist = d; }
-    }
-    return mejor;
-  }
-
-  /* Clic en un punto: el foco muestra su sueño y con quién se impulsa (otro clic: su siguiente conexión).
-     Clic en el vacío: el foco vuelve a rotar solo. */
-  private clic = (e: MouseEvent) => {
-    const caja = this.lienzo.getBoundingClientRect(), ahora = performance.now();
-    const n = this.nodoEn(e.clientX - caja.left, e.clientY - caja.top);
-    if (!n) { this.fijoHasta = 0; this.elegido = null; this.focoDesde = 0; this.foco = null; return; }
-    this.fijoHasta = ahora + 20000;
-    const suyos = this.enlaces.filter(l => l.t > 0 && (l.a === n || l.b === n) && filasDe(l).length > 0).sort((x, y) => (y.t - x.t) || (x.i - y.i));
-    if (suyos.length) {
-      const i = this.elegido === n && this.foco ? suyos.indexOf(this.foco) : -1;
-      this.elegido = n;
-      this.foco = null;
-      this.ponerFoco(suyos[(i + 1) % suyos.length], ahora);
-      return;
-    }
-    // Todavía sin conexión: igual se ve su sueño (o su superpoder).
-    this.elegido = n; this.foco = null; this.focoDesde = ahora;
-    this.onFoco?.({id: ++this.focoN, tipo: "sola", filas: [{sueno: n.t, poder: n.p}]});
-  };
-
-  private señalar = (e: PointerEvent) => {
-    const caja = this.lienzo.getBoundingClientRect();
-    this.lienzo.style.cursor = this.nodoEn(e.clientX - caja.left, e.clientY - caja.top) ? "pointer" : "";
-  };
 
   /** Cambia el filtro y el foco empieza de nuevo con lo que quedó a la vista. */
   filtrar(f: Filtro) {
     if (f === this.filtro) return;
     this.filtro = f; this.foco = null; this.elegido = null; this.focoDesde = 0; this.fijoHasta = 0; this.focoI = -1;
+    this.senales = [];
     this.onFoco?.(null);
   }
 
@@ -264,22 +152,124 @@ export class Motor {
     return !this.filtro || (this.filtro === "doble" ? l.t === 2 : this.filtro === "una" ? l.t === 1 : false);
   }
 
+  /* Margen que ocupan los textos de la vista, para que la red quede en el hueco libre. */
+  private marco() {
+    const abajo = this.reserva.abajo > 0 ? limitar(this.reserva.abajo, 0, this.h * .6) : limitar(this.h * .2, 100, 220);
+    const arriba = limitar(this.reserva.arriba, 24, this.h * .6), lado = this.w > 700 ? 28 : 12;
+    // En pantallas anchas la tarjeta del foco va a la izquierda: la red usa el espacio a su derecha.
+    const t = this.reserva.tapa, izq = t && this.w > 700 && t[2] < this.w * .45 ? t[2] + 16 : lado;
+    return {abajo, arriba, lado, izq, ancho: this.w - izq - lado, alto: this.h - arriba - abajo};
+  }
+
+  /* Dónde va cada punto: las tres capas, cada una repartida a lo largo del espacio libre.
+     Dentro de cada capa se ordenan por área, para que las líneas vayan en haces y no se crucen tanto. */
+  private ubicar() {
+    if (!this.w) return;
+    const m = this.marco();
+    this.forma = m.ancho >= m.alto * .9 ? "columnas" : "filas";
+    this.conTextos = this.lista.length <= MAX_ETIQUETAS && this.forma === "columnas";
+    const porArea = (arr: number[]) => arr[0] ?? 99;
+    const suenos = this.lista.filter(p => p.sueno).sort((x, y) => (porArea(x.needs) - porArea(y.needs)) || (x.orden - y.orden));
+    const poderes = [...this.lista].sort((x, y) => (porArea(x.powers) - porArea(y.powers)) || (x.orden - y.orden));
+    const usadas = new Set<number>();
+    for (const p of this.lista) { p.needs.forEach(a => usadas.add(a)); p.powers.forEach(a => usadas.add(a)); }
+    this.areas.forEach(a => { a.usada = usadas.has(a.id); });
+    const areas = this.areas.filter(a => a.usada);
+
+    // Reparte los puntos a lo largo de una línea (de "desde" a "hasta"), con la otra coordenada fija.
+    const repartir = (pts: Punto[], fija: number, desde: number, hasta: number, rMax: number) => {
+      const paso = (hasta - desde) / Math.max(1, pts.length);
+      const r = limitar(paso * .36, 2.2, rMax);
+      pts.forEach((pt, i) => {
+        const v = desde + (i + .5) * paso;
+        if (this.forma === "columnas") { pt.tx = fija; pt.ty = v; } else { pt.tx = v; pt.ty = fija; }
+        pt.r = r;
+        if (isNaN(pt.x)) { pt.x = pt.tx; pt.y = pt.ty; }
+      });
+    };
+    const titulo = 28;
+    if (this.forma === "columnas") {
+      // Si hay textos al lado de los puntos, las columnas de afuera dejan espacio para ellos.
+      const margenTexto = this.conTextos ? Math.min(m.ancho * .24, 280) : m.ancho * .06;
+      const xS = m.izq + margenTexto, xP = m.izq + m.ancho - margenTexto, xA = (xS + xP) / 2;
+      const y0 = m.arriba + titulo, y1 = m.arriba + m.alto;
+      repartir(suenos.map(p => p.sueno!), xS, y0, y1, 9);
+      repartir(poderes.map(p => p.poder), xP, y0, y1, 9);
+      repartir(areas.map(a => a.pt), xA, y0, y1, 15);
+    } else {
+      const x0 = m.izq, x1 = m.izq + m.ancho;
+      const yS = m.arriba + titulo, yP = m.arriba + m.alto - 8, yA = (yS + yP) / 2;
+      repartir(suenos.map(p => p.sueno!), yS, x0, x1, 7);
+      repartir(poderes.map(p => p.poder), yP, x0, x1, 7);
+      repartir(areas.map(a => a.pt), yA, x0, x1, 12);
+    }
+  }
+
+  /** El camino de un match: el sueño de d, el área en común, el superpoder de h. */
+  private ruta(d: Persona, h: Persona): Punto[] | null {
+    if (!d.sueno) return null;
+    const id = d.needs.find(x => h.powers.includes(x)) ?? h.powers[0] ?? d.needs[0];
+    const area = this.areas.find(a => a.id === id && a.usada);
+    return area ? [d.sueno, area.pt, h.poder] : [d.sueno, h.poder];
+  }
+  private rutasDe(l: Enlace) {
+    const r = [this.ruta(l.b, l.a)];
+    if (l.t === 2) r.push(this.ruta(l.a, l.b));
+    return r.filter((x): x is Punto[] => !!x);
+  }
+
+  /** La persona que está debajo del cursor o del dedo (con margen para que sea fácil atinarle). */
+  private personaEn(x: number, y: number) {
+    let mejor: Persona | null = null, dist = Infinity;
+    for (const p of this.lista) for (const pt of [p.sueno, p.poder]) {
+      if (!pt) continue;
+      const d = Math.hypot(pt.x - x, pt.y - y);
+      if (d < Math.max(pt.r + 8, 14) && d < dist) { mejor = p; dist = d; }
+    }
+    return mejor;
+  }
+
+  /* Clic en un punto: el foco muestra su sueño y su match (otro clic: su siguiente match).
+     Clic en el vacío: el foco vuelve a rotar solo. */
+  private clic = (e: MouseEvent) => {
+    const caja = this.lienzo.getBoundingClientRect(), ahora = performance.now();
+    const p = this.personaEn(e.clientX - caja.left, e.clientY - caja.top);
+    if (!p) { this.fijoHasta = 0; this.elegido = null; this.focoDesde = 0; this.foco = null; return; }
+    this.fijoHasta = ahora + 20000;
+    const suyos = this.enlaces.filter(l => (l.a === p || l.b === p) && filasDe(l).length > 0).sort((x, y) => (y.t - x.t) || (x.i - y.i));
+    if (suyos.length) {
+      const i = this.elegido === p && this.foco ? suyos.indexOf(this.foco) : -1;
+      this.elegido = p; this.foco = null;
+      this.ponerFoco(suyos[(i + 1) % suyos.length], ahora);
+      return;
+    }
+    // Todavía sin match: igual se ve su sueño (o su superpoder).
+    this.elegido = p; this.foco = null; this.focoDesde = ahora;
+    this.onFoco?.({id: ++this.focoN, tipo: "sola", filas: [{sueno: p.t, poder: p.p}]});
+  };
+
+  private señalar = (e: PointerEvent) => {
+    const caja = this.lienzo.getBoundingClientRect();
+    this.lienzo.style.cursor = this.personaEn(e.clientX - caja.left, e.clientY - caja.top) ? "pointer" : "";
+  };
+
+  /* El foco: cada 6,5 segundos pasa a otro match (primero los de doble vía).
+     Cuando alguien nuevo llega con un match, el foco salta a esa persona. */
   private rotarFoco(ahora: number) {
     if (ahora < this.fijoHasta) return;
-    // Filtro "buscando su conexión": la tarjeta recorre a quienes todavía no conectan.
     if (this.filtro === "sola") {
       if (this.elegido && ahora - this.focoDesde < DURA_FOCO) return;
-      const solos = this.lista.filter(n => !n.empalma && (n.t || n.p));
+      const solos = this.lista.filter(p => !p.empalma && (p.t || p.p));
       if (!solos.length) { if (this.elegido) { this.elegido = null; this.onFoco?.(null); } return; }
       this.focoI = (this.focoI + 1) % solos.length;
-      const n = solos[this.focoI];
-      this.elegido = n; this.foco = null; this.focoDesde = ahora;
-      this.onFoco?.({id: ++this.focoN, tipo: "sola", filas: [{sueno: n.t, poder: n.p}]});
+      const p = solos[this.focoI];
+      this.elegido = p; this.foco = null; this.focoDesde = ahora;
+      this.onFoco?.({id: ++this.focoN, tipo: "sola", filas: [{sueno: p.t, poder: p.p}]});
       return;
     }
     if (this.elegido) { this.elegido = null; this.focoDesde = 0; }
-    const hoy = this.enlaces.filter(l => l.t > 0 && this.pasa(l) && filasDe(l).length > 0);
-    const nuevo = this.lista.filter(n => ahora - n.nace < 2000 && n.k !== this.ultimoNuevo).sort((x, y) => y.nace - x.nace)[0];
+    const hoy = this.enlaces.filter(l => this.pasa(l) && filasDe(l).length > 0);
+    const nuevo = this.lista.filter(p => ahora - p.nace < 2000 && p.k !== this.ultimoNuevo).sort((x, y) => y.nace - x.nace)[0];
     if (nuevo) {
       const suyo = hoy.filter(l => l.a === nuevo || l.b === nuevo).sort((x, y) => y.t - x.t)[0];
       if (suyo) { this.ultimoNuevo = nuevo.k; this.ponerFoco(suyo, ahora); return; }
@@ -297,34 +287,17 @@ export class Motor {
     this.onFoco?.(l ? {id: ++this.focoN, tipo: l.t === 2 ? "doble" : "una", filas: filasDe(l)} : null);
   }
 
-  private objetivo(): Cam {
-    // El mapa es general: la cámara encuadra a todo el mundo, de todos los eventos.
-    const sel = this.lista;
-    if (!sel.length) return {x: 0, y: 0, k: 1, sx: 1, sy: 1};
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const n of sel) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); }
-    const m = this.marco(), pad = 6;
-    const bw = Math.max(x1 - x0 + pad * 2, 120), bh = Math.max(y1 - y0 + pad * 2, 120);
-    const escala = Math.min(this.w, this.h) / 800;
-    const kx = m.ancho / bw, ky = (this.h - m.arriba - m.abajo) / bh;
-    const k = limitar(Math.min(kx, ky), .08, 8 * Math.max(escala, .6));
-    // Lo que sobra en un sentido se llena estirando un poco la red (como mucho 1,8 veces).
-    return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k, sx: limitar(kx / k, 1, 1.8), sy: limitar(ky / k, 1, 1.8)};
-  }
-
-
-  private moverCamara(ahora: number) {
-    const o = this.objetivo();
-    if (this.tween) {
-      const t = Math.min(1, (ahora - this.tween.t0) / DURA_ZOOM), e = suave(t), d = this.tween.desde;
-      this.cam = {x: d.x + (o.x - d.x) * e, y: d.y + (o.y - d.y) * e, k: Math.exp(Math.log(d.k) + (Math.log(o.k) - Math.log(d.k)) * e), sx: d.sx + (o.sx - d.sx) * e, sy: d.sy + (o.sy - d.sy) * e};
-      if (t >= 1) this.tween = null;
-    } else if (this.quieto) this.cam = o;
-    else {
-      const f = .06;
-      const c = this.cam;
-      this.cam = {x: c.x + (o.x - c.x) * f, y: c.y + (o.y - c.y) * f, k: Math.exp(Math.log(c.k) + (Math.log(o.k) - Math.log(c.k)) * f), sx: c.sx + (o.sx - c.sx) * f, sy: c.sy + (o.sy - c.sy) * f};
-    }
+  /* Señales: cada poco sale una luz por el camino de un match al azar (de los que deja ver el filtro). */
+  private lanzarSenales(ahora: number) {
+    this.senales = this.senales.filter(s => ahora - s.t0 < DURA_SENAL);
+    if (this.quieto || ahora - this.ultimaSenal < CADA_SENAL || this.senales.length >= MAX_SENALES) return;
+    const candidatos = this.enlaces.filter(l => this.pasa(l));
+    if (!candidatos.length) return;
+    const l = candidatos[Math.floor(Math.random() * candidatos.length)];
+    // Las de doble vía salen más seguido que las de una vía.
+    if (l.t === 1 && Math.random() < .4) return;
+    this.ultimaSenal = ahora;
+    for (const ruta of this.rutasDe(l)) this.senales.push({ruta, t0: ahora});
   }
 
   private bucle = (ahora: number) => {
@@ -332,144 +305,197 @@ export class Motor {
     // Si la pantalla cambió de tamaño (girar el celular, pantalla completa), se vuelve a medir.
     if (this.lienzo.clientWidth !== this.w || this.lienzo.clientHeight !== this.h) this.medir();
     if (!document.hidden && this.w > 0) {
-      this.paso();
-      this.moverCamara(ahora);
       this.rotarFoco(ahora);
+      this.lanzarSenales(ahora);
+      this.mover();
       this.dibujar(ahora);
     }
     this.raf = requestAnimationFrame(this.bucle);
   };
 
+  /* Cuando alguien llega, los puntos se reacomodan deslizándose a su nuevo lugar. */
+  private mover() {
+    const f = this.quieto ? 1 : .12;
+    const paso = (pt: Punto) => { pt.x += (pt.tx - pt.x) * f; pt.y += (pt.ty - pt.y) * f; };
+    for (const p of this.lista) { if (p.sueno) paso(p.sueno); paso(p.poder); }
+    for (const a of this.areas) if (a.usada) paso(a.pt);
+  }
+
+  /** Un punto a lo largo de un camino (p de 0 a 1). */
+  private enRuta(ruta: Punto[], p: number) {
+    const tramos = ruta.length - 1, t = limitar(p, 0, 1) * tramos, i = Math.min(tramos - 1, Math.floor(t)), q = t - i;
+    return {x: ruta[i].x + (ruta[i + 1].x - ruta[i].x) * q, y: ruta[i].y + (ruta[i + 1].y - ruta[i].y) * q};
+  }
+
+  /** Dibuja un camino desde el principio hasta "hasta" (de 0 a 1). */
+  private trazar(ruta: Punto[], hasta = 1) {
+    const {ctx} = this;
+    ctx.beginPath(); ctx.moveTo(ruta[0].x, ruta[0].y);
+    const tramos = ruta.length - 1, t = hasta * tramos;
+    for (let i = 1; i <= tramos; i++) {
+      if (i <= t) ctx.lineTo(ruta[i].x, ruta[i].y);
+      else { const e = this.enRuta(ruta, hasta); ctx.lineTo(e.x, e.y); break; }
+    }
+    ctx.stroke();
+  }
+
   private dibujar(ahora: number) {
-    const {ctx, col, cam} = this;
+    const {ctx, col} = this;
     const m = this.marco();
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = col.bg;
     ctx.fillRect(0, 0, this.w, this.h);
-    const enfoque = true;
-    this.visibles = new Set(this.filtro === "sola" ? this.lista.filter(n => !n.empalma)
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const escala = limitar(Math.min(this.w, this.h) / 800, .7, 1.6);
+
+    // Quién queda a la vista con el filtro.
+    this.visibles = new Set(this.filtro === "sola" ? this.lista.filter(p => !p.empalma)
       : this.filtro ? this.enlaces.filter(l => this.pasa(l)).flatMap(l => [l.a, l.b]) : this.lista);
-    // Tamaño de puntos y líneas: crece con el zoom, pero con un tope según la pantalla (en el celular no se inflan).
-    const z = limitar(cam.k, .35, Math.min(3, Math.min(this.w, this.h) / 230));
-    const grosor = .55 + z * .45;
-    // La red respira: cada nodo se mece un poco alrededor de su lugar.
-    for (const n of this.lista) {
-      const b = this.quieto ? 0 : 2.2;
-      n.px = (n.x + Math.sin(ahora / 1700 + n.fase) * b - cam.x) * cam.k * cam.sx + m.cx;
-      n.py = (n.y + Math.cos(ahora / 1900 + n.fase) * b - cam.y) * cam.k * cam.sy + m.cy;
+    const vis = (p: Persona) => this.visibles.has(p) ? 1 : .2;
+    const areaDe = (id: number) => this.areas[id - 1];
+
+    // 1. Las conexiones de la red: cada sueño con sus áreas y cada área con sus superpoderes.
+    ctx.lineWidth = Math.max(.6, .8 * escala);
+    for (const p of this.lista) {
+      const v = vis(p);
+      if (p.sueno) {
+        ctx.strokeStyle = col.a; ctx.globalAlpha = .14 * v;
+        for (const id of p.needs) { const a = areaDe(id); if (!a?.usada) continue; ctx.beginPath(); ctx.moveTo(p.sueno.x, p.sueno.y); ctx.lineTo(a.pt.x, a.pt.y); ctx.stroke(); }
+      }
+      ctx.strokeStyle = col.h; ctx.globalAlpha = .14 * v;
+      for (const id of p.powers) { const a = areaDe(id); if (!a?.usada) continue; ctx.beginPath(); ctx.moveTo(a.pt.x, a.pt.y); ctx.lineTo(p.poder.x, p.poder.y); ctx.stroke(); }
     }
 
-    ctx.lineCap = "round";
-    for (const l of this.enlaces) {
-      const aparece = this.quieto ? 1 : limitar((ahora - Math.max(l.a.nace, l.b.nace)) / DURA_LINEA, 0, 1);
-      if (aparece <= 0) continue;
-      const dentro = true;
-      let alfa: number, ancho: number, color: string;
-      if (!enfoque) {
-        // Todos los eventos: líneas finas que pulsan.
-        const pulso = this.quieto ? 1 : .6 + .4 * Math.sin(ahora / 1100 + l.i * .7);
-        color = l.t ? col.h : col.m; ancho = (l.t === 2 ? 1.5 : 1) * grosor; alfa = (l.t ? .42 : .12) * pulso;
-      } else if (!dentro) { color = col.m; ancho = grosor; alfa = .06; }
-      else if (l.t === 2) { color = col.h; ancho = 3.4 * grosor; alfa = .92; }
-      else if (l.t === 1) { color = col.h; ancho = 1.6 * grosor; alfa = .5; }
-      else { color = col.m; ancho = grosor; alfa = .16; }
-      // Mientras el foco resalta una pareja, las demás líneas se apagan un poco.
-      if (enfoque && this.foco) { if (l === this.foco) continue; alfa *= .4; }
-      if (this.filtro && !this.pasa(l)) alfa *= .08;
-      ctx.globalAlpha = alfa; ctx.strokeStyle = color; ctx.lineWidth = ancho;
-      ctx.beginPath(); ctx.moveTo(l.a.px, l.a.py);
-      ctx.lineTo(l.a.px + (l.b.px - l.a.px) * aparece, l.a.py + (l.b.py - l.a.py) * aparece);
-      ctx.stroke();
+    // 2. Con un filtro puesto, se marcan todos los caminos de ese tipo de match.
+    if (this.filtro && this.filtro !== "sola") {
+      ctx.strokeStyle = col.h; ctx.lineWidth = (this.filtro === "doble" ? 1.6 : 1) * escala; ctx.globalAlpha = this.filtro === "doble" ? .4 : .18;
+      for (const l of this.enlaces) if (this.pasa(l)) for (const r of this.rutasDe(l)) this.trazar(r);
     }
 
-    // La línea del foco, encima de todas.
-    const f = enfoque ? this.foco : null;
-    if (f) {
-      ctx.globalAlpha = 1; ctx.strokeStyle = col.h; ctx.lineWidth = (f.t === 2 ? 5 : 3.6) * grosor;
-      ctx.beginPath(); ctx.moveTo(f.a.px, f.a.py); ctx.lineTo(f.b.px, f.b.py); ctx.stroke();
+    // 3. Las señales: una estela que se enciende y una luz que viaja del sueño al superpoder.
+    for (const s of this.senales) {
+      const q = (ahora - s.t0) / DURA_SENAL;
+      ctx.strokeStyle = col.h; ctx.lineWidth = 1.6 * escala; ctx.globalAlpha = .55 * (1 - q);
+      this.trazar(s.ruta, q);
+      const e = this.enRuta(s.ruta, q);
+      ctx.fillStyle = col.t; ctx.globalAlpha = .95 * Math.sin(q * Math.PI);
+      ctx.beginPath(); ctx.arc(e.x, e.y, 2.4 * escala, 0, 6.283); ctx.fill();
     }
 
-    // Puntos de luz que viajan por los empalmes del evento: de quien ayuda hacia el sueño.
-    if (enfoque && !this.quieto) {
-      ctx.fillStyle = col.t;
-      for (const l of this.enlaces) {
-        if (!l.t || !this.pasa(l)) continue;
-        const periodo = l.t === 2 ? 2600 : 3400, p = ((ahora + l.i * 397) % periodo) / periodo;
-        const r = (l.t === 2 ? 2.8 : 2.1) * grosor;
-        ctx.globalAlpha = .9 * Math.sin(p * Math.PI);
-        ctx.beginPath(); ctx.arc(l.a.px + (l.b.px - l.a.px) * p, l.a.py + (l.b.py - l.a.py) * p, r, 0, 6.283); ctx.fill();
-        if (l.t === 2) { ctx.beginPath(); ctx.arc(l.b.px + (l.a.px - l.b.px) * p, l.b.py + (l.a.py - l.b.py) * p, r, 0, 6.283); ctx.fill(); }
+    // 4. El foco: su camino encendido, con una luz que lo recorre sin parar.
+    const f = this.foco;
+    const rutasFoco = f ? this.rutasDe(f) : [];
+    for (const r of rutasFoco) {
+      ctx.strokeStyle = col.h; ctx.globalAlpha = 1; ctx.lineWidth = 3.4 * escala;
+      this.trazar(r);
+      if (!this.quieto) {
+        const e = this.enRuta(r, ((ahora - this.focoDesde) % 1600) / 1600);
+        ctx.fillStyle = col.t; ctx.beginPath(); ctx.arc(e.x, e.y, 4 * escala, 0, 6.283); ctx.fill();
+      }
+    }
+    const areasFoco = new Set(rutasFoco.filter(r => r.length === 3).map(r => r[1]));
+
+    // 5. La capa del centro: las áreas, con su nombre.
+    ctx.textBaseline = "middle";
+    for (const a of this.areas) {
+      if (!a.usada) continue;
+      const on = areasFoco.has(a.pt), pt = a.pt;
+      ctx.globalAlpha = 1; ctx.fillStyle = on ? col.h : col.bg; ctx.strokeStyle = on ? col.h : col.t; ctx.lineWidth = 1.6 * escala;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, 6.283); ctx.fill(); ctx.stroke();
+      const tam = limitar(pt.r * .95, 10, 15 * escala);
+      ctx.font = `800 ${tam}px ${this.fuente}`;
+      ctx.lineWidth = 4; ctx.strokeStyle = col.bg; ctx.fillStyle = on ? col.h : col.t; ctx.globalAlpha = on ? 1 : .85;
+      if (this.forma === "columnas") {
+        ctx.textAlign = "center";
+        ctx.strokeText(a.nombre, pt.x, pt.y + pt.r + tam * .9); ctx.fillText(a.nombre, pt.x, pt.y + pt.r + tam * .9);
+      } else {
+        ctx.save(); ctx.translate(pt.x + 2, pt.y - pt.r - 4); ctx.rotate(-Math.PI / 4); ctx.textAlign = "left";
+        ctx.strokeText(a.nombre, 0, 0); ctx.fillText(a.nombre, 0, 0); ctx.restore();
       }
     }
 
-    // Nodos: sueño en el color del sueño, hacedores en el del superpoder.
-    // Quien todavía no empalma con nadie queda como un anillo hueco.
-    for (const n of this.lista) {
-      const dentro = this.visibles.has(n);
-      const r = (n.s ? 4.4 : 3.6) * z * (1 + Math.min(n.grado, 5) * .1) * (enfoque ? 1 : .8);
-      n.r = r;
-      const color = n.s ? col.a : col.h;
-      if ((f && (n === f.a || n === f.b)) || n === this.elegido) {
-        ctx.globalAlpha = 1; ctx.strokeStyle = col.t; ctx.lineWidth = 2.4 * grosor;
-        ctx.beginPath(); ctx.arc(n.px, n.py, r + 6 * grosor, 0, 6.283); ctx.stroke();
-      }
-      ctx.globalAlpha = dentro ? 1 : .18;
-      ctx.beginPath(); ctx.arc(n.px, n.py, r, 0, 6.283);
-      if (n.empalma) { ctx.fillStyle = color; ctx.fill(); }
-      else { ctx.fillStyle = col.bg; ctx.fill(); ctx.globalAlpha = dentro ? .75 : .15; ctx.strokeStyle = color; ctx.lineWidth = 1.6 * grosor; ctx.stroke(); }
-      const q = (ahora - n.nace) / DURA_DESTELLO;
-      if (!this.quieto && q >= 0 && q < 1) {
-        ctx.globalAlpha = 1 - q; ctx.strokeStyle = col.t; ctx.lineWidth = 2 * grosor;
-        ctx.beginPath(); ctx.arc(n.px, n.py, r + 34 * grosor * salida(q), 0, 6.283); ctx.stroke();
+    // 6. Las personas: sueños en amarillo, superpoderes en menta. Quien no conecta, como anillo hueco.
+    const enFoco = (p: Persona) => (!!f && (p === f.a || p === f.b)) || p === this.elegido;
+    for (const p of this.lista) {
+      const v = vis(p);
+      for (const [pt, color] of [[p.sueno, col.a], [p.poder, col.h]] as [Punto | null, string][]) {
+        if (!pt) continue;
+        ctx.globalAlpha = v;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, 6.283);
+        if (p.empalma) { ctx.fillStyle = color; ctx.fill(); }
+        else { ctx.fillStyle = col.bg; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.stroke(); }
+        if (enFoco(p)) { ctx.globalAlpha = 1; ctx.strokeStyle = col.t; ctx.lineWidth = 2 * escala; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r + 4 * escala, 0, 6.283); ctx.stroke(); }
+        const q = (ahora - p.nace) / DURA_DESTELLO;
+        if (!this.quieto && q >= 0 && q < 1) {
+          ctx.globalAlpha = 1 - q; ctx.strokeStyle = col.t; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r + 26 * escala * (1 - Math.pow(1 - q, 3)), 0, 6.283); ctx.stroke();
+        }
       }
     }
-    if (enfoque) this.etiquetas(f, m);
+
+    // 7. Los nombres de las capas y los textos al lado de los puntos.
+    this.titulos(m, escala);
+    this.etiquetas(f, escala);
     ctx.globalAlpha = 1;
   }
 
-  /* Los sueños escritos junto a cada punto. Primero los de la pareja del foco, en grande;
-     después los demás, sin taparse entre ellos ni con los textos de la vista. */
-  private etiquetas(f: Enlace | null, m: {arriba: number; abajo: number; lado: number}) {
+  private titulos(m: ReturnType<Motor["marco"]>, escala: number) {
     const {ctx, col} = this;
-    const hoy = this.lista.filter(n => (n.t || n.p) && this.visibles.has(n));
-    const tam = limitar(Math.min(this.w, this.h) / 64, 11, 18);
-    // La tarjeta del foco cuenta como ocupada: ninguna etiqueta queda debajo.
+    const capas: [string, Punto | undefined, string][] = [
+      ["SUEÑOS", this.lista.find(p => p.sueno)?.sueno ?? undefined, col.a],
+      ["ÁREAS", this.areas.find(a => a.usada)?.pt, col.t],
+      ["SUPERPODERES", this.lista[0]?.poder, col.h]
+    ];
+    ctx.font = `800 ${limitar(12 * escala, 11, 15)}px ${this.fuente}`; ctx.textBaseline = "alphabetic"; ctx.globalAlpha = .9;
+    for (const [texto, pt, color] of capas) {
+      if (!pt) continue;
+      ctx.fillStyle = color;
+      if (this.forma === "columnas") { ctx.textAlign = "center"; ctx.fillText(texto, pt.tx, m.arriba + 14); }
+      else { ctx.textAlign = "left"; ctx.fillText(texto, m.izq, pt.ty - pt.r - 8); }
+    }
+  }
+
+  /* Los textos junto a los puntos: los sueños a la izquierda de su columna, los superpoderes a la derecha.
+     Siempre los del foco; los demás solo si caben (hasta 40 personas). */
+  private etiquetas(f: Enlace | null, escala: number) {
+    const {ctx, col} = this;
+    const tam = limitar(12 * escala, 11, 16);
     const puestas: [number, number, number, number][] = this.reserva.tapa ? [this.reserva.tapa] : [];
     const libre = (x0: number, y0: number, x1: number, y1: number) =>
-      x0 >= 8 && x1 <= this.w - 8 && y0 >= m.arriba - 8 && y1 <= this.h - m.abajo + 8 &&
-      !puestas.some(([a, b, c, d]) => x0 < c && x1 > a && y0 < d && y1 > b);
-    // Los sueños en gris claro; los superpoderes (de quien se suma a un sueño) en el color del superpoder.
-    const poner = (n: Nodo, texto: string, fuerte: boolean, color = fuerte ? col.t : col.m) => {
+      x0 >= 4 && x1 <= this.w - 4 && y0 >= 0 && y1 <= this.h && !puestas.some(([a, b, c, d]) => x0 < c && x1 > a && y0 < d && y1 > b);
+    const poner = (pt: Punto, texto: string, fuerte: boolean, color: string, lados: number[]) => {
       ctx.font = `${fuerte ? 800 : 600} ${fuerte ? tam * 1.15 : tam}px ${this.fuente}`;
-      const ancho = ctx.measureText(texto).width, alto = (fuerte ? tam * 1.15 : tam) * 1.3, sep = n.r + 8;
-      // A la derecha del punto; si no cabe, a la izquierda.
-      for (const lado of [1, -1]) {
-        const x0 = lado > 0 ? n.px + sep : n.px - sep - ancho, y0 = n.py - alto / 2;
+      const ancho = ctx.measureText(texto).width, alto = (fuerte ? tam * 1.15 : tam) * 1.3, sep = pt.r + 6;
+      for (const lado of lados) {
+        const x0 = lado > 0 ? pt.x + sep : pt.x - sep - ancho, y0 = pt.y - alto / 2;
         if (!libre(x0, y0, x0 + ancho, y0 + alto)) continue;
-        puestas.push([x0 - 4, y0, x0 + ancho + 4, y0 + alto]);
+        puestas.push([x0 - 3, y0, x0 + ancho + 3, y0 + alto]);
         ctx.textAlign = "left"; ctx.textBaseline = "middle";
-        ctx.globalAlpha = fuerte ? 1 : (f ? .45 : .82);
-        ctx.lineJoin = "round"; ctx.lineWidth = 4; ctx.strokeStyle = col.bg;
-        ctx.strokeText(texto, x0, n.py);
-        ctx.fillStyle = color;
-        ctx.fillText(texto, x0, n.py);
+        ctx.globalAlpha = fuerte ? 1 : (f ? .5 : .8);
+        ctx.lineWidth = 4; ctx.strokeStyle = col.bg; ctx.strokeText(texto, x0, pt.y);
+        ctx.fillStyle = color; ctx.fillText(texto, x0, pt.y);
         return;
       }
     };
-    // La pareja del foco: el sueño (o el superpoder de quien ayuda, si no tiene sueño).
-    if (f) for (const n of [f.b, f.a]) poner(n, recortar(n.t || n.p, 34), true, n.t ? col.t : col.h);
-    const el = this.elegido;
-    if (el && !(f && (el === f.a || el === f.b))) poner(el, recortar(el.t || el.p, 34), true, el.t ? col.t : col.h);
-    if (hoy.length > MAX_ETIQUETAS) return;
-    // Primero los sueños; después los superpoderes de quienes se suman, en el espacio que quede.
-    for (const n of hoy) {
-      if (!n.t || n === el || (f && (n === f.a || n === f.b))) continue;
-      poner(n, recortar(n.t, 30), false);
+    const filas = this.forma === "filas";
+    // Los del foco (o de quien elegiste): el sueño y el superpoder que hacen match.
+    const fuertes: [Punto, string, boolean][] = [];
+    if (f) {
+      if (f.b.sueno) fuertes.push([f.b.sueno, f.b.t, true]);
+      fuertes.push([f.a.poder, f.a.p, false]);
+      if (f.t === 2) { if (f.a.sueno) fuertes.push([f.a.sueno, f.a.t, true]); fuertes.push([f.b.poder, f.b.p, false]); }
+    } else if (this.elegido) {
+      const e = this.elegido;
+      if (e.sueno) fuertes.push([e.sueno, e.t, true]);
+      fuertes.push([e.poder, e.p, false]);
     }
-    for (const n of hoy) {
-      if (n.t || !n.p || n === el || (f && (n === f.a || n === f.b))) continue;
-      poner(n, recortar(n.p, 26), false, col.h);
+    for (const [pt, texto, esSueno] of fuertes) {
+      if (!texto) continue;
+      poner(pt, recortar(texto, filas ? 26 : 36), true, esSueno ? col.t : col.h, filas ? [1, -1] : esSueno ? [-1, 1] : [1, -1]);
     }
+    if (!this.conTextos) return;
+    for (const p of this.lista) if (p.sueno && p.t && this.visibles.has(p)) poner(p.sueno, recortar(p.t, 32), false, col.m, [-1]);
+    for (const p of this.lista) if (p.p && this.visibles.has(p)) poner(p.poder, recortar(p.p, 32), false, col.h, [1]);
   }
 }

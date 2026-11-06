@@ -60,6 +60,8 @@ export function VistaMapa({activo, demo}: Props) {
     const m = new Motor(lienzo.current);
     m.onFoco = setFoco;
     motor.current = m;
+    // Para que el motor reciba las medidas de la vista apenas existe.
+    window.dispatchEvent(new Event("resize"));
     return () => { m.destruir(); motor.current = null; antes.current = null; setFoco(null); };
   }, [activo]);
 
@@ -71,12 +73,20 @@ export function VistaMapa({activo, demo}: Props) {
       const p = pie.current, t = tarjeta.current;
       // La franja de abajo empieza transparente: la red puede llegar hasta los textos.
       // La red puede pasar por detrás del título: solo se reserva la línea de la leyenda.
-      const ley = p?.querySelector(".mapa-leyenda") as HTMLElement | null;
+      // En pantallas angostas las capas van a lo ancho: ahí se reserva todo el bloque de textos.
+      const ley = p?.querySelector(window.innerWidth <= 700 ? ".mapa-txt" : ".mapa-leyenda") as HTMLElement | null;
       const abajo = p && ley ? p.offsetHeight - ley.offsetTop + 4 : (p ? 60 : 0);
       // Si la tarjeta va arriba a lo ancho (celular, tablet en vertical), la red empieza debajo de ella.
-      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 28;
+      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 64;
+      // En pantallas anchas la tarjeta va a la izquierda. Su espacio se reserva siempre (aunque en ese
+      // momento no haya tarjeta), para que las columnas de la red no salten de lugar.
       const r = t?.getBoundingClientRect();
-      motor.current?.reservar(arriba, abajo, r ? [r.left - 8, r.top - 8, r.right + 8, r.bottom + 8] : null);
+      const ancha = window.innerWidth > 700 && !(t && t.offsetWidth > window.innerWidth * .6) &&
+        !(window.innerWidth <= 1100 && window.innerHeight > window.innerWidth);
+      const tapa: [number, number, number, number] | null = r
+        ? [r.left - 8, r.top - 8, r.right + 8, r.bottom + 8]
+        : ancha ? [0, 0, Math.min(480, window.innerWidth * .3) + Math.min(48, Math.max(16, window.innerWidth * .03)) + 8, 0] : null;
+      motor.current?.reservar(arriba, abajo, tapa);
     };
     medir();
     const ro = new ResizeObserver(medir);

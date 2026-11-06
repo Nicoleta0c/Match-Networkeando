@@ -12,8 +12,9 @@ export type Red = {
   /** Los eventos con gente, del más viejo al más nuevo. */
   eventos: {nombre: string; n: number}[];
   /** k: clave estable sin datos personales; e: índice del evento; s: 1 si escribió un sueño (0 = hacedor).
-      t y p: su sueño y su superpoder, solo en el evento de hoy (nunca el nombre). */
-  nodos: {k: string; e: number; s: 0 | 1; t?: string; p?: string}[];
+      t y p: su sueño y su superpoder, solo en el evento de hoy (nunca el nombre).
+      n: las áreas que necesita su sueño; w: las áreas de su superpoder (números de AREAS). */
+  nodos: {k: string; e: number; s: 0 | 1; t?: string; p?: string; n: number[]; w: number[]}[];
   /** [a, b, tipo] con índices de nodos. En una vía, a es quien ayuda y b quien tiene el sueño. */
   enlaces: [number, number, TipoEnlace][];
 };
@@ -29,9 +30,10 @@ export function construirRed(grupos: {evento: string; perfiles: Perfil[]}[], act
     const base = red.nodos.length;
     // Los textos van solo para el evento de hoy: es lo que se proyecta en el salón.
     const conTexto = g.evento === actual;
-    g.perfiles.forEach(p => red.nodos.push(conTexto
-      ? {k: clave(p.id), e, s: p.idea ? 1 : 0, t: p.idea.slice(0, 140), p: p.power.slice(0, 100)}
-      : {k: clave(p.id), e, s: p.idea ? 1 : 0}));
+    g.perfiles.forEach(p => {
+      const nodo = {k: clave(p.id), e, s: (p.idea ? 1 : 0) as 0 | 1, n: p.idea ? p.needs.slice(0, 3) : [], w: p.powers.slice(0, 2)};
+      red.nodos.push(conTexto ? {...nodo, t: p.idea.slice(0, 140), p: p.power.slice(0, 100)} : nodo);
+    });
     const cerca: [number, number, number][] = [];
     const ps = g.perfiles;
     for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {

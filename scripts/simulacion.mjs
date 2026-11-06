@@ -114,6 +114,23 @@ const GENTE = barajar(barajar(PODERES).map((power, i) => {
   return {power, idea: suenos[i] ?? "", anon, alias: anon ? "" : NOMBRES[i % NOMBRES.length]};
 })).map((d, i) => limpiar("p" + String(i + 1).padStart(3, "0"), {...d, createdAt: i + 1}));
 
+/* node scripts/simulacion.mjs guardar  ->  mete estas 100 personas en el evento de hoy, para ver el
+   Mapa de Sueños lleno. Son perfiles de ejemplo: se borran con npm run ejemplos:borrar. */
+if (process.argv.includes("guardar")) {
+  const { PrismaClient } = await import("@prisma/client");
+  const db = new PrismaClient();
+  const evento = (process.env.EVENTO || "").trim().slice(0, 60) ||
+    new Intl.DateTimeFormat("en-CA", {timeZone: "America/Santo_Domingo", year: "numeric", month: "2-digit", day: "2-digit"}).format(new Date());
+  for (const [i, p] of GENTE.entries()) {
+    const id = "ejemplo-cien-" + String(i + 1).padStart(3, "0");
+    const datos = {idea: p.idea, needs: "[]", power: p.power, anon: p.anon, alias: p.anon ? "" : p.alias, que: "", contact: "", likes: "[]", color: "", createdAt: Date.now() + i, evento};
+    await db.perfil.upsert({where: {id}, create: {id, ...datos}, update: datos});
+  }
+  await db.$disconnect();
+  console.log(`Listo: ${GENTE.length} personas en el evento ${evento}. Para quitarlas: npm run ejemplos:borrar`);
+  process.exit(0);
+}
+
 /* Si dos personas empalman y cómo: igual que el Mapa de Sueños (lib/red.ts). */
 function empalme(a, b) {
   const ab = analizar(a, b), ba = analizar(b, a);
