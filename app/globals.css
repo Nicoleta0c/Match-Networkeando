@@ -66,7 +66,9 @@ main{position:relative;z-index:1}
 .hilo.fino{stroke-width:2.5;opacity:.9}
 .hilo.tenue{opacity:.18;transition:opacity .5s}
 .nudo{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:var(--h);color:var(--on-h);display:grid;place-items:center;font-weight:900;font-size:15px;transform:scale(0);box-shadow:0 0 0 6px var(--bg),0 0 30px var(--hglow)}
-.nudo.ver{animation:pop .45s cubic-bezier(.3,1.5,.5,1) forwards}
+.nudo.ver{animation:pop .45s cubic-bezier(.3,1.5,.5,1) forwards,late 3.2s ease-in-out .7s infinite}
+/* El 98 % late despacito, como un corazón tranquilo. */
+@keyframes late{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes sube{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
@@ -88,8 +90,11 @@ main{position:relative;z-index:1}
 .escena .nudo{z-index:5}
 .duo{position:relative;z-index:1;aspect-ratio:909/553;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .duo img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;filter:drop-shadow(0 20px 30px rgba(0,0,0,.55))}
-.duo.juntar .dL{animation:duoL .9s cubic-bezier(.3,1.45,.5,1) .1s both}
-.duo.juntar .dR{animation:duoR .9s cubic-bezier(.3,1.45,.5,1) .1s both}
+/* Después de juntarse, los dos flotan suave, cada uno a su ritmo (como si respiraran). */
+.duo.juntar .dL{transform-origin:50% 90%;animation:duoL .9s cubic-bezier(.3,1.45,.5,1) .1s both,flotaL 3.8s ease-in-out 1s infinite}
+.duo.juntar .dR{transform-origin:50% 90%;animation:duoR .9s cubic-bezier(.3,1.45,.5,1) .1s both,flotaR 4.4s ease-in-out 1.5s infinite}
+@keyframes flotaL{0%,100%{transform:none}50%{transform:translateY(-6px) rotate(-1.5deg)}}
+@keyframes flotaR{0%,100%{transform:none}50%{transform:translateY(-5px) rotate(1.5deg)}}
 .duo.chico{width:min(240px,62vw);margin:0 auto 16px}
 @keyframes duoL{0%{transform:translateX(-30%) rotate(-7deg);opacity:0}25%{opacity:1}100%{transform:none}}
 @keyframes duoR{0%{transform:translateX(30%) rotate(7deg);opacity:0}25%{opacity:1}100%{transform:none}}
@@ -425,6 +430,8 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .duo.juntar .dL,.duo.juntar .dR{animation:none!important}
+  .nudo.ver{animation:none!important;transform:scale(1)}
 }
 
 .porque-accion{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:6px}
