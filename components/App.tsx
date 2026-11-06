@@ -340,14 +340,14 @@ export default function App() {
       const ids = new Set(cand.map(p => p.id));
       const mapa: ResIA["mapa"] = new Map();
       const txt = (v: unknown) => String(v || "").slice(0, 300).trim();
-      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown; te_ayuda?: unknown; le_ayudas?: unknown; primer_paso?: unknown; rompehielo?: unknown};
+      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown; te_ayuda?: unknown; le_ayudas?: unknown};
       (data && Array.isArray(data.conexiones) ? data.conexiones : []).forEach((m: ConexionIA) => {
         if (!m || typeof m.id !== "string" || !ids.has(m.id) || mapa.has(m.id)) return;
         const teAyuda = txt(m.te_ayuda), leAyudas = txt(m.le_ayudas);
         if (!teAyuda && !leAyudas) return;
         const pct = Math.max(1, Math.min(99, Math.round(Number(m.pct) || 0)));
         const tipo = m.tipo === "doble_via" && teAyuda && leAyudas ? "doble" : "una";
-        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: txt(m.primer_paso), tipo}, rompe: txt(m.rompehielo)});
+        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: "", tipo}, rompe: ""});
       });
       const consejo = data && typeof data.consejo === "string" ? txt(data.consejo) : "";
       // Si la IA no encontró a nadie, igual guardamos su consejo (y nadie de la lista cuenta como match).

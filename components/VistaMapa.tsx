@@ -153,14 +153,13 @@ export function VistaMapa({activo, demo}: Props) {
           <a className="boton chico" href="#inicio">Salir</a>
         </div>
 
-        {/* El foco: un sueño del salón y el superpoder que lo ayuda, sin nombres. */}
-        {foco && <div className="mapa-foco" ref={tarjeta} key={foco.id}>
+        {/* El foco: un sueño del salón, sin nombres. En el mapa solo se ven los sueños. */}
+        {foco && foco.filas.some(x => x.sueno) && <div className="mapa-foco" ref={tarjeta} key={foco.id}>
           {foco.tipo === "sola"
             ? <span className="via" data-tipo="una">Buscando su conexión</span>
             : <Via tipo={foco.tipo}/>}
-          {foco.filas.map((x, i) => <div className="foco-fila" key={i}>
-            {x.sueno && <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>}
-            {x.poder && <p className="foco-poder"><small>Superpoder · lo que mejor sabe hacer</small>{x.poder}</p>}
+          {foco.filas.filter(x => x.sueno).map((x, i) => <div className="foco-fila" key={i}>
+            <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>
           </div>)}
         </div>}
 

@@ -21,8 +21,6 @@ type Enlace = {a: Persona; b: Persona; t: TipoEnlace; i: number};
 type Senal = {ruta: Punto[]; t0: number};
 
 const DURA_FOCO = 6500, DURA_DESTELLO = 1400, DURA_SENAL = 1800, CADA_SENAL = 240, MAX_SENALES = 36;
-/** Con más gente que esto, los textos no caben al lado de cada punto: solo se rotula el foco. */
-const MAX_ETIQUETAS = 40;
 
 const limitar = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const recortar = (t: string, n: number) => t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
@@ -167,7 +165,8 @@ export class Motor {
     if (!this.w) return;
     const m = this.marco();
     this.forma = m.ancho >= m.alto * .9 ? "columnas" : "filas";
-    this.conTextos = this.lista.length <= MAX_ETIQUETAS && this.forma === "columnas";
+    // Los sueños se escriben junto a su punto (los que quepan sin taparse).
+    this.conTextos = this.forma === "columnas";
     const porArea = (arr: number[]) => arr[0] ?? 99;
     const suenos = this.lista.filter(p => p.sueno).sort((x, y) => (porArea(x.needs) - porArea(y.needs)) || (x.orden - y.orden));
     const poderes = [...this.lista].sort((x, y) => (porArea(x.powers) - porArea(y.powers)) || (x.orden - y.orden));
@@ -190,8 +189,9 @@ export class Motor {
     const titulo = 28;
     if (this.forma === "columnas") {
       // Si hay textos al lado de los puntos, las columnas de afuera dejan espacio para ellos.
-      const margenTexto = this.conTextos ? Math.min(m.ancho * .24, 280) : m.ancho * .06;
-      const xS = m.izq + margenTexto, xP = m.izq + m.ancho - margenTexto, xA = (xS + xP) / 2;
+      // Los textos de los sueños van a la izquierda de su columna: ahí se deja espacio.
+      const margenTexto = this.conTextos ? Math.min(m.ancho * .28, 320) : m.ancho * .06;
+      const xS = m.izq + margenTexto, xP = m.izq + m.ancho - m.ancho * .05, xA = (xS + xP) / 2;
       const y0 = m.arriba + titulo, y1 = m.arriba + m.alto;
       repartir(suenos.map(p => p.sueno!), xS, y0, y1, 9);
       repartir(poderes.map(p => p.poder), xP, y0, y1, 9);
@@ -259,7 +259,7 @@ export class Motor {
     if (ahora < this.fijoHasta) return;
     if (this.filtro === "sola") {
       if (this.elegido && ahora - this.focoDesde < DURA_FOCO) return;
-      const solos = this.lista.filter(p => !p.empalma && (p.t || p.p));
+      const solos = this.lista.filter(p => !p.empalma && p.t);
       if (!solos.length) { if (this.elegido) { this.elegido = null; this.onFoco?.(null); } return; }
       this.focoI = (this.focoI + 1) % solos.length;
       const p = solos[this.focoI];
@@ -456,8 +456,8 @@ export class Motor {
     }
   }
 
-  /* Los textos junto a los puntos: los sueños a la izquierda de su columna, los superpoderes a la derecha.
-     Siempre los del foco; los demás solo si caben (hasta 40 personas). */
+  /* Los sueños escritos junto a sus puntos, a la izquierda de su columna.
+     Siempre los del foco; los demás, los que quepan sin taparse. */
   private etiquetas(f: Enlace | null, escala: number) {
     const {ctx, col} = this;
     const tam = limitar(12 * escala, 11, 16);
@@ -479,23 +479,14 @@ export class Motor {
       }
     };
     const filas = this.forma === "filas";
-    // Los del foco (o de quien elegiste): el sueño y el superpoder que hacen match.
-    const fuertes: [Punto, string, boolean][] = [];
-    if (f) {
-      if (f.b.sueno) fuertes.push([f.b.sueno, f.b.t, true]);
-      fuertes.push([f.a.poder, f.a.p, false]);
-      if (f.t === 2) { if (f.a.sueno) fuertes.push([f.a.sueno, f.a.t, true]); fuertes.push([f.b.poder, f.b.p, false]); }
-    } else if (this.elegido) {
-      const e = this.elegido;
-      if (e.sueno) fuertes.push([e.sueno, e.t, true]);
-      fuertes.push([e.poder, e.p, false]);
-    }
-    for (const [pt, texto, esSueno] of fuertes) {
-      if (!texto) continue;
-      poner(pt, recortar(texto, filas ? 26 : 36), true, esSueno ? col.t : col.h, filas ? [1, -1] : esSueno ? [-1, 1] : [1, -1]);
-    }
+    // En el mapa solo se escriben los sueños: primero los del foco (o de quien elegiste), en grande.
+    const fuertes: Punto[] = [];
+    const conSueno = (p: Persona) => { if (p.sueno && p.t) fuertes.push(p.sueno); };
+    if (f) { conSueno(f.b); if (f.t === 2) conSueno(f.a); }
+    else if (this.elegido) conSueno(this.elegido);
+    const textoDe = new Map(this.lista.filter(p => p.sueno).map(p => [p.sueno as Punto, p.t]));
+    for (const pt of fuertes) poner(pt, recortar(textoDe.get(pt) || "", filas ? 26 : 40), true, col.t, filas ? [1, -1] : [-1, 1]);
     if (!this.conTextos) return;
-    for (const p of this.lista) if (p.sueno && p.t && this.visibles.has(p)) poner(p.sueno, recortar(p.t, 32), false, col.m, [-1]);
-    for (const p of this.lista) if (p.p && this.visibles.has(p)) poner(p.poder, recortar(p.p, 32), false, col.h, [1]);
+    for (const p of this.lista) if (p.sueno && p.t && this.visibles.has(p) && !fuertes.includes(p.sueno)) poner(p.sueno, recortar(p.t, 36), false, col.m, [-1]);
   }
 }

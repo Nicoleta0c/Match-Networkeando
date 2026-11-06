@@ -204,24 +204,22 @@ export function analizar(me: Perfil | null, o: Perfil | null): Analisis {
   return {pct, a, b, razones, rompe, conexion: conexionBasica(me, o, aT, b, kwA, kwB)};
 }
 
-/* El método básico (sin IA) también dice cómo se ayudan, no solo qué escribió cada uno. */
+/* En qué se pueden ayudar, dicho de forma general (por área). Los detalles los hablan ellos en persona. */
+const AYUDA_GENERAL: Record<number, string> = {
+  1: "la parte de tecnología", 2: "el diseño", 3: "la comunicación y el contenido", 4: "las ventas y el marketing",
+  5: "los números y el dinero", 6: "la organización", 7: "enseñar y explicar", 8: "la salud y el bienestar",
+  9: "la comunidad", 10: "construir y armar cosas", 11: "la investigación y los datos", 12: "lo legal y los trámites"
+};
+
+/* El método básico (sin IA) dice en qué se pueden ayudar, sin entrar en detalles. */
 function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: string[], kwB: string[]): Conexion | undefined {
-  const quien = esAnon(o) ? "Esta persona" : o.alias.split(/\s+/)[0];
-  // "diseñarte el logo" -> "diseñarle el logo": la misma acción, pero para la otra persona.
-  const paraEl = (t: string) => t.replace(/^(\S+?)te\b/, "$1le");
   let teAyuda = "", leAyudas = "";
-  if (me.idea && aT.length) teAyuda = `${quien} puede ${accion(o, aT[0]).puede}.`;
-  else if (me.idea && kwA.length) teAyuda = `${quien} sabe de lo mismo que necesita tu sueño: te puede orientar y decirte por dónde empezar.`;
-  if (o.idea && b.length) leAyudas = `Tú puedes ${paraEl(accion(me, b[0]).puede)}.`;
-  else if (o.idea && kwB.length) leAyudas = "Lo que tú sabes hacer tiene que ver con su sueño: le puedes dar tu opinión y tus consejos.";
+  if (me.idea && aT.length) teAyuda = `Te puede ayudar con ${AYUDA_GENERAL[aT[0]]}.`;
+  else if (me.idea && kwA.length) teAyuda = "Sabe de lo mismo que necesita tu sueño.";
+  if (o.idea && b.length) leAyudas = `Tú le puedes ayudar con ${AYUDA_GENERAL[b[0]]}.`;
+  else if (o.idea && kwB.length) leAyudas = "Lo que tú sabes hacer tiene que ver con su sueño.";
   if (!teAyuda && !leAyudas) return undefined;
-  const doble = !!(teAyuda && leAyudas);
-  const paso = doble
-    ? "Escríbele por el chat, búsquense y en 5 minutos cuéntense qué le falta a cada sueño."
-    : teAyuda
-      ? "Escríbele por el chat y pídele 5 minutos para contarle tu sueño y lo que te falta."
-      : "Escríbele por el chat y ofrécele tu ayuda con su sueño: son 5 minutos.";
-  return {teAyuda, leAyudas, paso, tipo: doble ? "doble" : "una"};
+  return {teAyuda, leAyudas, paso: "", tipo: teAyuda && leAyudas ? "doble" : "una"};
 }
 
 /* El match es "al revés" cuando tú le sirves a su idea pero su superpoder no le aporta a la tuya. */

@@ -2,7 +2,7 @@
 /* Piezas pequeñas de la interfaz. Cada una reemplaza una función *HTML() del original. */
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Cara } from "./Buscando";
-import { alReves, colorDe, esAnon, iniciales, nombre, sinComillas, type Analisis, type Conexion, type Item, type Perfil } from "@/lib/match";
+import { alReves, colorDe, esAnon, iniciales, nombre, type Analisis, type Conexion, type Item, type Perfil } from "@/lib/match";
 
 const varCSS = (vars: Record<string, string>) => vars as CSSProperties;
 
@@ -93,15 +93,13 @@ export function Via({tipo}: {tipo: Conexion["tipo"]}) {
   );
 }
 
-/* Cómo se ayudan: qué hace por tu sueño, qué haces tú por el suyo, el primer paso y el rompehielo.
-   En las tarjetas pequeñas (corto) no va el primer paso. */
-function Ayuda({c, rompe, corto}: {c: Conexion; rompe?: string; corto?: boolean}) {
+/* En qué se pueden ayudar, en general: qué hace por tu sueño y qué haces tú por el suyo.
+   Nada más: los detalles los hablan ellos en persona. */
+function Ayuda({c, corto}: {c: Conexion; corto?: boolean}) {
   return (
     <dl className={"ayuda" + (corto ? " corto" : "")}>
-      {c.teAyuda && <div><dt>Te ayuda con</dt><dd>{c.teAyuda}</dd></div>}
-      {c.leAyudas && <div><dt>Tú le ayudas con</dt><dd>{c.leAyudas}</dd></div>}
-      {!corto && c.paso && <div><dt>Primer paso</dt><dd>{c.paso}</dd></div>}
-      {rompe && <div className="ayuda-rompe"><dt>Rompehielo</dt><dd>“{sinComillas(rompe)}”</dd></div>}
+      {c.teAyuda && <div><dt>Para tu sueño</dt><dd>{c.teAyuda}</dd></div>}
+      {c.leAyudas && <div><dt>Para su sueño</dt><dd>{c.leAyudas}</dd></div>}
     </dl>
   );
 }
@@ -113,11 +111,8 @@ export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazone
     <div className="pie">
       {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su sueño" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
       {conRazones && (c
-        ? <><Via tipo={c.tipo}/><Ayuda c={c} rompe={x.r.rompe} corto/></>
-        : <>
-          <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>
-          {x.r.rompe && <p className="rompe-mini">Rompehielo: “{sinComillas(x.r.rompe)}”</p>}
-        </>)}
+        ? <><Via tipo={c.tipo}/><Ayuda c={c} corto/></>
+        : <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>)}
       {!esAnon(o) && o.contact && <>Escríbele: <Contacto t={o.contact}/></>}
       {accion && <div className="pie-accion">{accion}</div>}
     </div>
@@ -139,7 +134,7 @@ export function Porque({x, accion}: {me: Perfil; x: Item; accion?: ReactNode}) {
       </div>
       <h3>{c ? "Cómo se ayudan" : "Por qué encajan"}</h3>
       {(c || x.r.ia) && <div className="chips">{c && <Via tipo={c.tipo}/>}{x.r.ia && <span className="ia-chip">Según la IA</span>}</div>}
-      {c ? <Ayuda c={c} rompe={x.r.rompe}/> : <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>}
+      {c ? <Ayuda c={c}/> : <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>}
       {accion && <div className="porque-accion">{accion}</div>}
     </div>
   );
