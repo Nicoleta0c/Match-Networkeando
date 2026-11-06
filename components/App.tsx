@@ -52,7 +52,7 @@ type Estado = {
   /** Ya tocó «Ver mi match» después de que empezaron los matches. */
   yaVio: boolean;
   /** Presentadora: las 5 mejores parejas de la última búsqueda (null = todavía no busca). */
-  top: Pareja[] | null; buscandoTop: boolean;
+  top: Pareja[] | null; topI: number; topBusqueda: Busqueda | null; topGanador: string | null;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
 };
@@ -65,7 +65,7 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
-  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false, top: null, buscandoTop: false,
+  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false, top: null, topI: 0, topBusqueda: null, topGanador: null,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -335,7 +335,7 @@ export default function App() {
         // La presentadora empezó los matches: en todos los celulares aparece el botón «Ver mi match».
         const fase: Fase = data.fase === "matches" ? "matches" : "registro";
         const empezo = !primera && S.fase === "registro" && fase === "matches";
-        if (fase === "registro") { S.yaVio = false; S.top = null; }
+        if (fase === "registro") { S.yaVio = false; S.top = null; S.topBusqueda = null; }
         S.fase = fase;
         S.total = Number(data.total) || 0;
         S.presentadora = data.presentadora === true;
@@ -421,12 +421,21 @@ export default function App() {
   // Cada vez que toca «Buscar» se calcula de nuevo con la gente que haya en ese momento.
   const verTop = S.presentadora && !S.demo && S.fase === "matches";
   function buscarTop() {
-    if (S.buscandoTop) return;
-    S.buscandoTop = true; forzar();
-    setTimeout(() => {
-      S.top = mejoresParejas([...S.perfiles.values()].slice(0, 300), 5).top;
-      S.buscandoTop = false; forzar();
-    }, 2200);
+    if (S.topBusqueda) return;
+    // Primera vez, o ya mostró las 5: busca la lista de nuevo con la gente que haya ahora.
+    if (!S.top || S.topI >= S.top.length - 1) { S.top = mejoresParejas([...S.perfiles.values()].slice(0, 300), 5).top; S.topI = 0; }
+    else S.topI++;
+    const par = S.top[S.topI];
+    if (!par) { forzar(); return; }
+    // La misma animación del match normal: el hilo prueba con varias personas y se queda con la que encaja.
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const total = reduce ? 500 : 2200;
+    const otros = [...S.perfiles.values()].filter(o => o.id !== par.suena.id && o.id !== par.ayuda.id).sort(() => Math.random() - .5).slice(0, 5);
+    const pasos = ["Revisando " + S.perfiles.size + " perfiles…", "Comparando sueños con superpoderes…", "Eligiendo quién encaja mejor…"];
+    S.topBusqueda = {id: Date.now(), muestra: [...otros, par.ayuda], pasos, total, reduce}; S.topGanador = null;
+    forzar();
+    setTimeout(() => { S.topGanador = par.ayuda.id; forzar(); }, total);
+    setTimeout(() => { S.topBusqueda = null; S.topGanador = null; forzar(); }, total + (reduce ? 0 : 1600));
   }
 
   let aviso: ReactNode = null;
@@ -449,7 +458,7 @@ export default function App() {
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
           esperando={!hayMatches()} personas={S.demo ? S.perfiles.size : S.total}
           revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch}
-          admin={verTop ? {top: S.top, buscando: S.buscandoTop, onBuscar: buscarTop} : null}/>
+          admin={verTop ? {pareja: S.top?.[S.topI] ?? null, i: S.topI, n: S.top?.length ?? 0, buscado: S.top !== null, busqueda: S.topBusqueda, ganador: S.topGanador, onBuscar: buscarTop} : null}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.demo ? S.perfiles.size : S.total} pares={pares}
           fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaPanel activo={S.vista === "panel"} cambiando={S.cambiandoFase} onFase={cambiarFase}/>

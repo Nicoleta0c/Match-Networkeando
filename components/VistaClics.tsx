@@ -1,6 +1,6 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { UMBRAL, nombreVisible, type Item, type Pareja, type Perfil } from "@/lib/match";
+import { UMBRAL, esAnon, nombre, type Item, type Pareja, type Perfil } from "@/lib/match";
 import { Aviso, Carta, Duo, Pie, Porque } from "./ui";
 import { Buscando, type Busqueda } from "./Buscando";
 
@@ -19,36 +19,14 @@ type Props = {
   /** Ya empezaron los matches y todavía no vio el suyo: se muestra el botón «Ver mi match». */
   revelar: boolean; onRevelar: () => void;
   /** Solo la presentadora, cuando empezaron los matches: busca las 5 mejores parejas para mostrar. */
-  admin: {top: Pareja[] | null; buscando: boolean; onBuscar: () => void} | null;
+  admin: {pareja: Pareja | null; i: number; n: number; buscado: boolean; busqueda: Busqueda | null; ganador: string | null; onBuscar: () => void} | null;
 };
 
 export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, admin, ...resto}: Props) {
   if (admin) return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
-      <h2 className="titulo" id="t-clics">Los mejores matches</h2>
-      {admin.buscando
-        ? <div className="vacio-grande buscando-top" aria-live="polite"><Duo/><p>Buscando los mejores matches entre {resto.personas} personas…</p></div>
-        : admin.top === null
-          ? <div className="vacio-grande"><Duo chico/><p>Toca el botón y la app busca las 5 parejas que mejor encajan en el evento.</p>
-              <button className="boton fuerte" type="button" onClick={admin.onBuscar}>Buscar los mejores matches</button></div>
-          : !admin.top.length
-            ? <div className="vacio-grande"><Duo chico/><p>Todavía no hay matches. Prueba de nuevo cuando llegue más gente.</p>
-                <button className="boton fuerte" type="button" onClick={admin.onBuscar}>Buscar de nuevo</button></div>
-            : <>
-          <div className="m-cabeza"><button className="boton chico" type="button" onClick={admin.onBuscar}>Buscar de nuevo</button></div>
-          <ol className="panel-top">
-            {admin.top.map(x => (
-              <li key={x.suena.id + x.ayuda.id}>
-                <b className="panel-top-pct">{x.pct} %</b>
-                <div>
-                  <p><small>Sueño de {nombreVisible(x.suena)}</small>{x.suena.idea}</p>
-                  <p><small>Superpoder de {nombreVisible(x.ayuda)}</small>{x.ayuda.power}</p>
-                  {x.doble && <p className="panel-top-doble">Se ayudan los dos</p>}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </>}
+      <h2 className="titulo" id="t-clics">{admin.busqueda ? "La app busca un match" : "Matches"}</h2>
+      <Admin a={admin}/>
     </section>
   );
   return (
@@ -129,5 +107,31 @@ function Otros({n, children}: {n: number; children: ReactNode}) {
       </h3>
       <div className="otros" id="otros-lista" hidden={!abierto}>{children}</div>
     </section>
+  );
+}
+
+/* La presentadora: busca un match a la vez, con la misma animación y la misma tarjeta que ve cada persona. */
+function Admin({a}: {a: NonNullable<Props["admin"]>}) {
+  const p = a.pareja;
+  if (a.busqueda && p) return <Buscando key={a.busqueda.id} b={a.busqueda} me={p.suena} pasoFinal={null} ganador={a.ganador} pct={p.pct}
+    etiqueta={esAnon(p.suena) ? "Sueño anónimo" : "Sueño de " + nombre(p.suena)} listo="¡Listo! Encontramos un match."/>;
+  if (!p) return (
+    <div className="vacio-grande">
+      <Duo chico/>
+      <p>{a.buscado ? "Todavía no hay matches. Prueba de nuevo cuando llegue más gente." : "Toca el botón y la app busca un match."}</p>
+      <button className="boton fuerte" type="button" onClick={a.onBuscar}>Buscar match</button>
+    </div>
+  );
+  const ultimo = a.i >= a.n - 1;
+  return (
+    <>
+      <div className="m-cabeza">
+        <button className="boton chico" type="button" onClick={a.onBuscar}>{ultimo ? "Buscar de nuevo" : "Seguir buscando"}</button>
+      </div>
+      <div className="mejor" aria-label="Match">
+        <Carta p={p.ayuda} me={p.suena} analisis={p.r} sinCabeza tercera/>
+        <Porque me={p.suena} x={{o: p.ayuda, r: p.r}}/>
+      </div>
+    </>
   );
 }

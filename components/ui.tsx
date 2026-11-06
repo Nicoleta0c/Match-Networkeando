@@ -46,15 +46,16 @@ export function Contacto({t}: {t: string}) {
 
 /* Tarjeta de un match: tu idea y su superpoder.
    Se invierte (su idea y tu superpoder) si no tienes idea propia o si eres tú quien le sirve a su idea. */
-export function Carta({p, me, analisis, pie, sinCabeza}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode; sinCabeza?: boolean}) {
+export function Carta({p, me, analisis, pie, sinCabeza, tercera}: {p: Perfil; me: Perfil; analisis: Analisis; pie?: ReactNode; sinCabeza?: boolean; tercera?: boolean}) {
   // Cada parte dice de quién es: "Sueño de Luis", "Superpoder de Camila".
   // Lo tuyo dice "Tu sueño"; lo de otra persona, con su nombre o "anónimo" si no lo puso.
-  const de = (x: Perfil, campo: string, tuyo: string) => x === me ? tuyo : esAnon(x) ? campo + " anónimo" : campo + " de " + x.alias.split(/\s+/)[0];
+  // tercera: la presentadora mira el match de otras dos personas, así que nada dice "Tu".
+  const de = (x: Perfil, campo: string, tuyo: string) => x === me && !tercera ? tuyo : esAnon(x) ? campo + " anónimo" : campo + " de " + x.alias.split(/\s+/)[0];
   const t = me.idea && !alReves(me, analisis)
     ? {ideaDe: me, ideaLbl: de(me, "Sueño", "Tu sueño"), ideaTxt: me.idea, poderDe: p, poderLbl: de(p, "Superpoder", "Tu superpoder"), poderTxt: p.power}
     : {ideaDe: p, ideaLbl: de(p, "Sueño", "Tu sueño"), ideaTxt: p.idea, poderDe: me, poderLbl: de(me, "Superpoder", "Tu superpoder"), poderTxt: me.power};
   // La carita de quien escribió cada parte: la tuya en el color de la app, la del otro en su color.
-  const cara = (x: Perfil) => <Cara color={x === me ? "var(--a)" : esAnon(x) ? "#3A3A34" : colorDe(x)}/>;
+  const cara = (x: Perfil) => <Cara color={x === me && !tercera ? "var(--a)" : esAnon(x) ? "#3A3A34" : colorDe(x)}/>;
   return (
     <article className="carta" data-id={p.id}>
       {!sinCabeza && <div className="cabeza">

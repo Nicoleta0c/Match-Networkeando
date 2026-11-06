@@ -23,7 +23,7 @@ const recortar = (t: string, n: number) => t.length > n ? t.slice(0, n - 1).trim
 
 /* Tu carita a la izquierda; a la derecha va pasando cada persona del salón y la onda se teje
    entre los dos. Al final se queda con tu match y muestra cuánto encajan. */
-export function Buscando({b, me, pasoFinal, ganador, pct}: {b: Busqueda; me: Perfil; pasoFinal: string | null; ganador: string | null; pct: number | null}) {
+export function Buscando({b, me, pasoFinal, ganador, pct, etiqueta = "Tu sueño", listo = "¡Listo! Encontramos tu match."}: {b: Busqueda; me: Perfil; pasoFinal: string | null; ganador: string | null; pct: number | null; etiqueta?: string; listo?: string}) {
   const caja = useRef<HTMLDivElement>(null);
   const hilo = useRef<SVGPathElement>(null);
   const [i, setI] = useState(0);
@@ -60,7 +60,7 @@ export function Buscando({b, me, pasoFinal, ganador, pct}: {b: Busqueda; me: Per
         <svg className="hilos" aria-hidden="true"><path className="hilo" ref={hilo}/></svg>
         <div className="extremo tu">
           <Cara color="var(--a)"/>
-          <div className="ficha"><small>Tu sueño</small><p>{recortar(me.idea || me.power, 70)}</p></div>
+          <div className="ficha"><small>{etiqueta}</small><p>{recortar(me.idea || me.power, 70)}</p></div>
         </div>
         {otro && (
           <div className="extremo otro" key={otro.id}>
@@ -70,7 +70,7 @@ export function Buscando({b, me, pasoFinal, ganador, pct}: {b: Busqueda; me: Per
         )}
         {ganador && pct != null && <div className="compatible">{pct}% compatible</div>}
       </div>
-      <p className="estado" aria-live="polite">{ganador ? "¡Listo! Encontramos tu match." : (pasoFinal ?? paso)}</p>
+      <p className="estado" aria-live="polite">{ganador ? listo : (pasoFinal ?? paso)}</p>
     </>
   );
 }

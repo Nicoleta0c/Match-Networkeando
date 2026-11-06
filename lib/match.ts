@@ -339,16 +339,16 @@ export function ordenarMatches(me: Perfil, perfiles: Iterable<Perfil>): Item[] {
 }
 
 /** Una pareja: «suena» es la persona cuyo sueño recibe ayuda; «ayuda», la del superpoder. */
-export type Pareja = { suena: Perfil; ayuda: Perfil; pct: number; doble: boolean };
+export type Pareja = { suena: Perfil; ayuda: Perfil; pct: number; doble: boolean; r: Analisis };
 
 /** Todas las parejas con match (ordenadas de mejor a peor) y las n mejores sin repetir personas. */
 export function mejoresParejas(perfiles: Perfil[], n: number): { total: number; top: Pareja[] } {
   const lista: Pareja[] = [];
   for (let i = 0; i < perfiles.length; i++) for (let j = i + 1; j < perfiles.length; j++) {
     const a = perfiles[i], b = perfiles[j];
-    const ab = analizar(a, b).pct, ba = analizar(b, a).pct;
+    const rab = analizar(a, b), rba = analizar(b, a), ab = rab.pct, ba = rba.pct;
     if (Math.max(ab, ba) < UMBRAL) continue;
-    lista.push(ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL});
+    lista.push(ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL, r: rab} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL, r: rba});
   }
   lista.sort((x, y) => y.pct - x.pct);
   const usados = new Set<string>(), top: Pareja[] = [];
@@ -359,7 +359,5 @@ export function mejoresParejas(perfiles: Perfil[], n: number): { total: number; 
   }
   return {total: lista.length, top};
 }
-
-export const nombreVisible = (p: Perfil) => p.anon || !p.alias ? "Anónimo" : p.alias;
 
 export const sinComillas = (t: string) => t.replace(/^[“"]|[”"]$/g, "");
