@@ -237,11 +237,10 @@ function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: s
   if (o.idea && b.length) leAyudas = `Tu superpoder le puede ayudar con ${AYUDA_GENERAL[b[0]]} de su sueño.`;
   else if (o.idea && kwB.length) leAyudas = "Tu superpoder tiene que ver con lo que necesita su sueño.";
   if (!teAyuda && !leAyudas) return undefined;
-  // La respuesta que se muestra: cómo te ayuda a ti (o cómo ayudas tú), y si es de ida y vuelta, se dice al final.
+  // La respuesta que se muestra: cómo te ayuda a ti. Solo si esa persona no te aporta (o no tienes sueño), cómo ayudas tú.
   let texto: string;
   if (me.idea && aT.length) {
     texto = `Su superpoder encaja con ${AYUDA_GENERAL[aT[0]]} de tu sueño. Te puede ayudar a ${AYUDA_DETALLE[aT[0]]}.`;
-    if (o.idea && b.length) texto += ` Y tú también puedes aportar con ${AYUDA_GENERAL[b[0]]} de su sueño.`;
   } else if (teAyuda) {
     texto = "Su superpoder tiene que ver con lo que necesita tu sueño: es una buena persona para pedirle consejo y empezar.";
   } else if (o.idea && b.length) {
