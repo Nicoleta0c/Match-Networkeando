@@ -287,6 +287,10 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
 .mapa-txt h1{font-size:clamp(24px,2.6vw,44px);text-wrap:balance}
 .mapa-dato{margin-top:4px;font-size:clamp(13px,1vw,17px);font-weight:700;color:var(--m);font-variant-numeric:tabular-nums}
 .mapa-leyenda{display:flex;flex-wrap:wrap;gap:4px 18px;margin:10px 0 0;padding:0;list-style:none;font-size:clamp(12px,.85vw,15px);font-weight:700;color:var(--t);font-variant-numeric:tabular-nums}
+.filtrar{display:flex;align-items:center;gap:8px;min-height:32px;padding:3px 10px;margin:-3px -10px;border:1px solid transparent;border-radius:999px;background:none;color:inherit;font:inherit;cursor:pointer;transition:background-color .2s,border-color .2s,opacity .2s}
+.filtrar[aria-pressed="true"]{background:color-mix(in srgb,var(--h) 16%,var(--s));border-color:var(--h)}
+.mapa-leyenda:has(.filtrar[aria-pressed="true"]) .filtrar[aria-pressed="false"]{opacity:.5}
+@media (hover:hover) and (pointer:fine){.filtrar:hover{border-color:var(--b2)}}
 .mapa-leyenda li{display:flex;align-items:center;gap:8px}
 .mapa-leyenda b{font-weight:900}
 .mapa-leyenda svg{width:22px;height:11px;flex:none}

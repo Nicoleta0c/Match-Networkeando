@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { QR } from "./QR";
 import { Via } from "./ui";
-import { Motor, type Foco } from "./mapaMotor";
+import { Motor, type Filtro, type Foco } from "./mapaMotor";
 import type { Perfil } from "@/lib/match";
 import { construirRed, nombreEvento, type Red } from "@/lib/red";
 
@@ -18,6 +18,7 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
   const [pantalla, setPantalla] = useState(false);
   const [anuncio, setAnuncio] = useState("");
   const [foco, setFoco] = useState<Foco | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
   const pie = useRef<HTMLDivElement>(null);
   const tarjeta = useRef<HTMLDivElement>(null);
@@ -82,6 +83,9 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     return () => { ro.disconnect(); window.removeEventListener("resize", medir); };
   }, [activo, foco]);
   useEffect(() => { motor.current?.datos(red); }, [red, activo]);
+  useEffect(() => { motor.current?.filtrar(filtro); }, [filtro, activo]);
+  // Al salir del mapa, el filtro se quita.
+  useEffect(() => { if (!activo) setFiltro(null); }, [activo]);
 
   const datos = useMemo(() => {
     if (!red) return null;
@@ -143,20 +147,20 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
             : <Via tipo={foco.tipo}/>}
           {foco.filas.map((x, i) => <div className="foco-fila" key={i}>
             {x.sueno && <p className="foco-sueno"><small>Sueño</small>{x.sueno}</p>}
-            {x.poder && <p className="foco-poder"><small>{foco.tipo === "sola" ? (x.sueno ? "Su superpoder" : "Pone su superpoder") : "Lo impulsa el superpoder"}</small>{x.poder}</p>}
+            {x.poder && <p className="foco-poder"><small>Superpoder · lo que mejor sabe hacer</small>{x.poder}</p>}
           </div>)}
         </div>}
 
         <div className="mapa-pie" ref={pie}>
           <div className="mapa-txt">
             <h1 id="t-mapa">Mapa de Sueños</h1>
-            {linea && <p className="mapa-dato">{linea}<span className="mapa-pista"> · Toca un punto para ver su sueño</span></p>}
+            {linea && <p className="mapa-dato">{linea}<span className="mapa-pista"> · Toca un punto para ver su sueño, o un tipo de match para filtrar</span></p>}
             {c && !vacio && <ul className="mapa-leyenda">
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--a)"/></svg>Trae un sueño</li>
               <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" fill="var(--h)"/></svg>Pone su superpoder</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="4" strokeLinecap="round"/></svg><b>{c.doble}</b>&nbsp;se impulsan los dos</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="2" strokeLinecap="round" opacity=".55"/></svg><b>{c.una}</b>&nbsp;uno impulsa al otro</li>
-              <li><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;buscando su conexión</li>
+              <li><Filtrar f="doble" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="4" strokeLinecap="round"/></svg><b>{c.doble}</b>&nbsp;se impulsan los dos</Filtrar></li>
+              <li><Filtrar f="una" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7h24" stroke="var(--h)" strokeWidth="2" strokeLinecap="round" opacity=".55"/></svg><b>{c.una}</b>&nbsp;uno impulsa al otro</Filtrar></li>
+              <li><Filtrar f="sola" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;buscando su conexión</Filtrar></li>
             </ul>}
           </div>
           <figure className="mapa-qr">
@@ -167,5 +171,14 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
         <p className="sr" aria-live="polite">{anuncio}</p>
       </div>
     </section>
+  );
+}
+
+/* Un tipo de la leyenda que también es botón: filtra la red. Otro clic quita el filtro. */
+function Filtrar({f, actual, onCambiar, children}: {f: Filtro; actual: Filtro; onCambiar: (f: Filtro) => void; children: React.ReactNode}) {
+  return (
+    <button type="button" className="filtrar" aria-pressed={actual === f} onClick={() => onCambiar(actual === f ? null : f)}>
+      {children}
+    </button>
   );
 }
