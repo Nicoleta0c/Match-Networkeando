@@ -48,6 +48,18 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
     else setPideClave("Clave incorrecta. Inténtalo otra vez.");
   };
 
+  /* Opciones discretas al final del panel: repetir los matches o borrar todo el evento. */
+  const [aviso, setAviso] = useState("");
+  const accion = async (a: "repetir" | "borrarTodo") => {
+    if (a === "repetir" && !confirm("¿Mostrar el match de nuevo? A todos les vuelve a salir el botón «Ver mi match».")) return;
+    if (a === "borrarTodo" && !confirm("¿Borrar TODOS los perfiles de este evento y volver a registro? No se puede deshacer.")) return;
+    if (a === "borrarTodo" && prompt("Para confirmar, escribe BORRAR") !== "BORRAR") return;
+    const r = await fetch("/api/panel", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({accion: a})});
+    const d = await r.json().catch(() => ({}));
+    setAviso(!r.ok ? "No se pudo. Inténtalo otra vez." : a === "repetir" ? "Listo: a todos les vuelve a salir «Ver mi match»." : `Listo: se borraron ${d.borrados ?? 0} perfiles y el evento volvió a registro.`);
+    setPagina(0); setVuelta(v => v + 1);
+  };
+
   const cambiarQuitado = async (id: string, quitar: boolean) => {
     setOcupado(id);
     try {
@@ -140,6 +152,15 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
             <button type="button" className="boton chico" disabled={pag >= paginas - 1} onClick={() => setPagina(pag + 1)}>Siguiente</button>
           </nav>
         )}
+
+        <details className="panel-opciones">
+          <summary>Opciones</summary>
+          <div>
+            {fase === "matches" && <button type="button" className="boton chico" onClick={() => accion("repetir")}>Mostrar match de nuevo</button>}
+            <button type="button" className="boton chico panel-quitar" onClick={() => accion("borrarTodo")}>Borrar todo</button>
+          </div>
+          {aviso && <p className="panel-nota" role="status">{aviso}</p>}
+        </details>
       </>}
     </section>
   );

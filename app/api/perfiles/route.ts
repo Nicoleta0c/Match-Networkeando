@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { db, aDocumento } from "@/lib/db";
 import { miId } from "@/lib/identidad";
 import { eventoActual } from "@/lib/evento";
-import { leerFase, leerQuitados } from "@/lib/almacen";
+import { leerFase, leerQuitados, leerRonda } from "@/lib/almacen";
 import { esPresentadora } from "@/lib/presentadora";
 
 /* GET /api/perfiles: los perfiles de este evento (máximo 800) y quién eres tú.
@@ -14,13 +14,13 @@ import { esPresentadora } from "@/lib/presentadora";
 export async function GET(req: NextRequest) {
   const yo = await miId(req);
   const evento = eventoActual();
-  const [filas, fase, quitados, presentadora] = await Promise.all([
+  const [filas, fase, quitados, presentadora, ronda] = await Promise.all([
     db.perfil.findMany({where: {evento}, orderBy: {createdAt: "desc"}, take: 800}),
-    leerFase(evento), leerQuitados(evento), esPresentadora(req)
+    leerFase(evento), leerQuitados(evento), esPresentadora(req), leerRonda(evento)
   ]);
   const validos = filas.filter(f => !quitados.has(f.id));
   const visibles = fase === "matches" || presentadora ? validos : validos.filter(f => f.id === yo);
-  const cuerpo = JSON.stringify({yo, fase, presentadora, total: validos.length, quitado: quitados.has(yo), perfiles: visibles.map(aDocumento)});
+  const cuerpo = JSON.stringify({yo, fase, ronda, presentadora, total: validos.length, quitado: quitados.has(yo), perfiles: visibles.map(aDocumento)});
   const etag = '"' + createHash("sha1").update(cuerpo).digest("base64url") + '"';
   const cabeceras = {"Cache-Control": "private, no-cache", "ETag": etag, "Content-Type": "application/json"};
   if (req.headers.get("if-none-match") === etag) return new Response(null, {status: 304, headers: cabeceras});

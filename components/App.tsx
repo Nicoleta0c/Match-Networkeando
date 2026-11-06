@@ -51,6 +51,8 @@ type Estado = {
   total: number; presentadora: boolean;
   /** Ya tocó «Ver mi match» después de que empezaron los matches. */
   yaVio: boolean;
+  /** Ronda de matches: si la presentadora pide «Mostrar match de nuevo», sube y a todos les vuelve el botón. */
+  ronda: number;
   /** Presentadora: las 5 mejores parejas de la última búsqueda (null = todavía no busca). */
   top: Pareja[] | null; topI: number; topBusqueda: Busqueda | null; topGanador: string | null;
   toast: {texto: string; ver: boolean};
@@ -65,7 +67,7 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
-  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false, top: null, topI: 0, topBusqueda: null, topGanador: null,
+  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false, ronda: 0, top: null, topI: 0, topBusqueda: null, topGanador: null,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -318,7 +320,7 @@ export default function App() {
         // "no-cache" deja que el navegador pregunte "¿cambió algo?" (ETag) y reciba un 304 vacío si no.
         const r = await fetch("/api/perfiles", {cache: "no-cache"});
         if (!r.ok) throw new ErrorAPI(r.status);
-        const data: {yo: string; fase?: Fase; total?: number; presentadora?: boolean; perfiles: Record<string, unknown>[]} = await r.json();
+        const data: {yo: string; fase?: Fase; ronda?: number; total?: number; presentadora?: boolean; perfiles: Record<string, unknown>[]} = await r.json();
         if (parado) return;
         clearTimeout(lento);
         S.slow = false; S.avail = "ok"; fallos = 0;
@@ -336,6 +338,10 @@ export default function App() {
         const fase: Fase = data.fase === "matches" ? "matches" : "registro";
         const empezo = !primera && S.fase === "registro" && fase === "matches";
         if (fase === "registro") { S.yaVio = false; S.top = null; S.topBusqueda = null; }
+        const ronda = Number(data.ronda) || 0;
+        const repetir = !primera && ronda !== S.ronda && fase === "matches";
+        S.ronda = ronda;
+        if (repetir) { S.yaVio = false; S.top = null; S.topBusqueda = null; }
         S.fase = fase;
         S.total = Number(data.total) || 0;
         S.presentadora = data.presentadora === true;
@@ -343,8 +349,8 @@ export default function App() {
         if (!S.presentadora && !S.demo && S.vista === "proyectar") irA("inicio");
         if (primera) { primera = false; cargarNotificados(); }
         forzar();
-        if (empezo && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "panel" && S.vista !== "mapa") {
-          toast("¡Empezaron los matches!");
+        if ((empezo || repetir) && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "panel" && S.vista !== "mapa") {
+          toast(repetir ? "¡Puedes buscar tu match de nuevo!" : "¡Empezaron los matches!");
           irA("clics");
         }
         if (!S.demo && S.vista === "clics" && S.buscarAlLlegar && yo() && hayMatches()) { S.buscarAlLlegar = false; buscarMatch(); }
