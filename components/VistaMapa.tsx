@@ -2,7 +2,6 @@
 /* Mapa de Sueños: la red en vivo para la pantalla grande.
    Es general: muestra a todo el mundo, de todos los eventos, y crece de evento en evento. */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { QR } from "./QR";
 import { Via } from "./ui";
 import { Motor, type Filtro, type Foco } from "./mapaMotor";
 import type { Perfil } from "@/lib/match";
@@ -10,9 +9,9 @@ import { construirRed, nombreEvento, type Red } from "@/lib/red";
 
 const CADA_MS = 5000;
 
-type Props = {activo: boolean; qrUrl: string; demo: Map<string, Perfil> | null};
+type Props = {activo: boolean; demo: Map<string, Perfil> | null};
 
-export function VistaMapa({activo, qrUrl, demo}: Props) {
+export function VistaMapa({activo, demo}: Props) {
   const [redReal, setRedReal] = useState<Red | null>(null);
   const [error, setError] = useState(false);
   const [pantalla, setPantalla] = useState(false);
@@ -70,9 +69,11 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
     if (!activo) return;
     const medir = () => {
       const p = pie.current, t = tarjeta.current;
-      const abajo = p ? p.offsetHeight - 40 : 0;
+      // La franja de abajo empieza transparente: la red puede llegar hasta los textos.
+      const txt = p?.querySelector(".mapa-txt") as HTMLElement | null;
+      const abajo = p && txt ? p.offsetHeight - txt.offsetTop + 8 : 0;
       // Si la tarjeta va arriba a lo ancho (celular, tablet en vertical), la red empieza debajo de ella.
-      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 72;
+      const arriba = t && t.offsetWidth > window.innerWidth * .6 ? t.offsetTop + t.offsetHeight + 12 : 48;
       const r = t?.getBoundingClientRect();
       motor.current?.reservar(arriba, abajo, r ? [r.left - 8, r.top - 8, r.right + 8, r.bottom + 8] : null);
     };
@@ -164,10 +165,6 @@ export function VistaMapa({activo, qrUrl, demo}: Props) {
               <li><Filtrar f="sola" actual={filtro} onCambiar={setFiltro}><svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" fill="none" stroke="var(--m)" strokeWidth="1.8"/></svg><b>{c.solos}</b>&nbsp;buscando su conexión</Filtrar></li>
             </ul>}
           </div>
-          <figure className="mapa-qr">
-            <QR url={qrUrl}/>
-            <figcaption>Escanea y súmate al mapa</figcaption>
-          </figure>
         </div>
         <p className="sr" aria-live="polite">{anuncio}</p>
       </div>

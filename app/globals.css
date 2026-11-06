@@ -294,15 +294,11 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
 .mapa-leyenda li{display:flex;align-items:center;gap:8px}
 .mapa-leyenda b{font-weight:900}
 .mapa-leyenda svg{width:22px;height:11px;flex:none}
-.mapa-qr{margin:0;flex:none;width:clamp(110px,8vw,170px);background:#fff;color:#141414;border-radius:22px;padding:14px 14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 18px 40px -18px rgba(0,0,0,.8)}
-.mapa-qr .qr{width:100%;aspect-ratio:1;display:grid;place-items:center}
-.mapa-qr canvas{width:100%;height:auto;display:block;image-rendering:pixelated}
-.mapa-qr figcaption{font-weight:900;font-size:clamp(13px,1vw,17px);line-height:1.2;text-align:center;letter-spacing:-.01em}
 .mapa-vacio{position:absolute;inset:0 0 30vh;display:grid;place-items:center;padding:24px;text-align:center;pointer-events:none}
 .mapa-vacio p{max-width:24ch;font-size:clamp(22px,2.6vw,40px);font-weight:900;letter-spacing:-.02em;line-height:1.15;color:var(--m);text-wrap:balance}
 .mapa .salir .boton{white-space:nowrap}
 /* El foco: el sueño en grande y el superpoder que lo impulsa */
-.mapa-foco{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(16px,3vh,40px));left:clamp(20px,4vw,64px);width:min(560px,36vw);display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:20px 24px;border-radius:24px;background:color-mix(in srgb,var(--s) 92%,transparent);border:1px solid var(--b);box-shadow:0 24px 48px -24px rgba(0,0,0,.8);animation:sube .5s var(--ease) both}
+.mapa-foco{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(16px,3vh,40px));left:clamp(16px,3vw,48px);width:min(480px,30vw);display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:20px 24px;border-radius:24px;background:color-mix(in srgb,var(--s) 92%,transparent);border:1px solid var(--b);box-shadow:0 24px 48px -24px rgba(0,0,0,.8);animation:sube .5s var(--ease) both}
 .foco-fila{display:flex;flex-direction:column;gap:10px;width:100%}
 .foco-fila+.foco-fila{padding-top:14px;border-top:1px solid var(--b)}
 .mapa-foco small{display:block;margin-bottom:2px;font-size:clamp(12px,.9vw,15px);font-weight:800;letter-spacing:.02em}
@@ -319,7 +315,7 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
   .foco-fila+.foco-fila{display:none}
   .foco-sueno{font-size:14px}
   .foco-poder{font-size:12px}
-  .mapa-qr,.mapa-pantalla,.mapa-pista{display:none}
+  .mapa-pantalla,.mapa-pista{display:none}
   .mapa-pie{padding-top:24px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
   .mapa-txt h1{font-size:18px}
   .mapa-dato{font-size:12px;margin-top:0}
@@ -340,7 +336,7 @@ body[data-view="mapa"] .barra,body[data-view="mapa"] .paletas{display:none}
   .foco-poder{font-size:14px}
   /* En el celular cabe un solo sueño en la tarjeta; el otro lado de la doble vía se ve en la red. */
   .foco-fila+.foco-fila{display:none}
-  .mapa-qr,.mapa-pantalla{display:none}
+  .mapa-pantalla{display:none}
   .mapa-pie{padding-top:36px}
   .mapa-txt h1{font-size:22px}
   .mapa-pista{display:none}

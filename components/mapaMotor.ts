@@ -209,7 +209,7 @@ export class Motor {
   /* Margen que ocupan los textos de la vista, para que la red no quede detrás. */
   private marco() {
     const abajo = this.reserva.abajo > 0 ? limitar(this.reserva.abajo, 0, this.h * .6) : limitar(this.h * .3, 150, 300);
-    const arriba = limitar(this.reserva.arriba, 56, this.h * .45), lado = this.w > 700 ? 40 : 12;
+    const arriba = limitar(this.reserva.arriba, 40, this.h * .45), lado = this.w > 700 ? 40 : 12;
     // En pantallas anchas la tarjeta del foco va a la izquierda: la red usa el espacio a su derecha.
     const t = this.reserva.tapa, izq = t && this.w > 700 && t[2] < this.w * .45 ? t[2] + 16 : lado;
     return {abajo, arriba, lado, izq, ancho: this.w - izq - lado, cx: (izq + this.w - lado) / 2, cy: arriba + (this.h - abajo - arriba) / 2};
@@ -306,7 +306,7 @@ export class Motor {
     const bw = Math.max(x1 - x0 + pad * 2, 160), bh = Math.max(y1 - y0 + pad * 2, 160);
     const escala = Math.min(this.w, this.h) / 800;
     let k = Math.min(m.ancho / bw, (this.h - m.arriba - m.abajo) / bh);
-    k = limitar(k, .08, 4.6 * Math.max(escala, .6));
+    k = limitar(k, .08, 6 * Math.max(escala, .6));
     return {x: (x0 + x1) / 2, y: (y0 + y1) / 2, k};
   }
 
