@@ -13,15 +13,15 @@ web
 
 ## Product Purpose
 
-La gente escribe su **sueño** (lo que quiere lograr) y su **superpoder** (lo que sabe hacer). La app los empareja en vivo y explica **cómo se pueden ayudar entre sí**: qué hace el otro por tu sueño, qué haces tú por el suyo, un primer paso para hoy y un rompehielo. El éxito es que la gente se levante y hable con su match en el mismo evento.
+La gente escribe su **sueño** (lo que quiere lograr) y su **superpoder** (lo que sabe hacer). La app los empareja en vivo y muestra **el sueño de alguien y quién lo puede ayudar** (su superpoder). Los detalles los hablan ellos en persona. El éxito es que la gente se levante y hable con su match en el mismo evento.
 
 ## Positioning
 
-No es un directorio de contactos: empareja sueños con superpoderes y explica la ayuda concreta en las dos direcciones (doble vía / una vía). Los registros forman el **Mapa de Sueños**, que crece de evento en evento.
+No es un directorio de contactos: empareja sueños con superpoderes, en una o en las dos direcciones. Los registros forman el **Mapa de Sueños**, que crece de evento en evento.
 
 ## Operating Context
 
-- Flujo: QR en pantalla → formulario de dos preguntas (nombre y contacto opcionales; se puede ser anónimo) → búsqueda del match en vivo → chat solo con tu mejor match.
+- Flujo: QR en pantalla → formulario de dos preguntas (nombre y contacto opcionales; se puede ser anónimo) → fase de registro (esperan) → la presentadora empieza los matches → cada quien ve su match. No hay chat: se encuentran en persona.
 - La vista para proyectar se ve en pantalla grande, desde lejos, en un salón.
 - Primer evento (lanzamiento): 6 de noviembre de 2026.
 
@@ -45,7 +45,7 @@ No es un directorio de contactos: empareja sueños con superpoderes y explica la
 
 ## Product Principles
 
-1. Explicar cómo se ayudan, no repetir lo que cada uno escribió.
+1. Mostrar el sueño y quién lo puede ayudar; los detalles se hablan en persona.
 2. Simple y rápido: todo cabe en 10 minutos y se entiende en un celular de pie.
 3. La privacidad primero: se puede participar anónimo, y a los anónimos no se les inventa nombre ni se les pide contacto.
 4. Lo que se proyecta es real y en vivo.

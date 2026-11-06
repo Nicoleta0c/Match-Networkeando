@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 /* Identidad anónima.
    La cookie guarda una LLAVE secreta al azar que JavaScript no puede leer. Tu id (el que ven los demás
-   en el match, el chat y el mapa) sale de esa llave con un hash: con la llave se calcula el id, pero
+   en el match y en el mapa) sale de esa llave con un hash: con la llave se calcula el id, pero
    con el id no se puede sacar la llave. Así nadie puede hacerse pasar por otra persona copiando su id.
 
    Antes la cookie se llamaba "nw_uid" y era igual al id, que la app muestra a todos. Por eso esa

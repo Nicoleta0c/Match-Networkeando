@@ -1,11 +1,9 @@
 "use client";
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, claveIA, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
-import type { Mensaje } from "@/lib/chat";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
+import { UMBRAL, aplicarIA, analizar, claveIA, limpiar, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Fase } from "@/lib/fase";
-import { respuestaDemo } from "@/lib/respuestasDemo";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
 import { Barra } from "./Barra";
@@ -16,7 +14,6 @@ import { VistaProyectar } from "./VistaProyectar";
 import { VistaMapa } from "./VistaMapa";
 import { Paletas } from "./Paletas";
 import type { Busqueda } from "./Buscando";
-import { BotonChat, Chat, ListaChats } from "./Chat";
 
 /* Enlace público de esta página: el QR apunta aquí + #perfil.
    Por defecto es la dirección donde está corriendo la app. Al publicarla en internet
@@ -52,11 +49,7 @@ type Estado = {
   fase: Fase; cambiandoFase: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
-  chat: Charla; chatDemo: Charla; chatCon: string | null; chatLista: boolean; leido: Record<string, number> | null; escribiendo: string | null;
 };
-type Charla = {mensajes: Mensaje[]; bloqueados: Set<string>};
-const charlaVacia = (): Charla => ({mensajes: [], bloqueados: new Set()});
-export type Conv = {id: string; ultimo: Mensaje; sinLeer: number};
 const estadoInicial = (): Estado => ({
   vista: "inicio",
   demo: false, uid: null, realUid: null,
@@ -68,8 +61,7 @@ const estadoInicial = (): Estado => ({
   iaDisponible: false, iaRes: null, iaFallo: false,
   fase: "registro", cambiandoFase: false,
   toast: {texto: "", ver: false},
-  shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, ""),
-  chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, chatLista: false, leido: null, escribiendo: null
+  shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
 
 export default function App() {
@@ -83,8 +75,7 @@ export default function App() {
   const yo = () => S.uid ? S.perfiles.get(S.uid) ?? null : null;
   /** ¿Ya se pueden ver los matches? En la demo, siempre. */
   const hayMatches = () => S.demo || S.fase === "matches";
-  // Las personas que bloqueaste ya no aparecen entre tus matches.
-  const misMatches = (me: Perfil) => aplicarIA(me, ordenarMatches(me, [...S.perfiles.values()].filter(p => !charla().bloqueados.has(p.id))), S.iaRes);
+  const misMatches = (me: Perfil) => aplicarIA(me, ordenarMatches(me, [...S.perfiles.values()]), S.iaRes);
 
   /* ---------- toast ---------- */
   function toast(t: string) {
@@ -109,107 +100,6 @@ export default function App() {
     try { localStorage.setItem("clic-notificados", JSON.stringify([...vistos].slice(-500))); } catch {}
   }
 
-  /* ---------- chat temporal con los matches ---------- */
-  const charla = () => S.demo ? S.chatDemo : S.chat;
-  function cargarLeido() {
-    if (S.leido) return S.leido;
-    let o: unknown = {};
-    try { o = JSON.parse(localStorage.getItem("chat-leido") || "{}"); } catch {}
-    S.leido = o && typeof o === "object" && !Array.isArray(o) ? o as Record<string, number> : {};
-    return S.leido;
-  }
-  /** Marca como leído lo que te escribió esta persona. */
-  function marcarLeido(id: string) {
-    const l = cargarLeido();
-    const ult = charla().mensajes.filter(m => m.de === id).at(-1);
-    if (!ult || (l[id] ?? 0) >= ult.creado) return;
-    l[id] = ult.creado;
-    if (!S.demo) try { localStorage.setItem("chat-leido", JSON.stringify(l)); } catch {}
-  }
-  /** Una conversación por persona, la más reciente primero. */
-  function conversaciones(): Conv[] {
-    const yoId = S.uid, l = cargarLeido(), c = charla(), m = new Map<string, Conv>();
-    for (const x of c.mensajes) {
-      const otro = x.de === yoId ? x.para : x.de;
-      if (c.bloqueados.has(otro)) continue;
-      const v = m.get(otro) ?? {id: otro, ultimo: x, sinLeer: 0};
-      v.ultimo = x;
-      if (x.de === otro && x.creado > (l[otro] ?? 0)) v.sinLeer++;
-      m.set(otro, v);
-    }
-    return [...m.values()].sort((a, b) => b.ultimo.creado - a.ultimo.creado);
-  }
-  /* En la demo, la persona de ejemplo contesta cada mensaje: con la IA si hay clave; si no, con respuestas de la app. */
-  async function contestarDemo(para: string) {
-    const inicio = Date.now();
-    const historial = S.chatDemo.mensajes.filter(m => m.de === para || m.para === para).map(m => ({mio: m.de !== para, texto: m.texto}));
-    let texto: string | null = null;
-    if (S.iaDisponible) try {
-      const me = yo();
-      const r = await fetch("/api/chat/demo", {method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({otro: para, yo: me && {idea: me.idea, power: me.power, anon: esAnon(me)}, historial})});
-      if (r.ok) texto = ((await r.json()) as {texto?: string}).texto || null;
-    } catch {}
-    if (!texto) {
-      const otro = S.perfiles.get(para);
-      const yaContesto = historial.filter(m => !m.mio).length;
-      const ultimo = historial[historial.length - 1]?.texto || "";
-      if (otro) texto = respuestaDemo(otro, ultimo, yaContesto);
-    }
-    // Una pausa corta para que se sienta como alguien escribiendo.
-    await new Promise(res => setTimeout(res, Math.max(0, 1200 - (Date.now() - inicio))));
-    if (!S.demo || !S.uid) return;
-    if (S.escribiendo === para) S.escribiendo = null;
-    if (texto) {
-      const t = Date.now();
-      S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -t, de: para, para: S.uid, texto, creado: t}]};
-      if (S.chatCon === para) marcarLeido(para);
-    }
-    forzar();
-  }
-  function abrirChat(id: string) { S.chatCon = id; S.chatLista = false; marcarLeido(id); forzar(); }
-  const cerrarChat = useCallback(() => { S.chatCon = null; S.chatLista = false; forzar(); }, [S]);
-  const volverALista = useCallback(() => { S.chatCon = null; S.chatLista = true; forzar(); }, [S]);
-  async function enviarMensaje(texto: string) {
-    const para = S.chatCon;
-    if (!para || !S.uid) return false;
-    if (S.demo) {
-      const ahora = Date.now();
-      S.chatDemo = {...S.chatDemo, mensajes: [...S.chatDemo.mensajes, {id: -ahora, de: S.uid, para, texto, creado: ahora}]};
-      S.escribiendo = para;
-      forzar();
-      contestarDemo(para);
-      return true;
-    }
-    try {
-      const r = await fetch("/api/chat", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({para, texto})});
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) { toast(d.error || "No se pudo enviar."); return false; }
-      S.chat = {...S.chat, mensajes: [...S.chat.mensajes, d as Mensaje]};
-      forzar();
-      return true;
-    } catch {
-      toast("No se pudo enviar. Revisa tu conexión.");
-      return false;
-    }
-  }
-  async function bloquearChat() {
-    const id = S.chatCon; if (!id) return;
-    const p = S.perfiles.get(id);
-    if (!confirm(`¿Bloquear a ${p ? nombre(p) : "esta persona"}? Ya no podrá escribirte y se borra esta conversación.`)) return;
-    if (!S.demo) {
-      try {
-        const r = await fetch("/api/chat/bloquear", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id})});
-        if (!r.ok) throw new Error();
-      } catch { toast("No se pudo bloquear. Inténtalo otra vez."); return; }
-    }
-    const c = charla();
-    const nueva = {mensajes: c.mensajes.filter(m => m.de !== id && m.para !== id), bloqueados: new Set(c.bloqueados).add(id)};
-    if (S.demo) S.chatDemo = nueva; else S.chat = nueva;
-    S.chatCon = null; forzar();
-    toast("Persona bloqueada");
-  }
-
   /* ---------- rutas ---------- */
   function irA(v: Vista) { if (location.hash !== "#" + v) location.hash = v; else route(); }
   function route() {
@@ -218,7 +108,6 @@ export default function App() {
     document.body.dataset.view = v;
     if (v === "perfil") { formTocado.current = false; S.relleno++; }
     if (v !== "clics") cancelarBusqueda();
-    S.chatCon = null; S.chatLista = false;
     forzar();
     if (v === "clics" && S.buscarAlLlegar && yo() && hayMatches()) { S.buscarAlLlegar = false; buscarMatch(); }
   }
@@ -311,7 +200,7 @@ export default function App() {
   function entrarDemo() {
     if (S.demo) return;
     S.demo = true; S.realUid = S.uid; S.realNotif = S.notificados;
-    S.uid = "demo-yo"; S.notificados = new Set(); S.chatDemo = charlaVacia(); S.chatCon = null;
+    S.uid = "demo-yo"; S.notificados = new Set();
     const m = new Map<string, Perfil>();
     const real = S.realUid && S.real ? S.real.get(S.realUid) : null;
     const base = real ? {idea: real.idea, needs: real.tagsNeeds, power: real.power, anon: real.anon, alias: real.alias, que: real.que, contact: real.contact} : DEMO_YO;
@@ -340,14 +229,14 @@ export default function App() {
       const ids = new Set(cand.map(p => p.id));
       const mapa: ResIA["mapa"] = new Map();
       const txt = (v: unknown) => String(v || "").slice(0, 300).trim();
-      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown; te_ayuda?: unknown; le_ayudas?: unknown};
+      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown};
       (data && Array.isArray(data.conexiones) ? data.conexiones : []).forEach((m: ConexionIA) => {
         if (!m || typeof m.id !== "string" || !ids.has(m.id) || mapa.has(m.id)) return;
-        const teAyuda = txt(m.te_ayuda), leAyudas = txt(m.le_ayudas);
-        if (!teAyuda && !leAyudas) return;
+        if (m.tipo !== "doble_via" && m.tipo !== "te_ayuda" && m.tipo !== "le_ayudas") return;
         const pct = Math.max(1, Math.min(99, Math.round(Number(m.pct) || 0)));
-        const tipo = m.tipo === "doble_via" && teAyuda && leAyudas ? "doble" : "una";
-        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: "", tipo}, rompe: ""});
+        // La app ya no muestra frases: solo quién ayuda a quién.
+        const teAyuda = m.tipo !== "le_ayudas" ? "sí" : "", leAyudas = m.tipo !== "te_ayuda" ? "sí" : "";
+        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: "", tipo: m.tipo === "doble_via" ? "doble" : "una"}, rompe: ""});
       });
       const consejo = data && typeof data.consejo === "string" ? txt(data.consejo) : "";
       // Si la IA no encontró a nadie, igual guardamos su consejo (y nadie de la lista cuenta como match).
@@ -453,33 +342,8 @@ export default function App() {
         if (!parado) siguiente = setTimeout(cargar, CADA_MS);
       }
     }
-    // El chat se revisa aparte: más seguido mientras tienes una conversación abierta.
-    let firmaChat = "", sigChat: ReturnType<typeof setTimeout> | undefined;
-    async function cargarChat() {
-      try {
-        if (!S.demo && !document.hidden && S.uid) {
-          const r = await fetch("/api/chat", {cache: "no-cache"});
-          const txt = r.ok ? await r.text() : "";
-          if (txt && !parado && txt !== firmaChat) {
-            const primeraVez = !firmaChat;
-            firmaChat = txt;
-            const d: {mensajes: Mensaje[]; bloqueados: string[]} = JSON.parse(txt);
-            const antes = new Set(S.chat.mensajes.map(m => m.id));
-            S.chat = {mensajes: d.mensajes, bloqueados: new Set(d.bloqueados)};
-            if (S.chatCon) marcarLeido(S.chatCon);
-            // Aviso de mensajes nuevos que llegan mientras no tienes ese chat abierto.
-            const nuevo = primeraVez ? null : d.mensajes.findLast(m => !antes.has(m.id) && m.de !== S.uid && m.de !== S.chatCon);
-            if (nuevo) { const p = S.perfiles.get(nuevo.de); toast("Nuevo mensaje de " + (p ? nombre(p) : "un match")); }
-            forzar();
-          }
-        }
-      } catch {} finally {
-        if (!parado) sigChat = setTimeout(cargarChat, S.chatCon ? 2500 : CADA_MS);
-      }
-    }
     cargar();
-    cargarChat();
-    return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); clearTimeout(sigChat); };
+    return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); };
   }
 
   // Cada vista empieza arriba. Va después de pintar la vista nueva; si no, el navegador
@@ -515,9 +379,7 @@ export default function App() {
   const conIA = !!(me && S.iaRes && S.iaRes.clave === claveIA(me));
   function puede() { return S.demo || (S.avail === "ok" && !!S.uid); }
 
-  if (S.chatCon) marcarLeido(S.chatCon);
-  const convs = me ? conversaciones() : [];
-  let burbuja = convs.reduce((n, c) => n + c.sinLeer, 0);
+  let burbuja = 0;
   if (me && S.vista !== "clics" && hayMatches()) {
     const vistos = cargarNotificados();
     burbuja += todos.filter(x => x.r.pct >= UMBRAL && !vistos.has(x.o.id)).length;
@@ -529,16 +391,6 @@ export default function App() {
   });
 
   const enProyectar = S.vista === "proyectar";
-  // El chat es solo entre tú y tu mejor match. Si alguien te tiene a ti como su mejor match y te escribe,
-  // también puedes contestarle.
-  // En la fase de registro todavía no hay match, así que tampoco hay chat.
-  const mejorMatch = hayMatches() ? todos.find(x => x.r.pct >= UMBRAL)?.o : undefined;
-  const genteChat = mejorMatch ? [mejorMatch] : [];
-  for (const c of convs) {
-    const p = S.perfiles.get(c.id);
-    if (p && c.ultimo && charla().mensajes.some(m => m.de === p.id) && !genteChat.some(g => g.id === p.id)) genteChat.push(p);
-  }
-  const abrirChats = () => { if (genteChat.length === 1) abrirChat(genteChat[0].id); else { S.chatLista = true; forzar(); } };
   const perfilesMap = S.perfiles;
   const pares = useMemo(() => {
     if (!enProyectar) return 0;
@@ -573,12 +425,6 @@ export default function App() {
           fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaMapa activo={S.vista === "mapa"} demo={S.demo ? S.perfiles : null}/>
       </main>
-      {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}
-        mensajes={charla().mensajes.filter(m => m.de === S.chatCon || m.para === S.chatCon)}
-        escribiendo={S.escribiendo === S.chatCon} onEnviar={enviarMensaje} onBloquear={bloquearChat} onCerrar={cerrarChat} onVolver={genteChat.length > 1 ? volverALista : undefined}/>}
-      {me && S.chatLista && !S.chatCon && <ListaChats me={me} gente={genteChat} convs={convs} onAbrir={abrirChat} onCerrar={cerrarChat}/>}
-      {me && S.vista === "clics" && !S.chatCon && !S.chatLista && !S.busqueda && genteChat.length > 0 &&
-        <BotonChat sinLeer={convs.reduce((n, c) => n + c.sinLeer, 0)} onAbrir={abrirChats}/>}
       <Paletas/>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>
     </>

@@ -93,34 +93,21 @@ export function Via({tipo}: {tipo: Conexion["tipo"]}) {
   );
 }
 
-/* En qué se pueden ayudar, en general: qué hace por tu sueño y qué haces tú por el suyo.
-   Nada más: los detalles los hablan ellos en persona. */
-function Ayuda({c, corto}: {c: Conexion; corto?: boolean}) {
-  return (
-    <dl className={"ayuda" + (corto ? " corto" : "")}>
-      {c.teAyuda && <div><dt>Para tu sueño</dt><dd>{c.teAyuda}</dd></div>}
-      {c.leAyudas && <div><dt>Para su sueño</dt><dd>{c.leAyudas}</dd></div>}
-    </dl>
-  );
-}
-
 /* Pie de la tarjeta: su sueño, cómo se ayudan y cómo contactarle. */
 export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazones?: boolean; accion?: ReactNode}) {
   const o = x.o, c = x.r.conexion;
   return (
     <div className="pie">
       {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su sueño" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
-      {conRazones && (c
-        ? <><Via tipo={c.tipo}/><Ayuda c={c} corto/></>
-        : <ul className="razones">{x.r.razones.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}</ul>)}
+      {conRazones && c && <Via tipo={c.tipo}/>}
       {!esAnon(o) && o.contact && <>Escríbele: <Contacto t={o.contact}/></>}
       {accion && <div className="pie-accion">{accion}</div>}
     </div>
   );
 }
 
-/* Panel "Cómo se ayudan" con el anillo que se llena hasta el porcentaje. */
-export function Porque({x, accion}: {me: Perfil; x: Item; accion?: ReactNode}) {
+/* Panel del mejor match: el anillo con el porcentaje y quién puede ayudar a quién. */
+export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode}) {
   const fin = (364.4 * (1 - x.r.pct / 100)).toFixed(1);
   const c = x.r.conexion;
   return (
@@ -132,9 +119,9 @@ export function Porque({x, accion}: {me: Perfil; x: Item; accion?: ReactNode}) {
         </svg>
         <b><span>{x.r.pct}%</span></b>
       </div>
-      <h3>{c ? "Cómo se ayudan" : "Por qué encajan"}</h3>
+      {/* Solo el sueño y quién lo puede ayudar (la tarjeta de al lado los muestra). Los detalles, en persona. */}
+      <h3>{me.idea && !alReves(me, x.r) ? "Su superpoder puede ayudar con tu sueño" : "Tu superpoder puede ayudar con su sueño"}</h3>
       {(c || x.r.ia) && <div className="chips">{c && <Via tipo={c.tipo}/>}{x.r.ia && <span className="ia-chip">Según la IA</span>}</div>}
-      {c ? <Ayuda c={c}/> : <ul>{x.r.razones.map((t, i) => <li key={i}>{t}</li>)}</ul>}
       {accion && <div className="porque-accion">{accion}</div>}
     </div>
   );

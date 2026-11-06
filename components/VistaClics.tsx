@@ -59,7 +59,7 @@ function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando
       </div>
       {!conIA && todos.length > 0 && iaFallo && <p className="nota">La IA no respondió, así que la app eligió con su método básico. Toca Buscar de nuevo para intentarlo.</p>}
       {conIA && consejo && !buenos.length && <div className="aviso"><strong>Todavía no hay una conexión clara para ti.</strong> {consejo}</div>}
-      {me.anon && buenos.length > 0 && <div className="aviso"><strong>Tu perfil es anónimo.</strong> Tus matches solo pueden escribirte por el chat de la app. Si quieres, <a href="#perfil">agrega tu nombre y contacto</a>.</div>}
+      {me.anon && buenos.length > 0 && <div className="aviso"><strong>Tu perfil es anónimo.</strong> Tus matches no ven tu contacto. Si quieres que te escriban, <a href="#perfil">agrega tu nombre y contacto</a>.</div>}
       {!todos.length ? (
         <div className="vacio-grande"><Duo chico/><p>Cuando llegue más gente, la app buscará tu match sola. Vuelve en un rato.</p></div>
       ) : <>
