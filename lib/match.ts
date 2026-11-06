@@ -78,6 +78,8 @@ export const COLORES = ["#5B2EFF","#F0306F","#00A884","#FF8A00","#1E88E5","#B517
 export type Perfil = {
   id: string; idea: string; tagsNeeds: number[]; needs: number[];
   power: string; powers: number[];
+  /** La app no entendió de qué trata el sueño (le dio necesidades genéricas): su match no puede ser alto. */
+  generico?: boolean;
   anon: boolean; alias: string; que: string; contact: string;
   likes: string[]; color: string; createdAt: number;
 };
@@ -93,10 +95,11 @@ export function limpiar(id: string, d: Record<string, unknown>): Perfil {
   const powers = inferirPoder(power);
   // Lo que tu idea necesita y tú no sabes hacer: lo que ya cubres con tu superpoder no cuenta.
   let base = elegidas.length ? elegidas : (idea ? [...new Set([...necesita(idea), ...inferir(idea)])] : []);
-  if (idea && !base.length) base = NECESIDAD_COMUN;
+  const generico = !!idea && !base.length;
+  if (generico) base = NECESIDAD_COMUN;
   const faltan = base.filter(x => !powers.includes(x));
   return {
-    id, idea, tagsNeeds: elegidas, needs: (faltan.length ? faltan : base).slice(0, 4),
+    id, idea, generico, tagsNeeds: elegidas, needs: (faltan.length ? faltan : base).slice(0, 4),
     power, powers,
     anon: d.anon !== false, alias: str(d.alias, LIMITES.alias), que: str(d.que, LIMITES.que), contact: str(d.contact, LIMITES.contact),
     likes: Array.isArray(d.likes) ? d.likes.filter((x): x is string => typeof x === "string").slice(-500) : [],
@@ -186,6 +189,8 @@ export function analizar(me: Perfil | null, o: Perfil | null, sal = 0): Analisis
     if (mismoPoder) pts -= 15;
     // Si su superpoder no le aporta nada a tu idea, no puede ser un gran match.
     if (!a.length && !kwA.length) pts = Math.min(pts, UMBRAL - 2);
+    // Si la app no entendió tu sueño ("irme de vacaciones"), no puede asegurar un gran match.
+    if (me.generico) pts = Math.min(pts, 50);
   } else {
     // Sin sueño propio ("te sumas al de alguien"): tu match es la persona a cuyo sueño le sirve tu
     // superpoder. Se mide igual que desde su lado: cuánto cubres de lo que a su sueño le falta.
@@ -193,6 +198,8 @@ export function analizar(me: Perfil | null, o: Perfil | null, sal = 0): Analisis
     pts += Math.min(kwB.length, 3) * 8;
     if (me.powers.some(x => !o.powers.includes(x))) pts += 8;
     if (me.powers.length > 0 && me.powers.every(x => o.powers.includes(x))) pts -= 15;
+    // Si la app no entendió su sueño, no puede asegurar un gran match.
+    if (o.generico) pts = Math.min(pts, 50);
     // Si no tiene sueño, o tu superpoder no le sirve, no hay a qué sumarse.
     if (!o.idea || (!b.length && !kwB.length)) pts = Math.min(pts, UMBRAL - 2);
   }
@@ -403,15 +410,19 @@ export function mejoresParejas(perfiles: Perfil[], n: number): { total: number; 
   const lista: Pareja[] = [];
   for (let i = 0; i < perfiles.length; i++) for (let j = i + 1; j < perfiles.length; j++) {
     const a = perfiles[i], b = perfiles[j];
-    const rab = analizar(a, b), rba = analizar(b, a), ab = rab.pct, ba = rba.pct;
+    // «suena» siempre es alguien que escribió un sueño: sin sueño solo se puede ayudar.
+    const rab = a.idea ? analizar(a, b) : null, rba = b.idea ? analizar(b, a) : null;
+    const ab = rab?.pct ?? 0, ba = rba?.pct ?? 0;
     if (Math.max(ab, ba) < UMBRAL) continue;
-    lista.push(ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL, r: rab} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL, r: rba});
+    lista.push(rab && ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL, r: rab} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL, r: rba!});
   }
   lista.sort((x, y) => y.pct - x.pct);
   const usados = new Set<string>(), frases = new Set<string>(), top: Pareja[] = [];
   for (const x of lista) {
     if (top.length >= n) break;
     if (usados.has(x.suena.id) || usados.has(x.ayuda.id)) continue;
+    // Lo que se proyecta frente a todos: solo sueños que la app entendió.
+    if (x.suena.generico) continue;
     // El texto de la pareja es el mismo que esa persona ve en su lista.
     const mio = ordenarMatches(x.suena, perfiles).find(y => y.o.id === x.ayuda.id);
     if (mio) x.r = mio.r;
