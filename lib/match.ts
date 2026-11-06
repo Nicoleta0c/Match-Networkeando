@@ -370,6 +370,13 @@ export function aplicarIA(me: Perfil, lista: Item[], res: ResIA | null): Item[] 
   const minIA = Math.min(...[...res.mapa.values()].map(v => v.pct));
   return lista.map(x => {
     const v = res.mapa.get(x.o.id);
+    if (v && !me.idea) {
+      // Sin sueño propio, solo puedes ayudar tú al sueño del otro. Si la IA lo escribió al revés
+      // ("te puede ayudar", "tu sueño"), usamos el texto del método básico, que ya va en la dirección correcta.
+      const alRevesIA = /te puede|puede ayudarte|tu sueño|su superpoder/i.test(v.conexion.texto || "");
+      const texto = alRevesIA ? (x.r.conexion?.texto ?? "") : v.conexion.texto;
+      return {o: x.o, r: {...x.r, pct: v.pct, conexion: {...v.conexion, teAyuda: "", leAyudas: "sí", tipo: "una" as const, texto}, rompe: v.rompe || x.r.rompe, ia: true}};
+    }
     if (v) return {o: x.o, r: {...x.r, pct: v.pct, conexion: v.conexion, rompe: v.rompe || x.r.rompe, ia: true}};
     if (res.enviados.has(x.o.id)) return {o: x.o, r: {...x.r, pct: Math.min(x.r.pct, Math.max(5, Math.min(minIA - 1, UMBRAL - 1)))}};
     return x;
