@@ -1,7 +1,8 @@
 /* ¿Quién es la presentadora? Puede cambiar la fase, ver todos los perfiles y quitar los malos.
    - Si en .env.local pusiste CLAVE_PRESENTADORA="...", entra quien escriba esa clave una vez
      (se le guarda una cookie que JavaScript no puede leer).
-   - Si no la pusiste, solo la computadora donde corre la app (localhost). */
+   - Si no la pusiste, solo la computadora donde corre la app (localhost), y solo en desarrollo:
+     publicada (producción) sin clave, nadie es presentadora. Así nadie entra cambiando la dirección. */
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
@@ -15,14 +16,18 @@ const sello = (c: string) => createHash("sha256").update("networkeando-presentad
 
 export async function esPresentadora(req: NextRequest) {
   const c = clave();
-  if (!c) return LOCAL.test(req.headers.get("host") || "");
+  if (!c) return process.env.NODE_ENV !== "production" && LOCAL.test(req.headers.get("host") || "");
   return (await cookies()).get(COOKIE)?.value === sello(c);
 }
 
 /** Si la clave es correcta, deja la cookie puesta (un día). */
 export async function entrar(req: NextRequest, intento: unknown) {
   const c = clave();
-  if (!c || typeof intento !== "string" || intento !== c) return false;
+  if (!c || typeof intento !== "string" || intento !== c) {
+    // Clave equivocada: espera 1 segundo, para que nadie pueda probar miles de claves rápido.
+    if (c && intento !== undefined) await new Promise(r => setTimeout(r, 1000));
+    return false;
+  }
   (await cookies()).set(COOKIE, sello(c), {httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24, secure: req.nextUrl.protocol === "https:"});
   return true;
 }

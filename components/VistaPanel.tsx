@@ -10,6 +10,8 @@ import type { Fase } from "@/lib/fase";
 type Fila = Record<string, unknown> & {id: string; quitado: boolean};
 type Datos = {evento: string; fase: Fase; perfiles: Fila[]};
 const POR_PAGINA = 20;
+const TOP = 7;
+const nombre = (p: Perfil) => p.anon || !p.alias ? "Anónimo" : p.alias;
 
 export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambiando: boolean; onFase: (f: Fase) => void}) {
   const [datos, setDatos] = useState<Datos | null>(null);
@@ -63,11 +65,23 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
       const x = ordenarMatches(p, activos)[0];
       if (x && x.r.pct >= UMBRAL) mejor.set(p.id, {o: x.o, pct: x.r.pct});
     }
-    let pares = 0;
+    /* Cada par: «suena» es la persona cuyo sueño recibe ayuda y «ayuda» la que tiene el superpoder. */
+    const lista: {suena: Perfil; ayuda: Perfil; pct: number; doble: boolean}[] = [];
     for (let i = 0; i < activos.length; i++) for (let j = i + 1; j < activos.length; j++) {
-      if (Math.max(analizar(activos[i], activos[j]).pct, analizar(activos[j], activos[i]).pct) >= UMBRAL) pares++;
+      const a = activos[i], b = activos[j];
+      const ab = analizar(a, b).pct, ba = analizar(b, a).pct;
+      if (Math.max(ab, ba) < UMBRAL) continue;
+      lista.push(ab >= ba ? {suena: a, ayuda: b, pct: ab, doble: ba >= UMBRAL} : {suena: b, ayuda: a, pct: ba, doble: ab >= UMBRAL});
     }
-    return {perfiles, activos: activos.length, quitados: perfiles.length - activos.length, conMatch: mejor.size, pares, mejor};
+    /* Los mejores para presentar: hasta 7, sin repetir personas. */
+    lista.sort((x, y) => y.pct - x.pct);
+    const usados = new Set<string>(), top: typeof lista = [];
+    for (const x of lista) {
+      if (top.length >= TOP) break;
+      if (usados.has(x.suena.id) || usados.has(x.ayuda.id)) continue;
+      usados.add(x.suena.id); usados.add(x.ayuda.id); top.push(x);
+    }
+    return {perfiles, activos: activos.length, quitados: perfiles.length - activos.length, conMatch: mejor.size, pares: lista.length, mejor, top};
   }, [datos]);
 
   const fase = datos?.fase ?? "registro";
@@ -106,6 +120,22 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
                 </>}
           </div>
         </div>
+
+        {calculo.top.length > 0 && <section className="panel-top" aria-labelledby="t-top">
+          <h3 id="t-top">Los mejores matches para presentar</h3>
+          <ol>
+            {calculo.top.map(x => (
+              <li key={x.suena.id + x.ayuda.id}>
+                <b className="panel-top-pct">{x.pct} %</b>
+                <div>
+                  <p><small>Sueño de {nombre(x.suena)}</small>{x.suena.idea}</p>
+                  <p><small>Superpoder de {nombre(x.ayuda)}</small>{x.ayuda.power}</p>
+                  {x.doble && <p className="panel-top-doble">Se ayudan los dos</p>}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>}
 
         <p className="panel-nota">Todos entran aceptados. Si alguien escribió algo que no va, tócale <b>Quitar</b>: deja de salir en los matches y en los números.</p>
 
