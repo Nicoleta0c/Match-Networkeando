@@ -2,7 +2,7 @@
 /* La app completa. Funciona igual que el <script> del index.html original:
    un objeto S guarda el estado y forzar() vuelve a dibujar la pantalla. */
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UMBRAL, aplicarIA, analizar, claveIA, limpiar, mejoresParejas, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
+import { UMBRAL, aplicarIA, analizar, claveIA, limpiar, mejoresParejas, ordenarMatches, type Pareja, type Perfil, type ResIA } from "@/lib/match";
 import type { Fase } from "@/lib/fase";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
@@ -51,6 +51,8 @@ type Estado = {
   total: number; presentadora: boolean;
   /** Ya tocó «Ver mi match» después de que empezaron los matches. */
   yaVio: boolean;
+  /** Presentadora: las 5 mejores parejas de la última búsqueda (null = todavía no busca). */
+  top: Pareja[] | null; buscandoTop: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
 };
@@ -63,7 +65,7 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
-  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false,
+  fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false, top: null, buscandoTop: false,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -333,7 +335,7 @@ export default function App() {
         // La presentadora empezó los matches: en todos los celulares aparece el botón «Ver mi match».
         const fase: Fase = data.fase === "matches" ? "matches" : "registro";
         const empezo = !primera && S.fase === "registro" && fase === "matches";
-        if (fase === "registro") S.yaVio = false;
+        if (fase === "registro") { S.yaVio = false; S.top = null; }
         S.fase = fase;
         S.total = Number(data.total) || 0;
         S.presentadora = data.presentadora === true;
@@ -415,8 +417,17 @@ export default function App() {
   }, [perfilesMap, enProyectar]);
 
   // La presentadora, cuando empiezan los matches, ve en «Matches» las 5 mejores parejas para mostrar.
+  // La presentadora, cuando empiezan los matches, busca con un botón las 5 mejores parejas para mostrar.
+  // Cada vez que toca «Buscar» se calcula de nuevo con la gente que haya en ese momento.
   const verTop = S.presentadora && !S.demo && S.fase === "matches";
-  const top = useMemo(() => verTop ? mejoresParejas([...perfilesMap.values()].slice(0, 300), 5).top : null, [perfilesMap, verTop]);
+  function buscarTop() {
+    if (S.buscandoTop) return;
+    S.buscandoTop = true; forzar();
+    setTimeout(() => {
+      S.top = mejoresParejas([...S.perfiles.values()].slice(0, 300), 5).top;
+      S.buscandoTop = false; forzar();
+    }, 2200);
+  }
 
   let aviso: ReactNode = null;
   if (!S.demo) {
@@ -437,7 +448,8 @@ export default function App() {
         <VistaPerfil activo={S.vista === "perfil"} buscar={S.demo || S.fase === "matches"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
           esperando={!hayMatches()} personas={S.demo ? S.perfiles.size : S.total}
-          revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch} top={top}/>
+          revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch}
+          admin={verTop ? {top: S.top, buscando: S.buscandoTop, onBuscar: buscarTop} : null}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.demo ? S.perfiles.size : S.total} pares={pares}
           fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaPanel activo={S.vista === "panel"} cambiando={S.cambiandoFase} onFase={cambiarFase}/>

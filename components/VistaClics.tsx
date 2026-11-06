@@ -18,18 +18,26 @@ type Props = {
   personas: number;
   /** Ya empezaron los matches y todavía no vio el suyo: se muestra el botón «Ver mi match». */
   revelar: boolean; onRevelar: () => void;
-  /** Solo la presentadora, cuando empezaron los matches: las mejores parejas para mostrar. */
-  top: Pareja[] | null;
+  /** Solo la presentadora, cuando empezaron los matches: busca las 5 mejores parejas para mostrar. */
+  admin: {top: Pareja[] | null; buscando: boolean; onBuscar: () => void} | null;
 };
 
-export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, top, ...resto}: Props) {
-  if (top) return (
+export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, admin, ...resto}: Props) {
+  if (admin) return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
       <h2 className="titulo" id="t-clics">Los mejores matches</h2>
-      {!top.length
-        ? <div className="vacio-grande"><Duo chico/><p>Todavía no hay matches. Aparecen aquí en cuanto haya gente que encaje.</p></div>
-        : <ol className="panel-top">
-            {top.map(x => (
+      {admin.buscando
+        ? <div className="vacio-grande buscando-top" aria-live="polite"><Duo/><p>Buscando los mejores matches entre {resto.personas} personas…</p></div>
+        : admin.top === null
+          ? <div className="vacio-grande"><Duo chico/><p>Toca el botón y la app busca las 5 parejas que mejor encajan en el evento.</p>
+              <button className="boton fuerte" type="button" onClick={admin.onBuscar}>Buscar los mejores matches</button></div>
+          : !admin.top.length
+            ? <div className="vacio-grande"><Duo chico/><p>Todavía no hay matches. Prueba de nuevo cuando llegue más gente.</p>
+                <button className="boton fuerte" type="button" onClick={admin.onBuscar}>Buscar de nuevo</button></div>
+            : <>
+          <div className="m-cabeza"><button className="boton chico" type="button" onClick={admin.onBuscar}>Buscar de nuevo</button></div>
+          <ol className="panel-top">
+            {admin.top.map(x => (
               <li key={x.suena.id + x.ayuda.id}>
                 <b className="panel-top-pct">{x.pct} %</b>
                 <div>
@@ -39,7 +47,8 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
                 </div>
               </li>
             ))}
-          </ol>}
+          </ol>
+        </>}
     </section>
   );
   return (
@@ -59,7 +68,7 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando, personas}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct" | "top">) {
+function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando, personas}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct" | "admin">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">
