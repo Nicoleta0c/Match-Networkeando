@@ -34,6 +34,8 @@ p{margin:0}
 .barra-in{display:flex;align-items:center;gap:16px;height:68px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;letter-spacing:-.03em;text-decoration:none;white-space:nowrap}
 .logo svg{width:34px;height:20px}
+.logo-img{display:block;height:40px;width:auto}
+.logo-proy{display:block;height:clamp(44px,4.5vw,72px);width:auto;margin-bottom:24px}
 .nav{margin-left:auto;display:flex;gap:4px}
 .nav a{position:relative;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none;color:var(--m);font-weight:700;font-size:15px;padding:8px 14px;border-radius:999px;transition:color .2s,background-color .2s}
 .nav a[aria-current="page"]{color:var(--on-h);background:var(--h)}

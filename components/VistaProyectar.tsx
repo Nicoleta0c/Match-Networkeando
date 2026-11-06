@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { QR } from "./QR";
-import { Logo } from "./Barra";
 import type { Fase } from "@/lib/fase";
 
 type Props = {
@@ -32,7 +31,8 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
           <b>Escanea con la cámara</b>
         </figure>
         <div>
-          <p className="logo" style={{marginBottom: 20}}><Logo/>Networkeando RD</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="logo-proy" src="/logo-networkeando.webp" alt="Networkeando RD" width={2000} height={587}/>
           {registro
             ? <h1 id="t-proy">Escanea y escribe tu <span className="marca">sueño</span> y tu superpoder.</h1>
             : <h1 id="t-proy">Escanea y la app te busca tu <span className="marca">match</span>.</h1>}
