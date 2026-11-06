@@ -493,3 +493,6 @@ body[data-view="mapa"] .barra{display:none}
 .panel-opciones summary{cursor:pointer;width:max-content;opacity:.7}
 .panel-opciones summary:hover{opacity:1}
 .panel-opciones>div{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+
+/* Panel: título con el botón del Mapa */
+.panel-titulo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}

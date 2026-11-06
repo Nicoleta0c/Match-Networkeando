@@ -112,8 +112,8 @@ export default function App() {
   function irA(v: Vista) { if (location.hash !== "#" + v) location.hash = v; else route(); }
   function route() {
     const v = vistaActual();
-    // Proyectar es solo para la presentadora: a los demás los manda al inicio.
-    if (v === "proyectar" && S.realLoaded && !S.presentadora && !S.demo) { location.hash = "inicio"; return; }
+    // Proyectar y el Mapa son solo para la presentadora: a los demás los manda al inicio.
+    if ((v === "proyectar" || v === "mapa") && S.realLoaded && !S.presentadora && !S.demo) { location.hash = "inicio"; return; }
     S.vista = v;
     document.body.dataset.view = v;
     if (v === "perfil") { formTocado.current = false; S.relleno++; }
@@ -346,7 +346,7 @@ export default function App() {
         S.total = Number(data.total) || 0;
         S.presentadora = data.presentadora === true;
         // Proyectar es solo para la presentadora: a los demás los manda al inicio.
-        if (!S.presentadora && !S.demo && S.vista === "proyectar") irA("inicio");
+        if (!S.presentadora && !S.demo && (S.vista === "proyectar" || S.vista === "mapa")) irA("inicio");
         if (primera) { primera = false; cargarNotificados(); }
         forzar();
         if ((empezo || repetir) && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "panel" && S.vista !== "mapa") {

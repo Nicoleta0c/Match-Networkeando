@@ -4,6 +4,7 @@ import { aDocumento, db } from "@/lib/db";
 import { limpiar, type Perfil } from "@/lib/match";
 import { eventoActual } from "@/lib/evento";
 import { construirRed, type Red } from "@/lib/red";
+import { esPresentadora } from "@/lib/presentadora";
 
 /* GET /api/mapa: la red del Mapa de Sueños con los dos niveles (todos los eventos y este evento).
    Sin nombres ni textos. Los ids reales no salen: cada persona va con una clave que no se puede
@@ -16,6 +17,8 @@ const sal = (g.__salMapa ??= randomBytes(16).toString("hex"));
 const clave = (id: string) => createHash("sha256").update(sal + id).digest("base64url").slice(0, 12);
 
 export async function GET(req: NextRequest) {
+  // El mapa muestra los sueños de todos: solo lo ve la presentadora.
+  if (!(await esPresentadora(req))) return Response.json({error: "Solo la presentadora puede ver el mapa."}, {status: 403});
   const actual = eventoActual();
   // Los perfiles sin evento son pruebas de antes de esta versión: no cuentan en el mapa.
   const filas = await db.perfil.findMany({where: {evento: {not: ""}}, orderBy: {createdAt: "asc"}, take: MAX_PERFILES});

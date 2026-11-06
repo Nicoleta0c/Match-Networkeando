@@ -87,7 +87,10 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
 
   return (
     <section className="cont vista panel" data-view-panel="panel" aria-labelledby="t-panel" hidden={!activo}>
-      <h2 className="titulo" id="t-panel">Panel</h2>
+      <div className="panel-titulo">
+        <h2 className="titulo" id="t-panel">Panel</h2>
+        {datos && <a className="boton chico" href="#mapa">Mapa</a>}
+      </div>
 
       {pideClave !== null && (
         <form className="panel-clave" onSubmit={entrar}>

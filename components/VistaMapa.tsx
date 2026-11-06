@@ -150,7 +150,7 @@ export function VistaMapa({activo, demo}: Props) {
         <div className="salir">
           <button className="boton chico mapa-pantalla" type="button" hidden={!pantalla} onClick={alternarPantalla}>Pantalla completa</button>
           <a className="boton chico" href="#proyectar">Ver el QR</a>
-          <a className="boton chico" href="#inicio">Salir</a>
+          <a className="boton chico" href="#panel">Volver al panel</a>
         </div>
 
         {/* El foco: un sueño del salón, sin nombres. En el mapa solo se ven los sueños. */}
