@@ -397,6 +397,9 @@ body[data-view="mapa"] .barra{display:none}
   .proy .fase{justify-content:center}
 }
 @media (max-width:640px){
+  /* QR en el celular: más pequeño y proporcional al ancho de la pantalla (170 a 240 px). */
+  .qr-carta,.proy .qr-carta{width:clamp(170px,58vw,240px);padding:14px;gap:8px;border-radius:20px}
+  .qr-carta b,.proy .qr-carta b{font-size:15px}
   /* En el celular, «Crear mi perfil» va centrado. */
   .acciones{justify-content:center}
   /* Proyectar en el celular: sin «Pantalla completa» (no hace falta) y el logo más chico. */
@@ -406,8 +409,6 @@ body[data-view="mapa"] .barra{display:none}
   [data-view-panel="proyectar"] .salir .boton{min-height:36px;padding:6px 14px;font-size:13px}
   .proy{padding-top:80px}
   .proy h1{font-size:clamp(32px,9vw,44px)}
-  .proy .qr-carta{padding:18px;gap:10px;border-radius:22px}
-  .proy .qr-carta b{font-size:18px}
   .panel .cifras{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;justify-content:stretch}
   .panel .cifra{padding:12px 8px;font-size:13px;line-height:1.25;border-radius:18px}
   .panel .cifra b{font-size:28px}
