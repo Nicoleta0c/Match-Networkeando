@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { UMBRAL, aplicarIA, analizar, claveIA, esAnon, limpiar, nombre, ordenarMatches, type Perfil, type ResIA } from "@/lib/match";
 import type { Mensaje } from "@/lib/chat";
+import type { Fase } from "@/lib/fase";
 import { respuestaDemo } from "@/lib/respuestasDemo";
 import { DEMO, DEMO_MATCHES, DEMO_YO } from "@/lib/demo";
 import { Iconos } from "./ui";
@@ -47,6 +48,8 @@ type Estado = {
   notificados: Set<string> | null; realNotif: Set<string> | null;
   busqueda: Busqueda | null; pasoFinal: string | null; ganador: string | null; ganadorPct: number | null; nBusquedas: number;
   iaDisponible: boolean; iaRes: ResIA | null; iaFallo: boolean;
+  /** Fase del evento: en "registro" la gente espera; en "matches" ve su match (la presentadora la cambia). */
+  fase: Fase; cambiandoFase: boolean;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
   chat: Charla; chatDemo: Charla; chatCon: string | null; chatLista: boolean; leido: Record<string, number> | null; escribiendo: string | null;
@@ -63,6 +66,7 @@ const estadoInicial = (): Estado => ({
   notificados: null, realNotif: null,
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
+  fase: "registro", cambiandoFase: false,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, ""),
   chat: charlaVacia(), chatDemo: charlaVacia(), chatCon: null, chatLista: false, leido: null, escribiendo: null
@@ -77,6 +81,8 @@ export default function App() {
   const timers = useRef({busqueda: [] as ReturnType<typeof setTimeout>[], toast: undefined as ReturnType<typeof setTimeout> | undefined});
 
   const yo = () => S.uid ? S.perfiles.get(S.uid) ?? null : null;
+  /** ¿Ya se pueden ver los matches? En la demo, siempre. */
+  const hayMatches = () => S.demo || S.fase === "matches";
   // Las personas que bloqueaste ya no aparecen entre tus matches.
   const misMatches = (me: Perfil) => aplicarIA(me, ordenarMatches(me, [...S.perfiles.values()].filter(p => !charla().bloqueados.has(p.id))), S.iaRes);
 
@@ -214,7 +220,7 @@ export default function App() {
     if (v !== "clics") cancelarBusqueda();
     S.chatCon = null; S.chatLista = false;
     forzar();
-    if (v === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
+    if (v === "clics" && S.buscarAlLlegar && yo() && hayMatches()) { S.buscarAlLlegar = false; buscarMatch(); }
   }
 
   /* ---------- guardar y borrar (real o demo) ---------- */
@@ -272,6 +278,33 @@ export default function App() {
       manejarError(err);
       return false;
     }
+  }
+
+  /* ---------- la presentadora empieza los matches ---------- */
+  async function cambiarFase(fase: Fase) {
+    if (S.demo || S.cambiandoFase) return;
+    S.cambiandoFase = true; forzar();
+    const pedir = (clave?: string) => fetch("/api/fase", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({fase, clave})});
+    try {
+      let clave: string | undefined;
+      try { clave = sessionStorage.getItem("clave-presentadora") || undefined; } catch {}
+      let r = await pedir(clave);
+      let d: {error?: string; pideClave?: boolean} = r.ok ? {} : await r.json().catch(() => ({}));
+      // Si el evento tiene clave, se pide una vez y se recuerda mientras la pestaña esté abierta.
+      if (r.status === 403 && d.pideClave) {
+        const nueva = prompt("Clave de la presentadora");
+        if (nueva) {
+          r = await pedir(nueva);
+          d = r.ok ? {} : await r.json().catch(() => ({}));
+          if (r.ok) try { sessionStorage.setItem("clave-presentadora", nueva); } catch {}
+        }
+      }
+      if (!r.ok) { toast(d.error || "No se pudo cambiar."); return; }
+      S.fase = fase;
+      toast(fase === "matches" ? "¡Empezaron los matches!" : "Volvimos a la fase de registro");
+    } catch {
+      toast("No se pudo cambiar. Revisa la conexión.");
+    } finally { S.cambiandoFase = false; forzar(); }
   }
 
   /* ---------- demo ---------- */
@@ -386,7 +419,7 @@ export default function App() {
         // "no-cache" deja que el navegador pregunte "¿cambió algo?" (ETag) y reciba un 304 vacío si no.
         const r = await fetch("/api/perfiles", {cache: "no-cache"});
         if (!r.ok) throw new ErrorAPI(r.status);
-        const data: {yo: string; perfiles: Record<string, unknown>[]} = await r.json();
+        const data: {yo: string; fase?: Fase; perfiles: Record<string, unknown>[]} = await r.json();
         if (parado) return;
         clearTimeout(lento);
         S.slow = false; S.avail = "ok"; fallos = 0;
@@ -400,9 +433,18 @@ export default function App() {
           S.real = m; S.realLoaded = true;
           if (!S.demo) { S.perfiles = m; S.loaded = true; }
         }
+        // La presentadora empezó los matches: en todos los celulares arranca la búsqueda a la vez.
+        const fase: Fase = data.fase === "matches" ? "matches" : "registro";
+        const empezo = !primera && S.fase === "registro" && fase === "matches";
+        S.fase = fase;
         if (primera) { primera = false; cargarNotificados(); }
         forzar();
-        if (!S.demo && S.vista === "clics" && S.buscarAlLlegar && yo()) { S.buscarAlLlegar = false; buscarMatch(); }
+        if (empezo && !S.demo && yo() && S.vista !== "proyectar" && S.vista !== "mapa") {
+          toast("¡Empezaron los matches!");
+          S.buscarAlLlegar = true;
+          irA("clics");
+        }
+        if (!S.demo && S.vista === "clics" && S.buscarAlLlegar && yo() && hayMatches()) { S.buscarAlLlegar = false; buscarMatch(); }
       } catch {
         if (parado) return;
         // Un fallo suelto no importa; si se repite, avisamos que se perdió la conexión.
@@ -476,20 +518,21 @@ export default function App() {
   if (S.chatCon) marcarLeido(S.chatCon);
   const convs = me ? conversaciones() : [];
   let burbuja = convs.reduce((n, c) => n + c.sinLeer, 0);
-  if (me && S.vista !== "clics") {
+  if (me && S.vista !== "clics" && hayMatches()) {
     const vistos = cargarNotificados();
     burbuja += todos.filter(x => x.r.pct >= UMBRAL && !vistos.has(x.o.id)).length;
   }
 
   // En Mis matches, los matches que ya viste dejan de contar en la burbuja.
   useEffect(() => {
-    if (S.vista === "clics" && !S.busqueda && S.loaded && me) todos.filter(x => x.r.pct >= UMBRAL).forEach(x => marcarNotificado(x.o.id));
+    if (S.vista === "clics" && !S.busqueda && S.loaded && me && hayMatches()) todos.filter(x => x.r.pct >= UMBRAL).forEach(x => marcarNotificado(x.o.id));
   });
 
   const enProyectar = S.vista === "proyectar";
   // El chat es solo entre tú y tu mejor match. Si alguien te tiene a ti como su mejor match y te escribe,
   // también puedes contestarle.
-  const mejorMatch = todos.find(x => x.r.pct >= UMBRAL)?.o;
+  // En la fase de registro todavía no hay match, así que tampoco hay chat.
+  const mejorMatch = hayMatches() ? todos.find(x => x.r.pct >= UMBRAL)?.o : undefined;
   const genteChat = mejorMatch ? [mejorMatch] : [];
   for (const c of convs) {
     const p = S.perfiles.get(c.id);
@@ -524,8 +567,10 @@ export default function App() {
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
-        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}/>
-        <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}/>
+        <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
+          esperando={!hayMatches()} personas={S.perfiles.size}/>
+        <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.perfiles.size} pares={pares}
+          fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
         <VistaMapa activo={S.vista === "mapa"} demo={S.demo ? S.perfiles : null}/>
       </main>
       {me && S.chatCon && <Chat key={S.chatCon} me={me} otroId={S.chatCon} otro={S.perfiles.get(S.chatCon) ?? null}

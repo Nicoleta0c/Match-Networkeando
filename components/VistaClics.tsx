@@ -12,12 +12,16 @@ type Props = {
   /** Si la IA no encontró ninguna conexión: qué tipo de persona te conviene buscar. */
   consejo: string;
   onBuscar: () => void;
+  /** Fase de registro: la presentadora todavía no empezó los matches. */
+  esperando: boolean;
+  /** Cuánta gente hay en el evento. */
+  personas: number;
 };
 
 export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganadorPct, ...resto}: Props) {
   return (
     <section className="cont vista" data-view-panel="clics" aria-labelledby="t-clics" hidden={!activo}>
-      <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : "Mis matches"}</h2>
+      <h2 className="titulo" id="t-clics">{busqueda ? "La app busca tu match por ti" : resto.esperando && resto.me ? "¡Ya estás en el Mapa de Sueños!" : "Mis matches"}</h2>
       <Aviso>{aviso}</Aviso>
       {busqueda && resto.me
         ? <Buscando key={busqueda.id} b={busqueda} me={resto.me} pasoFinal={pasoFinal} ganador={ganador} pct={ganadorPct}/>
@@ -26,13 +30,22 @@ export function VistaClics({activo, aviso, busqueda, pasoFinal, ganador, ganador
   );
 }
 
-function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
+function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando, personas}:Omit<Props, "activo" | "aviso" | "busqueda" | "pasoFinal" | "ganador" | "ganadorPct">) {
   if (!loaded) return null;
   if (!me) return (
     <div className="vacio-grande">
       <Duo chico/>
       <p>Crea tu perfil y la app buscará con quién encajas mejor.</p>
       <div className="acciones"><a className="boton fuerte" href="#perfil">Crear mi perfil</a><a className="boton" href="#demo">Probar la demo</a></div>
+    </div>
+  );
+  // Fase de registro: tu perfil ya está guardado y esperas a que la presentadora empiece los matches.
+  if (esperando) return (
+    <div className="vacio-grande esperando">
+      <Duo chico/>
+      <p><b>Tu sueño y tu superpoder ya están en el mapa.</b> Cuando la presentadora empiece los matches, aquí aparecerá con quién encajas. No cierres esta página.</p>
+      <p className="esperando-cifra" aria-live="polite"><b>{personas}</b> {personas === 1 ? "persona en el mapa" : "personas en el mapa"}</p>
+      <div className="acciones"><a className="boton" href="#perfil">Revisar mi perfil</a></div>
     </div>
   );
   const buenos = todos.filter(x => x.r.pct >= UMBRAL);

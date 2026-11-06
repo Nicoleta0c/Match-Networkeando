@@ -254,6 +254,9 @@ h3.sub-t{font-size:clamp(26px,2.6vw,34px);margin-top:72px}
 .vacio-grande{margin-top:36px;padding:44px;border:1px dashed var(--b2);border-radius:30px;text-align:center;color:var(--m);font-size:19px}
 .vacio-grande p{max-width:48ch;margin:0 auto 20px}
 .vacio-grande .acciones{justify-content:center}
+.esperando p b{color:var(--t)}
+.esperando-cifra{font-weight:700;font-variant-numeric:tabular-nums}
+.esperando-cifra b{display:block;font-size:clamp(44px,8vw,72px);line-height:1;font-weight:900;color:var(--h);letter-spacing:-.03em}
 
 /* proyectar */
 body[data-view="proyectar"] .barra{display:none}
@@ -265,6 +268,12 @@ body[data-view="proyectar"] .barra{display:none}
 .cifra{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:20px 26px;color:var(--m);font-weight:700}
 .cifra b{display:block;font-size:clamp(44px,3.6vw,80px);line-height:1;color:var(--t);font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .cifra:last-child b{color:var(--h)}
+/* Control de la presentadora: empezar los matches */
+.fase{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:32px}
+.fase small{flex-basis:100%;color:var(--m);font-weight:600;font-size:15px}
+.fase-empezar{min-height:64px;padding:16px 34px;font-size:clamp(18px,1.6vw,24px)}
+.fase-lista{display:flex;align-items:center;gap:10px;font-weight:800;font-size:clamp(16px,1.3vw,20px)}
+.fase-lista span{width:12px;height:12px;border-radius:50%;background:var(--h);box-shadow:0 0 0 6px color-mix(in srgb,var(--h) 22%,transparent)}
 .salir{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;display:flex;gap:10px;z-index:5}
 
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translate(-50%,16px);background:var(--t);color:var(--bg);padding:12px 22px;border-radius:999px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--ease);z-index:60}
