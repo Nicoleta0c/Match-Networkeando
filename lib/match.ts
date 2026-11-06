@@ -4,18 +4,18 @@
 export const AREAS = ["Tecnología","Diseño y arte","Comunicación","Ventas y marketing","Negocios y finanzas","Liderazgo y organización","Educación","Salud y bienestar","Impacto social","Hacer con las manos","Investigación","Legal y trámites"];
 export const area = (v: number) => AREAS[v - 1] || "";
 export const CLAVES: Record<number, string[]> = {
-  1:["program","codig","software","app","aplicacion","web","desarroll","react","python","java","flutter","tecnolog","sistemas","base de datos","bases de datos","inteligencia artificial","automatiz","ciberseg","segurid","computad","plataforma"],
-  2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","pint","music","animac","moda","decor"],
-  3:["escrib","redact","comunic","hablo","hablar","publico","present","video","podcast","contenido","edit","locu","period","tiktok","youtube","guion","guiones","cuento","historia"],
-  4:["vend","venta","market","mercad","publicid","marca","cliente","redes","anunc","promo","crecer cuentas","influen","instagram"],
-  5:["negoci","finanz","contab","dinero","invers","presupuest","empren","excel","administr","econom","ahorr","patrocin","costos","precios","fondos"],
-  6:["organiz","lider","coordin","gestion","equipo","evento","planific","logist","proyecto","convenz","motiv"],
-  7:["ensen","educ","tutor","clase","explic","profe","capacit","mentor","taller","aprend","dinamic"],
-  8:["salud","psicol","nutri","deport","entren","medic","enferm","bienestar","yoga","fisio","emocional","estres","escucho"],
-  9:["comunidad","social","volunt","ong","fundaci","ambient","recicl","inclus","barrio","accesib"],
-  10:["constru","repar","arregl","maqueta","planos","electric","carpint","cocin","coser","costur","manualid","mecan","fabric","impresion 3d","hardware","solda","prototip","arduino","herramient"],
-  11:["investig","datos","analiz","analisis","estadist","encuest","cienci","estudio"],
-  12:["legal","ley","leyes","abogad","derecho","contrato","tramit","registr","permiso","impuest"]
+  1:["program","codig","software","app","aplicacion","web","desarroll","react","python","java","flutter","tecnolog","sistemas","base de datos","bases de datos","inteligencia artificial","automatiz","ciberseg","segurid","computad","plataforma","dron","drones","redes de computad","tecnico"],
+  2:["disen","logo","ilustr","dibuj","arte","artist","foto","ux","ui","interfa","pint","music","animac","moda","decor","toco","canto","cantant","guitarr","piano","baterist","musico","bail","danz","peluquer","barber","maquill","estilista","tatu","artesan","dj","productor musical","estudio de grabac"],
+  3:["escrib","redact","comunic","hablo","hablar","publico","present","video","podcast","contenido","edit","locu","period","tiktok","youtube","guion","guiones","cuento","historia","radio","escritor","poet","narr","traduc","idioma","ingles"],
+  4:["vend","venta","market","mercad","publicid","marca","cliente","redes","anunc","promo","crecer cuentas","influen","instagram","comerci","atencion al cliente","negocio propio"],
+  5:["negoci","finanz","contab","dinero","invers","presupuest","empren","excel","administr","econom","ahorr","patrocin","costos","precios","fondos","contador","banc","prestam","cooperativ"],
+  6:["organiz","lider","coordin","gestion","equipo","evento","planific","logist","proyecto","convenz","motiv","chofer","transport","delivery","mensajer","turis","guia","viaj","administro"],
+  7:["ensen","educ","tutor","clase","explic","profe","capacit","mentor","taller","aprend","dinamic","maestr","docente","entrenador","coach","catequ","pastor"],
+  8:["salud","psicol","nutri","deport","entren","medic","enferm","bienestar","yoga","fisio","emocional","estres","escucho","veterin","enfermer","doctor","odontolog","dentist","farmac","terapeut","primeros auxilios","cuido","cuidar","pelotero","beisbol","futbol","basket","gimnas"],
+  9:["comunidad","social","volunt","ong","fundaci","ambient","recicl","inclus","barrio","accesib","iglesia","junta de vecinos","animal","rescat","refugio","pescador","campesin","famili"],
+  10:["constru","repar","arregl","maqueta","planos","electric","carpint","cocin","coser","costur","manualid","mecan","fabric","impresion 3d","hardware","solda","prototip","arduino","herramient","agricult","siembr","cultiv","huert","finca","jabon","panader","reposter","chef","albanil","plomer","pesca","herrer","tapicer","ebanist"],
+  11:["investig","datos","analiz","analisis","estadist","encuest","cienci","estudio","laborator","quimic","biolog"],
+  12:["legal","ley","leyes","abogad","derecho","contrato","tramit","registr","permiso","impuest","notari","aduan"]
 };
 export const norm = (t: string) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const CLAVES_RE = Object.entries(CLAVES).map(([v, arr]) => [+v, new RegExp("(^|[^a-z0-9])(" + arr.join("|") + ")")] as const);
@@ -52,8 +52,21 @@ const NECESIDADES: [RegExp, number[]][] = [
   [/clase|tutoria|curso|escuela|liceo|estudiante|ensen|educa|aprend/, [7, 6]],
   [/investig|estudio|encuesta|datos|mapa/, [11, 1]],
   [/kit|prototipo|construir|fabricar|energia|solar|robot|maquina/, [10, 5]],
-  [/(^|[^a-z])(ley|legal|registro|tramite|permiso)/, [12]]
+  [/(^|[^a-z])(ley|legal|registro|tramite|permiso)/, [12]],
+  [/panader|reposter|comida|dulce|postre|cocina|casabe|empanada|cafe|jugo|helado|restaurante|food|chocolate/, [5, 4, 2]],
+  [/music|disco|banda|cancion|bachata|merengue|dembow|cantar|concierto|baile|danza/, [2, 4, 3, 5]],
+  [/turis|turista|viaje|tour|excursion|hotel|playa|ballena/, [4, 2, 6, 3]],
+  [/perro|gato|animal|mascota|refugio|veterinari/, [8, 9, 5]],
+  [/huerto|agricult|finca|siembr|cultiv|campo|organic|cacao|cafe/, [10, 9, 5]],
+  [/pesca|pescador|cooperativa|campesin|productor/, [5, 6, 12]],
+  [/beisbol|futbol|basket|deporte|atleta|gimnasio|equipo de/, [8, 7, 6]],
+  [/ropa|moda|joya|artesan|jabon|belleza|salon|barberia|unas/, [2, 4, 5]],
+  [/familia|mama|papa|hijo|hija|crecer|personal|mejor persona|feliz/, [8, 7]],
+  [/casa|vivienda|carro|vehiculo|taller mecanico/, [5, 10]]
 ];
+/* Si no reconocemos de qué trata un sueño, le damos lo que cualquier sueño necesita:
+   organizarse, darse a conocer y el dinero para arrancar. */
+const NECESIDAD_COMUN = [6, 4, 5];
 function necesita(idea: string) { const n = norm(idea); return NECESIDADES.filter(([re]) => re.test(n)).flatMap(([, v]) => v); }
 
 export const COLORES = ["#5B2EFF","#F0306F","#00A884","#FF8A00","#1E88E5","#B5179E","#2B9348","#E85D04"];
@@ -75,7 +88,8 @@ export function limpiar(id: string, d: Record<string, unknown>): Perfil {
   const elegidas = idea ? ints(d.needs, 3) : [];
   const powers = inferirPoder(power);
   // Lo que tu idea necesita y tú no sabes hacer: lo que ya cubres con tu superpoder no cuenta.
-  const base = elegidas.length ? elegidas : (idea ? [...new Set([...necesita(idea), ...inferir(idea)])] : []);
+  let base = elegidas.length ? elegidas : (idea ? [...new Set([...necesita(idea), ...inferir(idea)])] : []);
+  if (idea && !base.length) base = NECESIDAD_COMUN;
   const faltan = base.filter(x => !powers.includes(x));
   return {
     id, idea, tagsNeeds: elegidas, needs: (faltan.length ? faltan : base).slice(0, 4),
