@@ -268,6 +268,8 @@ h3.sub-t{font-size:clamp(26px,2.6vw,34px);margin-top:72px}
 
 /* proyectar */
 body[data-view="proyectar"] .barra{display:none}
+/* El logo y los botones se quedan arriba y se van con la página: así nunca tapan el QR al bajar. */
+[data-view-panel="proyectar"] .logo-proy,[data-view-panel="proyectar"] .salir{position:absolute}
 .proy{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:auto minmax(0,820px);gap:clamp(40px,6vw,110px);align-items:center;justify-content:center;padding:max(4vh,88px) 5vw 4vh}
 .proy h1{font-size:clamp(48px,5.8vw,96px)}
 .proy .qr-carta{width:min(560px,40vw,72vh)}
@@ -388,15 +390,28 @@ body[data-view="mapa"] .barra{display:none}
   .qr-carta{width:min(380px,100%);margin:0 auto}
   .bloques{grid-template-columns:1fr;gap:56px}
   .union{width:4px;height:56px;margin:-28px 0 0 -2px;animation-name:linea}
-  .proy{text-align:center;justify-items:center;padding-top:76px}
+  .proy{text-align:center;justify-items:center;padding:96px 16px 40px;gap:28px;min-height:0}
 
   .proy .qr-carta{width:min(380px,100%,58vh)}
   .cifras{justify-content:center}
+  .proy .fase{justify-content:center}
 }
 @media (max-width:640px){
   /* Proyectar en el celular: sin «Pantalla completa» (no hace falta) y el logo más chico. */
   #b-pantalla{display:none}
   .logo-proy{height:36px;top:calc(env(safe-area-inset-top,0px) + 16px)}
+  [data-view-panel="proyectar"] .salir{top:calc(env(safe-area-inset-top,0px) + 14px);right:16px;gap:8px}
+  [data-view-panel="proyectar"] .salir .boton{min-height:36px;padding:6px 14px;font-size:13px}
+  .proy{padding-top:80px}
+  .proy h1{font-size:clamp(32px,9vw,44px)}
+  .proy .qr-carta{padding:18px;gap:10px;border-radius:22px}
+  .proy .qr-carta b{font-size:18px}
+  .panel .cifras{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;justify-content:stretch}
+  .panel .cifra{padding:12px 8px;font-size:13px;line-height:1.25;border-radius:18px}
+  .panel .cifra b{font-size:28px}
+  .proy .cifras{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;margin-inline:auto}
+  .proy .cifra{padding:14px 10px}
+  .proy .cifra b{font-size:34px}
   .vista{padding-block:44px 80px}
   body{padding-bottom:84px}
   /* Sin desenfoque aquí: si no, la cabecera se vuelve la referencia de la barra fija de abajo. */
@@ -466,9 +481,8 @@ body[data-view="mapa"] .barra{display:none}
 .panel-paginas button:disabled{opacity:.4;cursor:default}
 
 
-/* Panel: sueños borrosos hasta tocar «Remover» */
-.panel-remover{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.panel-remover .panel-nota{flex:1 1 320px}
+/* Panel: sueños borrosos hasta tocar «Mostrar» */
+.panel-remover{display:flex;justify-content:flex-end;margin-top:24px}
 .panel-lista.disimulado .panel-texto{filter:blur(7px);user-select:none;pointer-events:none}
 
 /* Panel: opciones discretas al final (repetir matches, borrar todo) */

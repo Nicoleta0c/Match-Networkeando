@@ -9,7 +9,7 @@ import { entrar, esPresentadora, pideClave, sinClaveMensaje } from "@/lib/presen
    POST /api/panel {clave}: entrar con la clave (deja la cookie).
    POST /api/panel {id, quitar: true|false}: quita o devuelve un perfil.
    POST /api/panel {accion: "repetir"}: a todos les vuelve a salir «Ver mi match».
-   POST /api/panel {accion: "borrarTodo"}: borra todos los perfiles del evento y vuelve a registro. */
+   POST /api/panel {accion: "reiniciar"}: vuelve a registro (los perfiles registrados se quedan). */
 
 const sinPermiso = () => Response.json({error: sinClaveMensaje(), pideClave: pideClave()}, {status: 403});
 
@@ -31,11 +31,7 @@ export async function POST(req: NextRequest) {
   if (!(await esPresentadora(req))) return sinPermiso();
   const evento = eventoActual();
   if (cuerpo.accion === "repetir") { await nuevaRonda(evento); return Response.json({ok: true}); }
-  if (cuerpo.accion === "borrarTodo") {
-    const {count} = await db.perfil.deleteMany({where: {evento}});
-    await reiniciarEvento(evento);
-    return Response.json({ok: true, borrados: count});
-  }
+  if (cuerpo.accion === "reiniciar") { await reiniciarEvento(evento); return Response.json({ok: true}); }
   if (typeof cuerpo.id !== "string" || typeof cuerpo.quitar !== "boolean") return Response.json({error: "Faltan id y quitar."}, {status: 400});
   await quitar(eventoActual(), cuerpo.id, cuerpo.quitar);
   return Response.json({ok: true});

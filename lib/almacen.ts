@@ -60,11 +60,10 @@ export async function nuevaRonda(evento: string) {
   e.ronda[evento] = (e.ronda[evento] ?? 0) + 1;
   await escribir(e);
 }
-/** «Borrar todo»: el evento vuelve a registro, sin quitados (los perfiles se borran aparte). */
+/** «Reiniciar matches»: el evento vuelve a registro. Los perfiles y los quitados se quedan. */
 export async function reiniciarEvento(evento: string) {
   const e = await leer();
   e.fase[evento] = "registro";
-  e.quitados[evento] = [];
   e.ronda[evento] = (e.ronda[evento] ?? 0) + 1;
   await escribir(e);
 }

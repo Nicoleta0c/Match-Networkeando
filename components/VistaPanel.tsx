@@ -19,7 +19,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
   const [pagina, setPagina] = useState(0);
-  /* Los sueños se ven borrosos hasta que tocas «Remover»; ahí aparecen los botones de Quitar. */
+  /* Los sueños se ven borrosos hasta que tocas «Mostrar»; ahí aparecen los botones de Quitar. */
   const [remover, setRemover] = useState(false);
 
   /* Pide los perfiles cada 4 segundos mientras el panel está abierto. */
@@ -50,13 +50,11 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
 
   /* Opciones discretas al final del panel: repetir los matches o borrar todo el evento. */
   const [aviso, setAviso] = useState("");
-  const accion = async (a: "repetir" | "borrarTodo") => {
+  const accion = async (a: "repetir" | "reiniciar") => {
     if (a === "repetir" && !confirm("¿Mostrar el match de nuevo? A todos les vuelve a salir el botón «Ver mi match».")) return;
-    if (a === "borrarTodo" && !confirm("¿Borrar TODOS los perfiles de este evento y volver a registro? No se puede deshacer.")) return;
-    if (a === "borrarTodo" && prompt("Para confirmar, escribe BORRAR") !== "BORRAR") return;
+    if (a === "reiniciar" && !confirm("¿Reiniciar los matches? El evento vuelve a registro. Los perfiles registrados se quedan.")) return;
     const r = await fetch("/api/panel", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({accion: a})});
-    const d = await r.json().catch(() => ({}));
-    setAviso(!r.ok ? "No se pudo. Inténtalo otra vez." : a === "repetir" ? "Listo: a todos les vuelve a salir «Ver mi match»." : `Listo: se borraron ${d.borrados ?? 0} perfiles y el evento volvió a registro.`);
+    setAviso(!r.ok ? "No se pudo. Inténtalo otra vez." : a === "repetir" ? "Listo: a todos les vuelve a salir «Ver mi match»." : "Listo: el evento volvió a registro. Los perfiles siguen ahí.");
     setPagina(0); setVuelta(v => v + 1);
   };
 
@@ -120,8 +118,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
         </div>
 
         <div className="panel-remover">
-          <p className="panel-nota">Todos entran aceptados. Si alguien escribió algo que no va, toca <b>Remover</b> y luego <b>Quitar</b>: deja de salir en los matches y en los números.</p>
-          <button type="button" className="boton chico" aria-pressed={remover} onClick={() => setRemover(r => !r)}>{remover ? "Listo" : "Remover"}</button>
+          <button type="button" className="boton chico" aria-pressed={remover} onClick={() => setRemover(r => !r)}>{remover ? "Ocultar" : "Mostrar"}</button>
         </div>
 
         {!calculo.perfiles.length
@@ -157,7 +154,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
           <summary>Opciones</summary>
           <div>
             {fase === "matches" && <button type="button" className="boton chico" onClick={() => accion("repetir")}>Mostrar match de nuevo</button>}
-            <button type="button" className="boton chico panel-quitar" onClick={() => accion("borrarTodo")}>Borrar todo</button>
+            <button type="button" className="boton chico panel-quitar" onClick={() => accion("reiniciar")}>Reiniciar matches</button>
           </div>
           {aviso && <p className="panel-nota" role="status">{aviso}</p>}
         </details>
