@@ -278,12 +278,10 @@ const MATICES: [number, RegExp, string][] = [
 ];
 /* Varias formas de empezar la frase, para que los matches no suenen todos iguales. */
 const ENTRADAS = [
-  (g: string) => `¡Justo lo que tu sueño necesita en ${g}!`,
-  (g: string) => `¡Esta persona puede ser clave en ${g} de tu sueño!`,
-  (g: string) => `¡Buenas noticias para tu sueño! En ${g}, esta persona tiene mucho que aportar.`,
-  (g: string) => `¡Con esta persona, tu sueño gana mucho en ${g}!`,
-  (g: string) => `¡Aquí hay match! Esta persona le suma mucho a ${g} de tu sueño.`,
-  (g: string) => `¡Qué buena combinación para ${g} de tu sueño!`
+  (g: string) => `Su superpoder encaja con ${g} de tu sueño.`,
+  (g: string) => `Es una buena conexión para ${g} de tu sueño.`,
+  (g: string) => `Puede aportar mucho en ${g} de tu sueño.`,
+  (g: string) => `Tu sueño necesita ${g}, y esta persona sabe de eso.`
 ];
 
 /** La ayuda de alguien, según su superpoder: primero en el área que tu sueño necesita, si no en cualquiera. */
@@ -309,12 +307,12 @@ function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: s
     const entrada = ENTRADAS[hash(norm(o.power) + "|" + norm(me.idea)) % ENTRADAS.length](AYUDA_GENERAL[area]);
     texto = `${entrada} Te puede ayudar a ${ayuda}.`;
   } else if (teAyuda) {
-    texto = "¡Habla el mismo idioma que tu sueño! Es la persona ideal para pedirle consejo y dar el primer paso.";
+    texto = "Sabe de lo mismo que necesita tu sueño. Es una buena persona para pedirle consejo y dar el primer paso.";
   } else if (o.idea && b.length) {
     const [area, ayuda] = matiz(me, b);
-    texto = `¡Tu superpoder es justo lo que su sueño necesita en ${AYUDA_GENERAL[area]}! Le puedes ayudar a ${paraSu(ayuda)}.`;
+    texto = `Tu superpoder encaja con ${AYUDA_GENERAL[area]} de su sueño. Le puedes ayudar a ${paraSu(ayuda)}.`;
   } else {
-    texto = "¡Tu superpoder tiene mucho que ver con su sueño! Le puedes dar tu mirada y tus consejos para arrancar.";
+    texto = "Tu superpoder tiene que ver con su sueño. Le puedes dar tu mirada y tus consejos para arrancar.";
   }
   return {teAyuda, leAyudas, paso: "", tipo: teAyuda && leAyudas ? "doble" : "una", texto};
 }
