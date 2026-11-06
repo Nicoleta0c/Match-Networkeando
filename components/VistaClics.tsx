@@ -54,7 +54,7 @@ function Cuerpo({loaded, me, todos, conIA, consejo, iaFallo, onBuscar, esperando
   return (
     <>
       <div className="m-cabeza">
-        <p className="intro">{todos.length ? (conIA ? "La IA revisó " : "La app revisó ") + todos.length + (todos.length === 1 ? " perfil" : " perfiles") + " y eligió quién encaja mejor contigo." : "Todavía no hay más gente en el salón."}</p>
+        {!todos.length && <p className="intro">Todavía no hay más gente en el salón.</p>}
         {todos.length > 0 && <button className="boton chico" type="button" id="b-buscar" onClick={onBuscar}>Buscar de nuevo</button>}
       </div>
       {!conIA && todos.length > 0 && iaFallo && <p className="nota">La IA no respondió, así que la app eligió con su método básico. Toca Buscar de nuevo para intentarlo.</p>}

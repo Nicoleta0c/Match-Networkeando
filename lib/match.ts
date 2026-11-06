@@ -141,7 +141,7 @@ const PESO_NECESIDAD = [50, 24, 14, 8];
 /* Cómo se pueden ayudar dos personas (el formato que se acordó en la reunión del 5 de nov):
    qué hace la otra persona por tu sueño, qué haces tú por el suyo y un primer paso para hoy.
    Si en una dirección no hay ayuda, ese texto queda vacío y el tipo es "una" (una vía). */
-export type Conexion = { teAyuda: string; leAyudas: string; paso: string; tipo: "doble" | "una" };
+export type Conexion = { teAyuda: string; leAyudas: string; paso: string; tipo: "doble" | "una"; texto?: string };
 export type Analisis = { pct: number; a: number[]; b: number[]; razones: string[]; rompe?: string; conexion?: Conexion; ia?: boolean };
 export type Item = { o: Perfil; r: Analisis };
 
@@ -214,12 +214,13 @@ const AYUDA_GENERAL: Record<number, string> = {
 /* El método básico (sin IA) dice en qué se pueden ayudar, sin entrar en detalles. */
 function conexionBasica(me: Perfil, o: Perfil, aT: number[], b: number[], kwA: string[], kwB: string[]): Conexion | undefined {
   let teAyuda = "", leAyudas = "";
-  if (me.idea && aT.length) teAyuda = `Te puede ayudar con ${AYUDA_GENERAL[aT[0]]}.`;
-  else if (me.idea && kwA.length) teAyuda = "Sabe de lo mismo que necesita tu sueño.";
-  if (o.idea && b.length) leAyudas = `Tú le puedes ayudar con ${AYUDA_GENERAL[b[0]]}.`;
-  else if (o.idea && kwB.length) leAyudas = "Lo que tú sabes hacer tiene que ver con su sueño.";
+  if (me.idea && aT.length) teAyuda = `Su superpoder te puede ayudar con ${AYUDA_GENERAL[aT[0]]} de tu sueño.`;
+  else if (me.idea && kwA.length) teAyuda = "Su superpoder tiene que ver con lo que necesita tu sueño.";
+  if (o.idea && b.length) leAyudas = `Tu superpoder le puede ayudar con ${AYUDA_GENERAL[b[0]]} de su sueño.`;
+  else if (o.idea && kwB.length) leAyudas = "Tu superpoder tiene que ver con lo que necesita su sueño.";
   if (!teAyuda && !leAyudas) return undefined;
-  return {teAyuda, leAyudas, paso: "", tipo: teAyuda && leAyudas ? "doble" : "una"};
+  // La frase que se muestra: primero cómo te ayuda a ti; si no, cómo ayudas tú.
+  return {teAyuda, leAyudas, paso: "", tipo: teAyuda && leAyudas ? "doble" : "una", texto: teAyuda || leAyudas};
 }
 
 /* El match es "al revés" cuando tú le sirves a su idea pero su superpoder no le aporta a la tuya. */

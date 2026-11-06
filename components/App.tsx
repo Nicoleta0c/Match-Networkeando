@@ -229,14 +229,14 @@ export default function App() {
       const ids = new Set(cand.map(p => p.id));
       const mapa: ResIA["mapa"] = new Map();
       const txt = (v: unknown) => String(v || "").slice(0, 300).trim();
-      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown};
+      type ConexionIA = {id?: unknown; pct?: unknown; tipo?: unknown; porque?: unknown};
       (data && Array.isArray(data.conexiones) ? data.conexiones : []).forEach((m: ConexionIA) => {
         if (!m || typeof m.id !== "string" || !ids.has(m.id) || mapa.has(m.id)) return;
         if (m.tipo !== "doble_via" && m.tipo !== "te_ayuda" && m.tipo !== "le_ayudas") return;
         const pct = Math.max(1, Math.min(99, Math.round(Number(m.pct) || 0)));
-        // La app ya no muestra frases: solo quién ayuda a quién.
+        // Quién ayuda a quién, y una frase general de por qué.
         const teAyuda = m.tipo !== "le_ayudas" ? "sí" : "", leAyudas = m.tipo !== "te_ayuda" ? "sí" : "";
-        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: "", tipo: m.tipo === "doble_via" ? "doble" : "una"}, rompe: ""});
+        mapa.set(m.id, {pct, conexion: {teAyuda, leAyudas, paso: "", tipo: m.tipo === "doble_via" ? "doble" : "una", texto: txt(m.porque)}, rompe: ""});
       });
       const consejo = data && typeof data.consejo === "string" ? txt(data.consejo) : "";
       // Si la IA no encontró a nadie, igual guardamos su consejo (y nadie de la lista cuenta como match).

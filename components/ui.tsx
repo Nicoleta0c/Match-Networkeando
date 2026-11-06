@@ -99,7 +99,7 @@ export function Pie({me, x, conRazones, accion}: {me: Perfil; x: Item; conRazone
   return (
     <div className="pie">
       {me.idea && o.idea && !alReves(me, x.r) && <p className="su-idea"><b>{esAnon(o) ? "Su sueño" : "Sueño de " + o.alias.split(/\s+/)[0]}:</b> {o.idea}</p>}
-      {conRazones && c && <Via tipo={c.tipo}/>}
+      {conRazones && c?.texto && <p className="porque-texto chico">{c.texto}</p>}
       {!esAnon(o) && o.contact && <>Escríbele: <Contacto t={o.contact}/></>}
       {accion && <div className="pie-accion">{accion}</div>}
     </div>
@@ -120,8 +120,9 @@ export function Porque({me, x, accion}: {me: Perfil; x: Item; accion?: ReactNode
         <b><span>{x.r.pct}%</span></b>
       </div>
       {/* Solo el sueño y quién lo puede ayudar (la tarjeta de al lado los muestra). Los detalles, en persona. */}
-      <h3>{me.idea && !alReves(me, x.r) ? "Su superpoder puede ayudar con tu sueño" : "Tu superpoder puede ayudar con su sueño"}</h3>
-      {(c || x.r.ia) && <div className="chips">{c && <Via tipo={c.tipo}/>}{x.r.ia && <span className="ia-chip">Según la IA</span>}</div>}
+      <h3>{(c ? !!c.teAyuda : me.idea && !alReves(me, x.r)) ? "Su superpoder puede ayudar con tu sueño" : "Tu superpoder puede ayudar con su sueño"}</h3>
+      {c?.texto && <p className="porque-texto">{c.texto}</p>}
+      {x.r.ia && <div className="chips"><span className="ia-chip">Según la IA</span></div>}
       {accion && <div className="porque-accion">{accion}</div>}
     </div>
   );
