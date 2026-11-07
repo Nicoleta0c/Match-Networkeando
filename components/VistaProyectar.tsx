@@ -38,7 +38,6 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
           {registro
             ? <h1 id="t-proy">Escanea y escribe tu <span className="marca">sueño</span> y tu superpoder.</h1>
             : <h1 id="t-proy">Escanea y la app te busca tu <span className="marca">match</span>.</h1>}
-          {!registro && <p className="intro">Tu sueño, tu superpoder y la gente del evento que encaja contigo.</p>}
           <div className="cifras" aria-live="polite">
             <div className="cifra"><b id="n-perfiles">{perfiles}</b>{perfiles === 1 ? "registrado" : "registrados"}</div>
             <div className="cifra"><b id="n-clics">{pares}</b>{registro ? "matches detectados" : "matches encontrados"}</div>
@@ -49,8 +48,8 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
                   {cambiando ? "Empezando…" : "Empezar los matches"}
                 </button>
               : <>
-                  <p className="fase-lista"><span aria-hidden="true"></span>Los matches ya empezaron: todos ven el suyo en su celular.</p>
-                  <button className="borrar" type="button" disabled={cambiando} onClick={() => { if (confirm("¿Volver a la fase de registro? Los celulares dejan de mostrar los matches hasta que los empieces otra vez.")) onFase("registro"); }}>Volver a la fase de registro</button>
+                  {/* Volver a registro se hace desde el panel, no frente al público. */}
+                  <p className="fase-lista"><span aria-hidden="true"></span>Los matches ya empezaron</p>
                 </>}
             {registro && perfiles < 2 && <small>Hacen falta al menos 2 personas registradas.</small>}
           </div>}
