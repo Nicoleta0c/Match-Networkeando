@@ -85,6 +85,26 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
     return {perfiles, activos: activos.length, quitados: perfiles.length - activos.length, conMatch: mejor.size, pares, mejor};
   }, [datos]);
 
+  /* Descarga todos los perfiles del evento en un archivo que abre en Excel (con el mejor match de cada uno). */
+  const descargar = () => {
+    if (!datos || !calculo) return;
+    const celda = (v: unknown) => '"' + String(v ?? "").replace(/"/g, '""').replace(/\s*\n\s*/g, " ") + '"';
+    const hora = (ms: number) => ms ? new Date(ms).toLocaleString("es-DO", {timeZone: "America/Santo_Domingo"}) : "";
+    const filas = [["Fecha", "Nombre", "Contacto", "A qué se dedica", "Sueño", "Superpoder", "Mejor match", "Superpoder del match", "Compatibilidad", "Quitado"]];
+    for (const {fila, p} of calculo.perfiles) {
+      const m = calculo.mejor.get(p.id);
+      filas.push([hora(p.createdAt), p.anon ? "Anónimo" : p.alias, p.anon ? "" : p.contact, p.anon ? "" : p.que, p.idea, p.power,
+        m ? (m.o.anon || !m.o.alias ? "Anónimo" : m.o.alias) : "", m ? m.o.power : "", m ? m.pct + " %" : "", fila.quitado ? "Sí" : ""]);
+    }
+    // Punto y coma y BOM: así Excel en español separa bien las columnas y respeta las tildes.
+    const texto = "\uFEFF" + filas.map(f => f.map(celda).join(";")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([texto], {type: "text/csv;charset=utf-8"}));
+    const a = document.createElement("a");
+    a.href = url; a.download = `networkeando-${datos.evento}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const fase = datos?.fase ?? "registro";
   const paginas = Math.max(1, Math.ceil((calculo?.perfiles.length ?? 0) / POR_PAGINA));
   const pag = Math.min(pagina, paginas - 1);
@@ -94,7 +114,10 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
     <section className="cont vista panel" data-view-panel="panel" aria-labelledby="t-panel" hidden={!activo}>
       <div className="panel-titulo">
         <h2 className="titulo" id="t-panel">Panel</h2>
-        {datos && <a className="boton chico" href="#mapa">Mapa</a>}
+        {datos && <div className="panel-acciones">
+          <button type="button" className="boton chico" onClick={descargar}>Descargar datos</button>
+          <a className="boton chico" href="#mapa">Mapa</a>
+        </div>}
       </div>
 
       {pideClave !== null && (
