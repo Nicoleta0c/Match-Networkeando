@@ -65,7 +65,6 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
                   {/* Volver a registro se hace desde el panel, no frente al público. */}
                   <p className="fase-lista"><span aria-hidden="true"></span>Los matches ya empezaron</p>
                 </>}
-            {registro && perfiles < 2 && <small>Hacen falta al menos 2 personas registradas.</small>}
           </div>}
         </div>
       </div>}
