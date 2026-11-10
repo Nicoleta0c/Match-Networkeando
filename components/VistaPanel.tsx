@@ -60,24 +60,27 @@ export function VistaPanel({activo, cambiando, onFase, evento, verEvento, onVerE
   const eventoActivo = eventos?.find(e => e.activo);
   const viendoAnterior = !!evento && !evento.activo;
 
-  const pedirEventos = async (cuerpo: Record<string, string>) => {
+  /* Las acciones de eventos se hacen con un formulario dentro del panel (sin ventanitas del navegador,
+     que algunos navegadores no muestran): «nuevo» y «renombrar» piden un nombre; «activar» pide confirmar. */
+  const [formEvento, setFormEvento] = useState<{tipo: "nuevo"} | {tipo: "renombrar" | "activar"; e: Evento} | null>(null);
+  const [nombreEvento, setNombreEvento] = useState("");
+  const [errorEvento, setErrorEvento] = useState("");
+  const abrirForm = (f: NonNullable<typeof formEvento>) => {
+    setFormEvento(f); setErrorEvento("");
+    setNombreEvento(f.tipo === "renombrar" ? f.e.nombre : "");
+  };
+  const enviarEvento = async (ev: FormEvent) => {
+    ev.preventDefault();
+    if (!formEvento) return;
+    const nombre = nombreEvento.replace(/\s+/g, " ").trim();
+    if (formEvento.tipo !== "activar" && nombre.length < 3) { setErrorEvento("Escribe un nombre de al menos 3 letras."); return; }
+    const cuerpo = formEvento.tipo === "nuevo" ? {accion: "crear", nombre}
+      : formEvento.tipo === "renombrar" ? {accion: "renombrar", id: formEvento.e.id, nombre}
+      : {accion: "activar", id: formEvento.e.id};
     const r = await fetch("/api/eventos", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(cuerpo)});
-    if (!r.ok) { alert((await r.json().catch(() => ({}))).error || "No se pudo. Inténtalo otra vez."); return false; }
-    return true;
-  };
-  const nuevoEvento = async () => {
-    const nombre = (prompt("Nombre del nuevo evento (por ejemplo: «Hackathon Santo Domingo»)") || "").trim();
-    if (!nombre) return;
-    if (!confirm(`Se creará «${nombre}» y será el evento activo: los registros nuevos del QR irán ahí.\n\n«${eventoActivo?.nombre ?? "El evento actual"}» queda guardado con todos sus perfiles.`)) return;
-    if (await pedirEventos({accion: "crear", nombre})) { onVerEvento(null); setVuelta(v => v + 1); }
-  };
-  const activarEvento = async (e: Evento) => {
-    if (!confirm(`¿Hacer activo «${e.nombre}»? Los registros nuevos del QR irán a ese evento. Los demás eventos quedan guardados.`)) return;
-    if (await pedirEventos({accion: "activar", id: e.id})) { onVerEvento(null); setVuelta(v => v + 1); }
-  };
-  const renombrarEvento = async (e: Evento) => {
-    const nombre = (prompt("Nuevo nombre del evento", e.nombre) || "").trim();
-    if (nombre && nombre !== e.nombre && await pedirEventos({accion: "renombrar", id: e.id, nombre})) setVuelta(v => v + 1);
+    if (!r.ok) { setErrorEvento((await r.json().catch(() => ({}))).error || "No se pudo. Inténtalo otra vez."); return; }
+    if (formEvento.tipo !== "renombrar") onVerEvento(null);
+    setFormEvento(null); setVuelta(v => v + 1);
   };
 
   const entrar = async (e: FormEvent) => {
@@ -189,14 +192,29 @@ export function VistaPanel({activo, cambiando, onFase, evento, verEvento, onVerE
                     </div>
                     <div className="panel-eventos-botones">
                       {!viendo && <button type="button" className="boton chico" onClick={() => onVerEvento(e.activo ? null : e.id)}>Ver</button>}
-                      {!e.activo && <button type="button" className="boton chico" onClick={() => activarEvento(e)}>Hacerlo activo</button>}
-                      <button type="button" className="boton chico" onClick={() => renombrarEvento(e)}>Renombrar</button>
+                      {!e.activo && <button type="button" className="boton chico" onClick={() => abrirForm({tipo: "activar", e})}>Hacerlo activo</button>}
+                      <button type="button" className="boton chico" onClick={() => abrirForm({tipo: "renombrar", e})}>Renombrar</button>
                     </div>
                   </li>
                 );
               })}
             </ul>
-            <button type="button" className="boton fuerte" onClick={nuevoEvento}>Nuevo evento</button>
+            {formEvento
+              ? <form className="panel-evento-form" onSubmit={enviarEvento}>
+                  {formEvento.tipo === "activar"
+                    ? <p>¿Hacer activo <b>{formEvento.e.nombre}</b>? Los registros nuevos del QR irán a ese evento. Los demás quedan guardados.</p>
+                    : <>
+                        <label htmlFor="f-evento">{formEvento.tipo === "nuevo" ? "Nombre del nuevo evento" : <>Nuevo nombre para <b>{formEvento.e.nombre}</b></>}</label>
+                        <input id="f-evento" type="text" maxLength={80} autoFocus placeholder="Ej.: Hackathon Santo Domingo" value={nombreEvento} onChange={e => setNombreEvento(e.target.value)}/>
+                        {formEvento.tipo === "nuevo" && <small>Será el evento activo: los registros nuevos del QR irán ahí. <b>{eventoActivo?.nombre ?? "El evento actual"}</b> queda guardado con todos sus perfiles.</small>}
+                      </>}
+                  {errorEvento && <p className="error" role="alert">{errorEvento}</p>}
+                  <div className="panel-eventos-botones">
+                    <button type="submit" className="boton fuerte">{formEvento.tipo === "nuevo" ? "Crear evento" : formEvento.tipo === "renombrar" ? "Guardar nombre" : "Sí, hacerlo activo"}</button>
+                    <button type="button" className="boton chico" onClick={() => setFormEvento(null)}>Cancelar</button>
+                  </div>
+                </form>
+              : <button type="button" className="boton fuerte" onClick={() => abrirForm({tipo: "nuevo"})}>Nuevo evento</button>}
           </div>
         </details>
       )}

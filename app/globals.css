@@ -523,3 +523,10 @@ body[data-view="mapa"] .barra{display:none}
 .perfil-anterior{display:flex;align-items:center;justify-content:space-between;gap:12px 18px;flex-wrap:wrap;margin:0 0 22px;padding:14px 18px;border:1px solid var(--h);border-radius:18px;background:var(--s)}
 .perfil-anterior p{margin:0;flex:1 1 280px}
 .perfil-anterior b{color:var(--h)}
+/* Panel: formulario de eventos (nuevo, renombrar, hacer activo) */
+.panel-evento-form{display:grid;gap:10px;padding:14px;border:1px solid var(--h);border-radius:14px}
+.panel-evento-form p{margin:0}
+.panel-evento-form label{font-weight:700}
+.panel-evento-form input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--b2);background:var(--bg);color:var(--t);font:inherit}
+.panel-evento-form small{color:var(--m)}
+.panel-evento-form .error{color:#ff8a7a}
