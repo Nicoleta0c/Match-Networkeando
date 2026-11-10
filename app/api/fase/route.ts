@@ -7,7 +7,7 @@ import { entrar, esPresentadora, pideClave, sinClaveMensaje } from "@/lib/presen
    POST /api/fase {fase, clave?}: la presentadora la cambia (ver lib/presentadora.ts). */
 
 export async function GET() {
-  return Response.json({fase: await leerFase(eventoActual())});
+  return Response.json({fase: await leerFase(await eventoActual())});
 }
 
 export async function POST(req: NextRequest) {
@@ -18,6 +18,6 @@ export async function POST(req: NextRequest) {
   if (!(await esPresentadora(req)) && !(await entrar(req, cuerpo.clave))) {
     return Response.json({error: pideClave() ? "Clave incorrecta." : sinClaveMensaje(), pideClave: pideClave()}, {status: 403});
   }
-  await ponerFase(eventoActual(), cuerpo.fase);
+  await ponerFase(await eventoActual(), cuerpo.fase);
   return Response.json({fase: cuerpo.fase});
 }

@@ -4,6 +4,7 @@ import { idDeCookie } from "@/lib/identidad";
 import { revisarTextos, validarPerfil } from "@/lib/validar";
 import { moderarPerfil } from "@/lib/moderar";
 import { eventoActual } from "@/lib/evento";
+import { leerQuitados, quitar } from "@/lib/almacen";
 
 const MAX_BYTES = 8 * 1024;
 
@@ -31,19 +32,29 @@ export async function PUT(req: NextRequest, ctx: RouteContext<"/api/perfiles/[id
   // Que escriban algo real: primero reglas rápidas; después, si el texto cambió, la IA lo revisa.
   const rapido = revisarTextos(resto.idea, resto.power);
   if (rapido) return Response.json({error: rapido.error, campo: rapido.campo}, {status: 422});
-  const antes = await db.perfil.findUnique({where: {id}, select: {idea: true, power: true}});
+  const evento = await eventoActual();
+  const existente = await db.perfil.findUnique({where: {id}});
+  const antes = existente && existente.evento === evento ? existente : null;
   if (!antes || antes.idea !== resto.idea || antes.power !== resto.power) {
     const ia = await moderarPerfil(resto.idea, resto.power);
     if (ia) return Response.json({error: ia.error, campo: ia.campo}, {status: 422});
   }
 
-  // La fecha de creación la pone el servidor y no cambia al editar.
-  // El evento también lo pone el servidor: al guardar, quedas en el evento de hoy.
-  const evento = eventoActual();
+  // ¿Tu perfil era de un evento anterior? Antes de pasarte al evento activo, dejamos una copia en el
+  // anterior, para que ese evento no pierda a nadie (sus números, su mapa y sus matches quedan igual).
+  if (existente && existente.evento && existente.evento !== evento) {
+    const {id: _viejo, updatedAt: _u, ...datos} = existente;
+    const copia = id + "@" + existente.evento;
+    await db.perfil.upsert({where: {id: copia}, create: {...datos, id: copia}, update: datos});
+    if ((await leerQuitados(existente.evento)).has(id)) await quitar(existente.evento, copia, true);
+  }
+
+  // La fecha de creación la pone el servidor (y es nueva si es tu primer perfil en este evento).
+  // El evento también lo pone el servidor: al guardar, quedas en el evento activo.
   const fila = await db.perfil.upsert({
     where: {id},
     create: {id, ...resto, needs: JSON.stringify(needs), createdAt: Date.now(), evento},
-    update: {...resto, needs: JSON.stringify(needs), evento}
+    update: {...resto, needs: JSON.stringify(needs), evento, ...(antes ? {} : {createdAt: Date.now(), likes: "[]"})}
   });
   return Response.json(aDocumento(fila));
 }
@@ -52,6 +63,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext<"/api/perfiles/[id
 export async function DELETE(_req: NextRequest, ctx: RouteContext<"/api/perfiles/[id]">) {
   const id = await esMio(ctx);
   if (!id) return Response.json({error: "Solo puedes borrar tu propio perfil."}, {status: 403});
-  await db.perfil.deleteMany({where: {id}});
+  // Solo tu perfil del evento activo: lo de eventos anteriores queda guardado.
+  await db.perfil.deleteMany({where: {id, evento: await eventoActual()}});
   return new Response(null, {status: 204});
 }

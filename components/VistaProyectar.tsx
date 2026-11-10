@@ -7,9 +7,11 @@ type Props = {
   activo: boolean; qrUrl: string; perfiles: number; pares: number;
   /** Fase del evento (null en la demo: ahí no hay botón). */
   fase: Fase | null; cambiando: boolean; onFase: (f: Fase) => void;
+  /** Si la presentadora está mirando un evento anterior: su nombre (ahí no hay QR, ya cerró). */
+  anterior: string | null;
 };
 
-export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando, onFase}: Props) {
+export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando, onFase, anterior}: Props) {
   const [pantalla, setPantalla] = useState(false);
   useEffect(() => { setPantalla(document.fullscreenEnabled); }, []);
 
@@ -29,7 +31,19 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
         <a className="boton chico" href="#panel">Panel</a>
         <a className="boton chico" href="#inicio">Salir</a>
       </div>
-      <div className="proy">
+      {anterior ? (
+        /* Evento anterior: su nombre y cómo les fue, sin QR (el registro ya cerró). */
+        <div className="proy proy-anterior">
+          <div>
+            <p className="proy-etiqueta">Evento anterior</p>
+            <h1 id="t-proy">{anterior}</h1>
+            <div className="cifras" aria-live="polite">
+              <div className="cifra"><b>{perfiles}</b>{perfiles === 1 ? "persona" : "personas"}</div>
+              <div className="cifra"><b>{pares}</b>matches encontrados</div>
+            </div>
+          </div>
+        </div>
+      ) : <div className="proy">
         <figure className="qr-carta" aria-label="Código QR para entrar">
           <QR url={qrUrl}/>
           <b>Escanea con la cámara</b>
@@ -54,7 +68,7 @@ export function VistaProyectar({activo, qrUrl, perfiles, pares, fase, cambiando,
             {registro && perfiles < 2 && <small>Hacen falta al menos 2 personas registradas.</small>}
           </div>}
         </div>
-      </div>
+      </div>}
     </section>
   );
 }

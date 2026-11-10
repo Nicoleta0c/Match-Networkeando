@@ -497,3 +497,29 @@ body[data-view="mapa"] .barra{display:none}
 /* Panel: título con el botón del Mapa */
 .panel-titulo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .panel-acciones{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Eventos: aviso de que la presentadora mira un evento anterior */
+.viendo-evento{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:center;gap:12px 18px;flex-wrap:wrap;padding:10px 16px;background:#2a2410;border-bottom:1px solid var(--h);color:var(--t);font-size:.95rem;text-align:center}
+.viendo-evento b{color:var(--h)}
+/* Proyectar de un evento anterior: sin QR, centrado */
+.proy-anterior{grid-template-columns:minmax(0,900px);text-align:center;justify-items:center}
+.proy-anterior .cifras{justify-content:center}
+.proy-etiqueta{margin:0 0 10px;color:var(--h);font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:clamp(14px,1.4vw,20px)}
+
+/* Panel: eventos */
+.panel-eventos{margin:8px 0 26px;border:1px solid var(--b);border-radius:18px;background:var(--s)}
+.panel-eventos summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;font-weight:800}
+.panel-eventos-actual{font-weight:600;color:var(--m);font-size:.95rem}
+.panel-eventos-actual b{color:var(--t)}
+.panel-eventos-cuerpo{padding:0 18px 18px}
+.panel-eventos-cuerpo .panel-nota{margin-top:0}
+.panel-eventos ul{list-style:none;margin:12px 0 16px;padding:0;display:grid;gap:10px}
+.panel-eventos li{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--b);border-radius:14px}
+.panel-eventos li.viendo{border-color:var(--h)}
+.panel-eventos li small{display:block;color:var(--m);font-size:.85rem;margin-top:2px}
+.panel-eventos-botones{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Mi perfil: usar el perfil de un evento anterior */
+.perfil-anterior{display:flex;align-items:center;justify-content:space-between;gap:12px 18px;flex-wrap:wrap;margin:0 0 22px;padding:14px 18px;border:1px solid var(--h);border-radius:18px;background:var(--s)}
+.perfil-anterior p{margin:0;flex:1 1 280px}
+.perfil-anterior b{color:var(--h)}

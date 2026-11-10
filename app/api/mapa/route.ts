@@ -19,7 +19,7 @@ const clave = (id: string) => createHash("sha256").update(sal + id).digest("base
 export async function GET(req: NextRequest) {
   // El mapa muestra los sueños de todos: solo lo ve la presentadora.
   if (!(await esPresentadora(req))) return Response.json({error: "Solo la presentadora puede ver el mapa."}, {status: 403});
-  const actual = eventoActual();
+  const actual = await eventoActual();
   // Los perfiles sin evento son pruebas de antes de esta versión: no cuentan en el mapa.
   const filas = await db.perfil.findMany({where: {evento: {not: ""}}, orderBy: {createdAt: "asc"}, take: MAX_PERFILES});
 

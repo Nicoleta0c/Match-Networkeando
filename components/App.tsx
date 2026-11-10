@@ -28,6 +28,10 @@ class ErrorAPI extends Error {
   constructor(public status: number, public detalle?: {error?: string; campo?: string}) { super("HTTP " + status); }
 }
 
+export type InfoEvento = {id: string; nombre: string; activo: boolean};
+export type PerfilAnterior = {idea: string; power: string; anon: boolean; alias: string; que: string; contact: string; evento: string};
+const leerVerEvento = () => { try { return localStorage.getItem("ver-evento") || null; } catch { return null; } };
+
 const VISTAS = ["inicio", "perfil", "clics", "proyectar", "mapa", "panel"] as const;
 export type Vista = typeof VISTAS[number];
 function vistaActual(): Vista {
@@ -55,6 +59,12 @@ type Estado = {
   ronda: number;
   /** Presentadora: las 5 mejores parejas de la última búsqueda (null = todavía no busca). */
   top: Pareja[] | null; topI: number; topBusqueda: Busqueda | null; topGanador: string | null;
+  /** El evento que se está mirando (los celulares siempre ven el activo; la presentadora puede mirar uno anterior). */
+  evento: InfoEvento | null;
+  /** Presentadora: el evento anterior que eligió mirar (null = el activo). Se recuerda en este navegador. */
+  verEvento: string | null;
+  /** Tu perfil de un evento anterior, si en el activo todavía no tienes (para «usar mi perfil anterior»). */
+  anterior: PerfilAnterior | null;
   toast: {texto: string; ver: boolean};
   shareUrl: string;
 };
@@ -68,6 +78,7 @@ const estadoInicial = (): Estado => ({
   busqueda: null, pasoFinal: null, ganador: null, ganadorPct: null, nBusquedas: 0,
   iaDisponible: false, iaRes: null, iaFallo: false,
   fase: "registro", cambiandoFase: false, total: 0, presentadora: false, yaVio: false, ronda: 0, top: null, topI: 0, topBusqueda: null, topGanador: null,
+  evento: null, verEvento: leerVerEvento(), anterior: null,
   toast: {texto: "", ver: false},
   shareUrl: SHARE_URL_FIJA || location.origin + location.pathname.replace(/\/$/, "")
 });
@@ -78,6 +89,16 @@ export default function App() {
   const S = ref.current;
   const [, forzar] = useReducer((n: number) => n + 1, 0);
   const formTocado = useRef(false);
+  /** Pide los datos ya (sin esperar los 5 segundos), por ejemplo al cambiar de evento. */
+  const recargar = useRef<() => void>(() => {});
+
+  /* La presentadora mira un evento anterior (o vuelve al activo con null). Solo cambia lo que ve ella. */
+  function verEvento(id: string | null) {
+    S.verEvento = id;
+    try { if (id) localStorage.setItem("ver-evento", id); else localStorage.removeItem("ver-evento"); } catch {}
+    S.top = null; S.topBusqueda = null; forzar();
+    recargar.current();
+  }
   const timers = useRef({busqueda: [] as ReturnType<typeof setTimeout>[], toast: undefined as ReturnType<typeof setTimeout> | undefined});
 
   const yo = () => S.uid ? S.perfiles.get(S.uid) ?? null : null;
@@ -320,10 +341,15 @@ export default function App() {
       if (document.hidden && S.realLoaded) { siguiente = setTimeout(cargar, CADA_MS); return; }
       try {
         // "no-cache" deja que el navegador pregunte "¿cambió algo?" (ETag) y reciba un 304 vacío si no.
-        const r = await fetch("/api/perfiles", {cache: "no-cache"});
+        const r = await fetch("/api/perfiles" + (S.verEvento ? "?evento=" + encodeURIComponent(S.verEvento) : ""), {cache: "no-cache"});
         if (!r.ok) throw new ErrorAPI(r.status);
-        const data: {yo: string; fase?: Fase; ronda?: number; total?: number; presentadora?: boolean; perfiles: Record<string, unknown>[]} = await r.json();
+        const data: {yo: string; fase?: Fase; ronda?: number; total?: number; presentadora?: boolean; evento?: InfoEvento; anterior?: PerfilAnterior | null; perfiles: Record<string, unknown>[]} = await r.json();
         if (parado) return;
+        // ¿Cambió el evento (la presentadora abrió uno nuevo o miró otro)? Se empieza limpio, sin avisos.
+        const cambioEvento = !!data.evento && !!S.evento && data.evento.id !== S.evento.id;
+        if (cambioEvento) { primera = true; S.yaVio = false; S.top = null; S.topBusqueda = null; S.iaRes = null; firma = ""; S.relleno++; }
+        S.evento = data.evento ?? null;
+        S.anterior = data.anterior ?? null;
         clearTimeout(lento);
         S.slow = false; S.avail = "ok"; fallos = 0;
         if (S.demo) S.realUid = data.yo; else S.uid = data.yo;
@@ -339,7 +365,9 @@ export default function App() {
         // La presentadora empezó los matches: en todos los celulares aparece el botón «Ver mi match».
         const fase: Fase = data.fase === "matches" ? "matches" : "registro";
         const empezo = !primera && S.fase === "registro" && fase === "matches";
-        if (fase === "registro") { S.yaVio = false; S.top = null; S.topBusqueda = null; }
+        // Al volver a registro se limpia (solo cuando la fase cambia, no en cada consulta: así la presentadora
+        // puede buscar matches de un evento anterior aunque ese evento esté en registro).
+        if (fase === "registro" && S.fase === "matches") { S.yaVio = false; S.top = null; S.topBusqueda = null; }
         const ronda = Number(data.ronda) || 0;
         const repetir = !primera && ronda !== S.ronda && fase === "matches";
         S.ronda = ronda;
@@ -364,6 +392,7 @@ export default function App() {
         if (!parado) siguiente = setTimeout(cargar, CADA_MS);
       }
     }
+    recargar.current = () => { clearTimeout(siguiente); cargar(); };
     cargar();
     return () => { parado = true; clearTimeout(siguiente); clearTimeout(lento); };
   }
@@ -427,7 +456,9 @@ export default function App() {
   // La presentadora, cuando empiezan los matches, ve en «Matches» las 5 mejores parejas para mostrar.
   // La presentadora, cuando empiezan los matches, busca con un botón las 5 mejores parejas para mostrar.
   // Cada vez que toca «Buscar» se calcula de nuevo con la gente que haya en ese momento.
-  const verTop = S.presentadora && !S.demo && S.fase === "matches";
+  // Mirando un evento anterior, la presentadora puede buscar sus matches aunque ya no esté en «matches».
+  const viendoAnterior = S.presentadora && !S.demo && !!S.evento && !S.evento.activo;
+  const verTop = S.presentadora && !S.demo && (S.fase === "matches" || viendoAnterior);
   function buscarTop() {
     if (S.topBusqueda) return;
     // Primera vez, o ya mostró las 5: busca la lista de nuevo con la gente que haya ahora.
@@ -459,17 +490,24 @@ export default function App() {
   return (
     <>
       <Iconos/>
-      <Barra vista={S.vista} burbuja={burbuja} verMatches={S.demo || S.fase === "matches"} presentadora={S.presentadora}/>
+      <Barra vista={S.vista} burbuja={burbuja} verMatches={S.demo || S.fase === "matches" || viendoAnterior} presentadora={S.presentadora}/>
+      {viendoAnterior && S.evento && S.vista !== "proyectar" && (
+        <div className="viendo-evento" role="status">
+          <span>Estás viendo <b>{S.evento.nombre}</b> (evento anterior). Los celulares siguen en el evento activo.</span>
+          <button type="button" className="boton chico" onClick={() => verEvento(null)}>Volver al evento activo</button>
+        </div>
+      )}
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
-        <VistaPerfil activo={S.vista === "perfil"} buscar={S.demo || S.fase === "matches"} aviso={aviso} me={me} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
+        <VistaPerfil activo={S.vista === "perfil"} buscar={S.demo || S.fase === "matches"} aviso={aviso} me={me} anterior={S.demo ? null : S.anterior} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>
         <VistaClics activo={S.vista === "clics"} aviso={aviso} busqueda={S.busqueda} pasoFinal={S.pasoFinal} ganador={S.ganador} ganadorPct={S.ganadorPct} loaded={S.loaded} me={me} todos={todos} conIA={conIA} consejo={conIA && S.iaRes ? S.iaRes.consejo : ""} iaFallo={S.iaFallo} onBuscar={buscarMatch}
           esperando={!hayMatches()} personas={S.demo ? S.perfiles.size : S.total}
           revelar={!S.demo && S.fase === "matches" && !S.yaVio && !!me} onRevelar={buscarMatch}
           admin={verTop ? {pareja: S.top?.[S.topI] ?? null, i: S.topI, n: S.top?.length ?? 0, buscado: S.top !== null, busqueda: S.topBusqueda, ganador: S.topGanador, onBuscar: buscarTop} : null}/>
         <VistaProyectar activo={enProyectar} qrUrl={qrUrl} perfiles={S.demo ? S.perfiles.size : S.total} pares={pares}
-          fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
-        <VistaPanel activo={S.vista === "panel"} cambiando={S.cambiandoFase} onFase={cambiarFase}/>
+          fase={S.demo ? null : S.fase} cambiando={S.cambiandoFase} onFase={cambiarFase} anterior={viendoAnterior && S.evento ? S.evento.nombre : null}/>
+        <VistaPanel activo={S.vista === "panel"} cambiando={S.cambiandoFase} onFase={cambiarFase}
+          evento={S.evento} verEvento={S.verEvento} onVerEvento={verEvento}/>
         <VistaMapa activo={S.vista === "mapa"} demo={S.demo ? S.perfiles : null}/>
       </main>
       <div className={"toast" + (S.toast.ver ? " ver" : "")} id="toast" role="status" aria-live="polite">{S.toast.texto}</div>

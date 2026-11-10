@@ -2,16 +2,25 @@
 /* Panel de la presentadora (#panel): solo lo abre su computadora o quien tenga la clave.
    - Ve llegar los perfiles en vivo, con el mejor match de cada uno.
    - Todos entran aceptados; ella quita los malos (y los puede devolver).
-   - Desde aquí empieza los matches para todos. */
+   - Desde aquí empieza los matches para todos.
+   - Eventos: crea uno nuevo (el anterior queda guardado), vuelve a activar uno o mira uno anterior. */
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { UMBRAL, limpiar, mejoresParejas, ordenarMatches, type Perfil } from "@/lib/match";
 import type { Fase } from "@/lib/fase";
+import type { InfoEvento } from "./App";
 
 type Fila = Record<string, unknown> & {id: string; quitado: boolean};
 type Datos = {evento: string; fase: Fase; perfiles: Fila[]};
 const POR_PAGINA = 20;
+type Evento = {id: string; nombre: string; personas: number; activo: boolean};
 
-export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambiando: boolean; onFase: (f: Fase) => void}) {
+type Props = {
+  activo: boolean; cambiando: boolean; onFase: (f: Fase) => void;
+  /** El evento que se está mirando, y el que eligió mirar la presentadora (null = el activo). */
+  evento: InfoEvento | null; verEvento: string | null; onVerEvento: (id: string | null) => void;
+};
+
+export function VistaPanel({activo, cambiando, onFase, evento, verEvento, onVerEvento}: Props) {
   const [datos, setDatos] = useState<Datos | null>(null);
   const [pideClave, setPideClave] = useState<string | null>(null);
   const [clave, setClave] = useState("");
@@ -29,7 +38,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
     let t: ReturnType<typeof setTimeout> | undefined;
     async function cargar() {
       try {
-        const r = await fetch("/api/panel", {cache: "no-store"});
+        const r = await fetch("/api/panel" + (verEvento ? "?evento=" + encodeURIComponent(verEvento) : ""), {cache: "no-store"});
         const d = await r.json().catch(() => ({}));
         if (parado) return;
         if (r.status === 403) { setPideClave(d.error || "Escribe la clave de la presentadora."); setFaltaClave(d.pideClave === false); setDatos(null); }
@@ -39,7 +48,37 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
     }
     cargar();
     return () => { parado = true; clearTimeout(t); };
-  }, [activo, vuelta]);
+  }, [activo, vuelta, verEvento]);
+  useEffect(() => { setPagina(0); }, [verEvento]);
+
+  /* La lista de eventos. */
+  const [eventos, setEventos] = useState<Evento[] | null>(null);
+  useEffect(() => {
+    if (!activo) return;
+    fetch("/api/eventos", {cache: "no-store"}).then(r => r.ok ? r.json() : null).then(d => { if (d) setEventos(d.eventos); }).catch(() => {});
+  }, [activo, vuelta, verEvento]);
+  const eventoActivo = eventos?.find(e => e.activo);
+  const viendoAnterior = !!evento && !evento.activo;
+
+  const pedirEventos = async (cuerpo: Record<string, string>) => {
+    const r = await fetch("/api/eventos", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(cuerpo)});
+    if (!r.ok) { alert((await r.json().catch(() => ({}))).error || "No se pudo. Inténtalo otra vez."); return false; }
+    return true;
+  };
+  const nuevoEvento = async () => {
+    const nombre = (prompt("Nombre del nuevo evento (por ejemplo: «Hackathon Santo Domingo»)") || "").trim();
+    if (!nombre) return;
+    if (!confirm(`Se creará «${nombre}» y será el evento activo: los registros nuevos del QR irán ahí.\n\n«${eventoActivo?.nombre ?? "El evento actual"}» queda guardado con todos sus perfiles.`)) return;
+    if (await pedirEventos({accion: "crear", nombre})) { onVerEvento(null); setVuelta(v => v + 1); }
+  };
+  const activarEvento = async (e: Evento) => {
+    if (!confirm(`¿Hacer activo «${e.nombre}»? Los registros nuevos del QR irán a ese evento. Los demás eventos quedan guardados.`)) return;
+    if (await pedirEventos({accion: "activar", id: e.id})) { onVerEvento(null); setVuelta(v => v + 1); }
+  };
+  const renombrarEvento = async (e: Evento) => {
+    const nombre = (prompt("Nuevo nombre del evento", e.nombre) || "").trim();
+    if (nombre && nombre !== e.nombre && await pedirEventos({accion: "renombrar", id: e.id, nombre})) setVuelta(v => v + 1);
+  };
 
   const entrar = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,7 +105,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
   const cambiarQuitado = async (id: string, quitar: boolean) => {
     setOcupado(id);
     try {
-      await fetch("/api/panel", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, quitar})});
+      await fetch("/api/panel", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, quitar, evento: datos?.evento})});
       setDatos(d => d && {...d, perfiles: d.perfiles.map(p => p.id === id ? {...p, quitado: quitar} : p)});
     } finally { setOcupado(null); }
   };
@@ -100,7 +139,8 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
     const texto = "\uFEFF" + filas.map(f => f.map(celda).join(";")).join("\r\n");
     const url = URL.createObjectURL(new Blob([texto], {type: "text/csv;charset=utf-8"}));
     const a = document.createElement("a");
-    a.href = url; a.download = `networkeando-${datos.evento}.csv`;
+    const nombre = (evento?.id === datos.evento ? evento.nombre : datos.evento).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+    a.href = url; a.download = `networkeando-${nombre || datos.evento}.csv`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -130,6 +170,37 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
         </form>
       )}
 
+      {datos && eventos && (
+        <details className="panel-eventos">
+          <summary>
+            <span>Eventos</span>
+            <span className="panel-eventos-actual">{viendoAnterior ? <>Viendo: <b>{evento?.nombre}</b></> : <>Activo: <b>{eventoActivo?.nombre}</b></>}</span>
+          </summary>
+          <div className="panel-eventos-cuerpo">
+            <p className="panel-nota">El <b>activo</b> recibe los registros nuevos del QR. Los demás quedan guardados: los puedes ver, proyectar y buscar sus matches.</p>
+            <ul>
+              {eventos.map(e => {
+                const viendo = evento?.id === e.id;
+                return (
+                  <li key={e.id} className={viendo ? "viendo" : ""}>
+                    <div>
+                      <b>{e.nombre}</b>
+                      <small>{e.personas} {e.personas === 1 ? "persona" : "personas"}{e.activo ? " · Activo" : ""}{viendo ? " · Lo estás viendo" : ""}</small>
+                    </div>
+                    <div className="panel-eventos-botones">
+                      {!viendo && <button type="button" className="boton chico" onClick={() => onVerEvento(e.activo ? null : e.id)}>Ver</button>}
+                      {!e.activo && <button type="button" className="boton chico" onClick={() => activarEvento(e)}>Hacerlo activo</button>}
+                      <button type="button" className="boton chico" onClick={() => renombrarEvento(e)}>Renombrar</button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <button type="button" className="boton fuerte" onClick={nuevoEvento}>Nuevo evento</button>
+          </div>
+        </details>
+      )}
+
       {datos && calculo && <>
         <div className="panel-cabeza">
           <div className="cifras">
@@ -137,14 +208,16 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
             <div className="cifra"><b>{calculo.conMatch}</b>con match</div>
             <div className="cifra"><b>{calculo.pares}</b>matches detectados</div>
           </div>
-          <div className="fase">
+          {viendoAnterior
+            ? <p className="panel-nota">Evento anterior: puedes proyectarlo y buscar sus matches en <a href="#clics">Matches</a>. Los registros nuevos van al evento activo.</p>
+            : <div className="fase">
             {fase === "registro"
               ? <button className="boton fuerte fase-empezar" type="button" disabled={cambiando || calculo.activos < 2} onClick={() => { onFase("matches"); setTimeout(() => setVuelta(v => v + 1), 800); }}>{cambiando ? "Empezando…" : "Empezar los matches"}</button>
               : <>
                   <p className="fase-lista"><span aria-hidden="true"></span>Los matches ya empezaron: todos pueden ver el suyo.</p>
                   <button className="borrar" type="button" disabled={cambiando} onClick={() => { if (confirm("¿Volver a la fase de registro? Los celulares dejan de mostrar los matches.")) { onFase("registro"); setTimeout(() => setVuelta(v => v + 1), 800); } }}>Volver a la fase de registro</button>
                 </>}
-          </div>
+          </div>}
         </div>
 
         <div className="panel-remover">
@@ -180,7 +253,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
           </nav>
         )}
 
-        <details className="panel-opciones">
+        {!viendoAnterior && <details className="panel-opciones">
           <summary>Opciones</summary>
           <div>
             {fase === "matches" && <button type="button" className="boton chico" onClick={() => accion("repetir")}>Mostrar match de nuevo</button>}
@@ -188,7 +261,7 @@ export function VistaPanel({activo, cambiando, onFase}: {activo: boolean; cambia
             <button type="button" className="boton chico panel-quitar" onClick={() => accion("borrarTodo")}>Borrar todos los perfiles</button>
           </div>
           {aviso && <p className="panel-nota" role="status">{aviso}</p>}
-        </details>
+        </details>}
       </>}
     </section>
   );

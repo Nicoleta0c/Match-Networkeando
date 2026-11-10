@@ -4,6 +4,7 @@ import { LIMITES, type Perfil } from "@/lib/match";
 import { revisarTextos } from "@/lib/validar";
 import { Aviso } from "./ui";
 import { Cara } from "./Buscando";
+import type { PerfilAnterior } from "./App";
 
 export type DatosForm = {idea: string; power: string; anon: boolean; alias: string; que: string; contact: string};
 
@@ -11,6 +12,8 @@ type Props = {
   /** Ya empezaron los matches (o es la demo): el botón también busca. */
   buscar: boolean;
   activo: boolean; aviso: ReactNode; me: Perfil | null;
+  /** Tu perfil de un evento anterior (si en este todavía no tienes): se ofrece para no escribir todo otra vez. */
+  anterior: PerfilAnterior | null;
   puede: boolean; guardando: boolean;
   /* Cada vez que cambia, el formulario se vuelve a llenar con el perfil guardado (llenarForm del original). */
   relleno: number;
@@ -20,7 +23,7 @@ type Props = {
   onBorrar: () => Promise<boolean>;
 };
 
-export function VistaPerfil({activo, buscar, aviso, me, puede, guardando, relleno, tocadoRef, onGuardar, onBorrar}: Props) {
+export function VistaPerfil({activo, buscar, aviso, me, anterior, puede, guardando, relleno, tocadoRef, onGuardar, onBorrar}: Props) {
   const [idea, setIdea] = useState("");
   const [poder, setPoder] = useState("");
   // "Mi nombre" siempre empieza cerrado; lo abre quien quiera. Ser anónimo depende de si escribes tu nombre.
@@ -28,6 +31,7 @@ export function VistaPerfil({activo, buscar, aviso, me, puede, guardando, rellen
   const [alias, setAlias] = useState("");
   const [que, setQue] = useState("");
   const [contacto, setContacto] = useState("");
+  const [usoAnterior, setUsoAnterior] = useState(false);
   const [error, setError] = useState("");
   const [malo, setMalo] = useState<"idea" | "poder" | "nombre" | "contacto" | null>(null);
   const [armado, setArmado] = useState(false);
@@ -84,6 +88,17 @@ export function VistaPerfil({activo, buscar, aviso, me, puede, guardando, rellen
     <section className="cont vista" data-view-panel="perfil" aria-labelledby="t-perfil" hidden={!activo}>
       <h2 className="titulo" id="t-perfil">Mi perfil</h2>
       <Aviso>{aviso}</Aviso>
+      {!me && anterior && !usoAnterior && (
+        <div className="perfil-anterior">
+          <p>Ya usaste la app en <b>{anterior.evento}</b>. ¿Quieres usar el mismo perfil? Lo puedes cambiar antes de guardar.</p>
+          <button type="button" className="boton chico fuerte" onClick={() => {
+            setIdea(anterior.idea); setPoder(anterior.power);
+            setAlias(anterior.anon ? "" : anterior.alias); setQue(anterior.anon ? "" : anterior.que); setContacto(anterior.anon ? "" : anterior.contact);
+            if (!anterior.anon) setAbierto(true);
+            tocadoRef.current = true; setUsoAnterior(true);
+          }}>Usar mi perfil anterior</button>
+        </div>
+      )}
       <form className="form" id="form" noValidate onSubmit={enviar} onInput={tocar}>
         {/* Escribes directo en tu tarjeta: así se verá cuando hagas match. */}
         <div className="bloques">
