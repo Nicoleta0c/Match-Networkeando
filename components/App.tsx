@@ -491,12 +491,6 @@ export default function App() {
     <>
       <Iconos/>
       <Barra vista={S.vista} burbuja={burbuja} verMatches={S.demo || S.fase === "matches" || viendoAnterior} presentadora={S.presentadora}/>
-      {viendoAnterior && S.evento && S.vista !== "proyectar" && (
-        <div className="viendo-evento" role="status">
-          <span>Estás viendo <b>{S.evento.nombre}</b> (evento anterior). Los celulares siguen en el evento activo.</span>
-          <button type="button" className="boton chico" onClick={() => verEvento(null)}>Volver al evento activo</button>
-        </div>
-      )}
       <main>
         <VistaInicio activo={S.vista === "inicio"} qrUrl={qrUrl}/>
         <VistaPerfil activo={S.vista === "perfil"} buscar={S.demo || S.fase === "matches"} aviso={aviso} me={me} anterior={S.demo ? null : S.anterior} puede={puede()} guardando={S.guardando} relleno={S.relleno} tocadoRef={formTocado} onGuardar={guardar} onBorrar={borrar}/>

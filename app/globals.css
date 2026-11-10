@@ -498,9 +498,6 @@ body[data-view="mapa"] .barra{display:none}
 .panel-titulo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .panel-acciones{display:flex;gap:10px;flex-wrap:wrap}
 
-/* Eventos: aviso de que la presentadora mira un evento anterior */
-.viendo-evento{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:center;gap:12px 18px;flex-wrap:wrap;padding:10px 16px;background:#2a2410;border-bottom:1px solid var(--h);color:var(--t);font-size:.95rem;text-align:center}
-.viendo-evento b{color:var(--h)}
 /* Proyectar de un evento anterior: sin QR, centrado */
 .proy-anterior{grid-template-columns:minmax(0,900px);text-align:center;justify-items:center}
 .proy-anterior .cifras{justify-content:center}

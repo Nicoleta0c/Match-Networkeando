@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mente de sueños · prototipo</title>
+<style>
+  :root { --bg:#0b0f10; --t:#f4f1e8; --m:#a9a497; --teal:#3ee0c5; --amber:#f8c000; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: radial-gradient(ellipse at 50% 45%, #13201f 0%, var(--bg) 62%); color: var(--t); font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+  canvas.arrastrando { cursor: grabbing; }
+  .cabeza { position: fixed; top: 22px; left: 0; right: 0; text-align: center; pointer-events: none; padding: 0 16px; }
+  .cabeza small { display: block; color: var(--teal); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; }
+  .cabeza h1 { margin: 6px 0 0; font-size: clamp(26px, 4vw, 48px); letter-spacing: -.02em; }
+  .cifras { position: fixed; bottom: 22px; left: 0; right: 0; display: flex; gap: 12px; justify-content: center; pointer-events: none; flex-wrap: wrap; padding: 0 16px; }
+  .cifra { background: rgba(20,28,28,.75); border: 1px solid #2a3534; border-radius: 18px; padding: 10px 18px; color: var(--m); font-weight: 700; font-size: 14px; backdrop-filter: blur(6px); }
+  .cifra b { display: block; color: var(--t); font-size: 28px; line-height: 1.1; }
+  .ficha { position: fixed; pointer-events: none; max-width: 300px; background: rgba(14,20,20,.92); border: 1px solid var(--teal); border-radius: 16px; padding: 12px 14px; font-size: 14px; line-height: 1.4; opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
+  .ficha.ver { opacity: 1; transform: none; }
+  .ficha small { display: block; color: var(--m); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-top: 6px; }
+  .ficha small:first-child { margin-top: 0; }
+  .ficha .s { color: var(--amber); } .ficha .p { color: var(--teal); }
+  .ayuda { position: fixed; top: 22px; right: 18px; color: var(--m); font-size: 12px; text-align: right; pointer-events: none; }
+  @media (max-width: 640px) { .ayuda { display: none; } .cifra b { font-size: 22px; } }
+</style>
+</head>
+<body>
+<canvas id="lienzo"></canvas>
+<div class="cabeza"><small>Prototipo · datos inventados</small><h1>La mente del evento</h1></div>
+<div class="ayuda">Arrastra para girar<br>Toca una neurona</div>
+<div class="cifras"><div class="cifra"><b id="n-personas">0</b>personas</div><div class="cifra"><b id="n-matches">0</b>matches</div></div>
+<div class="ficha" id="ficha"></div>
+<script>
+/* Prototipo: cada neurona es una persona (su sueño y su superpoder); los hilos son sus matches.
+   Las neuronas forman dos hemisferios, como un cerebro, que giran despacio. Todo con perspectiva
+   dibujada a mano en un canvas 2D (sin librerías). Los datos son inventados. */
+const SUENOS = ["Una app para que los colmados lleven el fiado","Un refugio para perros de la calle","Una marca de ropa con diseños taínos","Un podcast de tecnología en español","Una escuela de béisbol para niños","Abrir una panadería de casabe","Un huerto comunitario en el barrio","Una clínica de salud mental accesible","Exportar aguacates dominicanos","Una librería café donde la gente lea","Una ONG que enseñe IA a otras ONG","Un festival de música en la Zona Colonial","Una app de alfabetización para adultos mayores","Ser diplomática de mi país","Una empresa de lengua de señas","Un programa de radio sobre ciencia","Un sistema para vender cosechas de campesinos","Una fundación para niños con cáncer","Un estudio de videojuegos dominicano","Una red de voluntarios para emergencias"];
+const PODERES = ["Programo apps en Flutter","Diseño logos e identidad de marca","Vendo por Instagram","Llevo las cuentas y los números","Organizo eventos","Soy veterinaria","Escucho con empatía","Analizo datos con Python","Enseño matemáticas","Grabo y edito videos","Coordino voluntarios","Hablo en público","Redacto propuestas","Construyo prototipos con Arduino","Soy abogado","Hago marketing digital","Cocino rico","Lidero equipos","Traduzco inglés y francés","Modelado 3D"];
+const N = 140;
+const lienzo = document.getElementById("lienzo"), ctx = lienzo.getContext("2d");
+const ficha = document.getElementById("ficha");
+let W = 0, H = 0, R = 0, dpr = 1;
+
+// Neuronas en forma de cerebro: dos hemisferios (esferas achatadas) separados por una línea media.
+const neuronas = [];
+const azar = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+for (let i = 0; i < N; i++) {
+  const lado = i % 2 ? 1 : -1;
+  const k = (i >> 1) + .5, n = N / 2;
+  const phi = Math.acos(1 - 2 * k / n), th = Math.PI * (1 + Math.sqrt(5)) * k;
+  const x = Math.sin(phi) * Math.cos(th), y = Math.cos(phi), z = Math.sin(phi) * Math.sin(th);
+  // Cada hemisferio es un óvalo alargado de adelante hacia atrás, a su lado de la línea media;
+  // más plano abajo, como un cerebro visto de frente.
+  const j = .93 + azar() * .12;                 // un poco irregular
+  const yy = y < 0 ? y * .62 : y * .78;
+  neuronas.push({
+    x: (lado * .5 + x * .46) * j, y: -yy * j, z: z * 1.05 * j,
+    sueno: SUENOS[Math.floor(azar() * SUENOS.length)], poder: PODERES[Math.floor(azar() * PODERES.length)],
+    fase: azar() * Math.PI * 2, color: azar() < .5 ? "teal" : "amber", px: 0, py: 0, pz: 0, esc: 1
+  });
+}
+// Matches: cada neurona se conecta con 2 o 3 cercanas (y algunas cruzan al otro hemisferio).
+const hilos = [];
+const ya = new Set();
+neuronas.forEach((a, i) => {
+  const cerca = neuronas.map((b, j) => [j, (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2]).filter(([j]) => j !== i).sort((p, q) => p[1] - q[1]);
+  const cuantos = 2 + (azar() < .4 ? 1 : 0);
+  for (let c = 0; c < cuantos; c++) {
+    const j = azar() < .12 ? cerca[10 + Math.floor(azar() * 40)][0] : cerca[c][0];
+    const clave = Math.min(i, j) + "-" + Math.max(i, j);
+    if (ya.has(clave)) continue;
+    ya.add(clave);
+    hilos.push({a: i, b: j, pulso: azar(), vel: .12 + azar() * .18});
+  }
+});
+document.getElementById("n-personas").textContent = N;
+document.getElementById("n-matches").textContent = hilos.length;
+
+function medir() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  lienzo.width = W * dpr; lienzo.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  R = Math.min(W * .34, H * .36);
+}
+addEventListener("resize", medir); medir();
+
+// Giro: solo, despacio; y con el dedo o el mouse.
+let giroY = .4, giroX = -.25, velY = .0025, arrastre = null, elegida = -1, sobre = -1;
+const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+lienzo.addEventListener("pointerdown", e => { arrastre = {x: e.clientX, y: e.clientY, gy: giroY, gx: giroX, movio: false}; lienzo.classList.add("arrastrando"); lienzo.setPointerCapture(e.pointerId); });
+lienzo.addEventListener("pointermove", e => {
+  if (arrastre) {
+    const dx = e.clientX - arrastre.x, dy = e.clientY - arrastre.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) arrastre.movio = true;
+    giroY = arrastre.gy + dx * .006; giroX = Math.max(-1.1, Math.min(1.1, arrastre.gx + dy * .006));
+  } else { sobre = cercana(e.clientX, e.clientY); mostrarFicha(sobre, e.clientX, e.clientY); }
+});
+lienzo.addEventListener("pointerup", e => {
+  lienzo.classList.remove("arrastrando");
+  if (arrastre && !arrastre.movio) { elegida = cercana(e.clientX, e.clientY); mostrarFicha(elegida, e.clientX, e.clientY); }
+  arrastre = null;
+});
+function cercana(x, y) {
+  let mejor = -1, d = 22 * 22;
+  neuronas.forEach((n, i) => { const dd = (n.px - x) ** 2 + (n.py - y) ** 2; if (dd < d && n.pz > -.2) { d = dd; mejor = i; } });
+  return mejor;
+}
+function mostrarFicha(i, x, y) {
+  if (i < 0) { ficha.classList.remove("ver"); return; }
+  const n = neuronas[i];
+  const conectadas = hilos.filter(h => h.a === i || h.b === i).length;
+  ficha.innerHTML = `<small>Sueño</small><span class="s">${n.sueno}</span><small>Superpoder</small><span class="p">${n.poder}</span><small>${conectadas} ${conectadas === 1 ? "match" : "matches"}</small>`;
+  ficha.style.left = Math.min(W - 310, x + 16) + "px"; ficha.style.top = Math.min(H - 140, y + 16) + "px";
+  ficha.classList.add("ver");
+}
+
+const COL = {teal: [62, 224, 197], amber: [248, 192, 0]};
+let t0 = performance.now();
+function cuadro(t) {
+  const dt = Math.min(50, t - t0) / 1000; t0 = t;
+  if (!arrastre && !quieto) giroY += velY * 60 * dt;
+  const cy = Math.cos(giroY), sy = Math.sin(giroY), cx = Math.cos(giroX), sx = Math.sin(giroX);
+  const f = 2.6;  // distancia de la cámara (perspectiva)
+  for (const n of neuronas) {
+    // Respira un poquito.
+    const r = 1 + Math.sin(t / 1400 + n.fase) * .012;
+    let x = n.x * r, y = n.y * r, z = n.z * r;
+    const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;          // giro horizontal
+    const y2 = y * cx - z1 * sx, z2 = y * sx + z1 * cx;          // inclinación
+    const esc = f / (f + z2);
+    n.px = W / 2 + x1 * R * esc; n.py = H / 2 + y2 * R * esc; n.pz = -z2; n.esc = esc;
+  }
+  ctx.clearRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "lighter";
+
+  // Hilos (matches): más visibles al frente; un pulso de luz viaja por cada uno.
+  const foco = elegida >= 0 ? elegida : sobre;
+  for (const h of hilos) {
+    const a = neuronas[h.a], b = neuronas[h.b];
+    const prof = ((a.pz + b.pz) / 2 + 1) / 2;                   // 0 (atrás) a 1 (al frente)
+    const resalta = foco >= 0 && (h.a === foco || h.b === foco);
+    const alfa = resalta ? .85 : (foco >= 0 ? .04 : .05 + prof * .16);
+    ctx.strokeStyle = resalta ? `rgba(248,192,0,${alfa})` : `rgba(62,224,197,${alfa})`;
+    ctx.lineWidth = resalta ? 1.6 : .6 + prof * .8;
+    ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+    if (!quieto) {
+      h.pulso = (h.pulso + h.vel * dt) % 1;
+      const px = a.px + (b.px - a.px) * h.pulso, py = a.py + (b.py - a.py) * h.pulso;
+      const ra = (resalta ? 3.2 : 1.6) * (.6 + prof);
+      ctx.fillStyle = resalta ? "rgba(255,225,120,.95)" : `rgba(160,255,235,${.15 + prof * .55})`;
+      ctx.beginPath(); ctx.arc(px, py, ra, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Neuronas, de atrás hacia adelante: brillo suave + núcleo.
+  const orden = neuronas.map((n, i) => i).sort((p, q) => neuronas[p].pz - neuronas[q].pz);
+  for (const i of orden) {
+    const n = neuronas[i], prof = (n.pz + 1) / 2, [r, g, b] = COL[n.color];
+    const latido = 1 + Math.sin(t / 900 + n.fase * 3) * .15;
+    const grande = i === foco ? 2.2 : 1;
+    const rad = (2.2 + prof * 3.4) * n.esc * latido * grande;
+    const brillo = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, rad * 4.5);
+    brillo.addColorStop(0, `rgba(${r},${g},${b},${.18 + prof * .4})`);
+    brillo.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = brillo; ctx.beginPath(); ctx.arc(n.px, n.py, rad * 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `rgba(${Math.min(255, r + 60)},${Math.min(255, g + 40)},${Math.min(255, b + 60)},${.35 + prof * .65})`;
+    ctx.beginPath(); ctx.arc(n.px, n.py, rad, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  requestAnimationFrame(cuadro);
+}
+requestAnimationFrame(cuadro);
+</script>
+</body>
+</html>
